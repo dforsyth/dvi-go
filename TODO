@@ -1,0 +1,19 @@
+- make a new structure called a line that holds a gapbuffer and some meta information
+- tabs
+- rainbow mode
+- syntax highlighting
+- config?  (not really needed since this is my editor)
+- commands
+	- w // write
+	- o // open
+	- tn // next buf
+	- tp // prev buf
+	- x // close
+- auto indent
+- open directory -> list files
+- open archive -> list files
+- actually error handling
+
+BUGS
+- handle newline correctly
+- moving the gap to the cursor is all sorts of fucked up
