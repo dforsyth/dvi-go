@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	size = 256
+	size = 64
 	max = 4096
 )
 

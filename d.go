@@ -195,7 +195,7 @@ func (d *D) UpdateScreen() {
 
 	i := d.s
 	for l := d.Buffer().Lines().Front(); l != nil; l = l.Next() {
-		curses.Stdwin.Mvwaddnstr(i, 0, l.Value.(*GapBuffer).DebugString(), *curses.Cols)
+		curses.Stdwin.Mvwaddnstr(i, 0, l.Value.(*GapBuffer).String(), *curses.Cols)
 		i++
 	}
 
@@ -207,7 +207,7 @@ func (d *D) UpdateScreen() {
 		if d.m == MINSERT {
 			curses.Stdwin.Move(0, d.Buffer().Line().gs)
 		} else {
-			curses.Stdwin.Move(0, d.Buffer().Line().DebugCursor())
+			curses.Stdwin.Move(0, d.Buffer().Line().c)
 		}
 	}
 
