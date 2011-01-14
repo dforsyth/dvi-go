@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"io/ioutil"
 	"os"
 )
 
@@ -38,6 +39,34 @@ func NewReadFileEditBuffer(pathname string) *EditBuffer {
 	return b
 }
 
-func WriteEditBuffer(pathname string, b *EditBuffer) *os.FileInfo {
-	return nil
+// Do a naive write of the entire buffer to a temp file, then rename into place.
+func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
+
+	f, e := ioutil.TempFile(TMPDIR, TMPPREFIX)
+	if e != nil {
+		return nil, e
+	}
+	defer f.Close()
+
+	for l := b.Lines().Front(); l != nil; l = l.Next() {
+		_, e := f.Write(l.Value.(*GapBuffer).GaplessBuffer())
+		if e != nil {
+			return nil, e
+		}
+	}
+
+	st, e := f.Stat()
+	if e != nil {
+		return nil, e
+	}
+
+	// rename (i dont think this is dir smart.  i dont remember stat())
+	e = os.Rename(st.Name, b.st.Name)
+	if e != nil {
+		return nil, e
+	}
+
+	b.st = st
+
+	return st, nil
 }

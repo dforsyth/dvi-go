@@ -3,11 +3,12 @@ package main
 // A simple gap buffer implementation on slices.
 
 import (
-	"fmt"
+//	"fmt"
 )
 
 const (
-	size = 4
+	size = 256
+	max = 4096
 )
 
 type GapBuffer struct {
@@ -57,46 +58,28 @@ func (g *GapBuffer) DeleteSpan(p, s int) {
 	}
 }
 
-// g.c = g.gs + (p - g.gs - (g.ge - g.gs))
 // Move cursor to p.  p does not account for the gap.
 func (g *GapBuffer) MoveCursor(p int) {
-	if p > g.gs {
-		g.c = g.gs + (p - g.gs - (g.ge - g.gs))
-		// g.c = p + (g.ge - g.gs) + g.gs
-	} else {
-		g.c = p
-	}
+	g.c = p
 }
 
 func (g *GapBuffer) CursorLeft() {
 	if g.c == 0 {
 		return
 	}
-	if g.c <= g.gs {
-		g.MoveCursor(g.c - 1)
-	} else {
-		g.MoveCursor(g.c - (g.ge - g.gs))
-	}
-	Debug = fmt.Sprintf("cursor now at %d or %s", g.c, g.String())
+	g.MoveCursor(g.c - 1)
 }
 
 func (g *GapBuffer) CursorRight() {
 	if g.c == len(g.GaplessBuffer()) {
 		return
 	}
-
-	if g.c <= g.gs {
-		g.MoveCursor(g.c + 1)
-	} else {
-		g.MoveCursor(g.c + (g.ge - g.gs))
-	}
-	Debug = fmt.Sprintf("cursor now at %d out of %d", g.c, len(g.String()))
+	g.MoveCursor(g.c + 1)
 }
 
 // Move the cursor to g.gs
 func (g *GapBuffer) UpdateCursor() {
 	g.c = g.gs
-	Debug = "update cursor"
 }
 
 // Grow the size of gap by s
@@ -105,9 +88,6 @@ func (g *GapBuffer) GrowGap(s int) {
 	// we should check the cap() of our new slice after append and see if we
 	// can use the new size to make a larger gap.
 	b := make([]byte, s)
-	for i, _ := range b {
-		b[i] = byte(0)
-	}
 
 	g.buf = append(g.buf, b...)
 	copy(g.buf[g.ge + s:], g.buf[g.ge:])
@@ -122,23 +102,19 @@ func (g *GapBuffer) MoveGap(p int) {
 	}
 
 	if p < g.gs {
-		copy(g.buf[g.ge - (g.gs - p):g.ge], g.buf[p:g.gs])
-		g.ge -= (g.gs - p)
+		s := g.gs - p
+		copy(g.buf[g.ge - s:g.ge], g.buf[p:g.gs])
+		g.ge -= s
 	} else {
-		copy(g.buf[g.gs:p], g.buf[g.ge:g.ge + (p - g.gs)])
-		g.ge += (p - g.gs)
+		s := p - g.gs
+		copy(g.buf[g.gs:p], g.buf[g.ge:g.ge + s])
+		g.ge += s
 	}
 	g.gs = p
-
-	Debug = fmt.Sprintf("moved gap to %d", g.gs)
 }
 
 func (g *GapBuffer) MoveGapToCursor() {
-	if g.c <= g.gs {
-		g.MoveGap(g.c)
-	} else {
-		g.MoveGap(g.ge + g.c)
-	}
+	g.MoveGap(g.c)
 }
 
 func (g *GapBuffer) Buffer() []byte {
@@ -146,10 +122,34 @@ func (g *GapBuffer) Buffer() []byte {
 }
 
 func (g *GapBuffer) GaplessBuffer() []byte {
-	return append(g.buf[:g.gs], g.buf[g.ge:]...)
+	b := make([]byte, len(g.buf[:g.gs]) + len(g.buf[g.ge:]))
+	copy(b, g.buf[:g.gs])
+	copy(b[:g.gs], g.buf[g.ge:])
+	return b
 }
 
 func (g *GapBuffer) String() string {
 	return string(g.buf[:g.gs]) + string(g.buf[g.ge:])
+}
+
+func (g *GapBuffer) DebugString() string {
+	s := ""
+	for i, c := range g.buf {
+		if i >= g.gs && i < g.ge {
+			s += "_"
+		} else {
+			s += string(c)
+		}
+
+	}
+
+	return s
+}
+
+func (g *GapBuffer) DebugCursor() int {
+	if g.c > g.gs {
+		return g.c + (g.ge - g.gs)
+	}
+	return g.c
 }
 

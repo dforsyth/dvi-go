@@ -6,11 +6,7 @@ import (
 	"os"
 )
 
-const (
-	gSize int = 4
-	maxLine int = 32
-)
-
+// todo: lockable
 type EditBuffer struct {
 	lines *list.List
 	line *list.Element

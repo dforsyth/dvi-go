@@ -27,7 +27,8 @@ const (
 	// strings
 	NaL string = "+" // char that shows that a line does not exist
 
-	TMP_PREFIX = "d.tmp." // temp file prefix
+	TMPDIR = "."
+	TMPPREFIX = "d.tmp." // temp file prefix
 
 	// modes
 	MNORMAL string = "NORMAL"
@@ -42,6 +43,8 @@ type D struct {
 
 	bufs *list.List
 	buf *list.Element
+
+	yank *list.List // list of lines in the current yank buff
 
 	s int // the first row we give to the edit buffer
 	e int // number of rows we give to the editor
@@ -58,7 +61,7 @@ func (d *D) init(args []string) {
 
 	d.bufs = list.New()
 	if len(args) == 0 {
-		d.InsertBuffer(NewTempFileEditBuffer(TMP_PREFIX))
+		d.InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
 		d.Buffer().FirstLine()
 	} else {
 		for _, path := range args {
@@ -110,7 +113,7 @@ func (d *D) ModeInsert() {
 	d.m = MINSERT
 
 	if d.Buffer() == nil {
-		d.InsertBuffer(NewTempFileEditBuffer(TMP_PREFIX))
+		d.InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
 	}
 
 	if d.Buffer().Line() == nil {
@@ -192,19 +195,19 @@ func (d *D) UpdateScreen() {
 
 	i := d.s
 	for l := d.Buffer().Lines().Front(); l != nil; l = l.Next() {
-		curses.Stdwin.Mvwaddnstr(i, 0, l.Value.(*GapBuffer).String(), *curses.Cols)
+		curses.Stdwin.Mvwaddnstr(i, 0, l.Value.(*GapBuffer).DebugString(), *curses.Cols)
 		i++
 	}
 
 	curses.Stdwin.Mvwaddnstr(0, 0, d.Buffer().Title(), *curses.Cols)
 	curses.Stdwin.Mvwaddnstr(d.e, 0, d.StatusLine(), *curses.Cols)
-
+	Debug = ""
 	// cursor draw for debug at the moment
 	if d.Buffer().Line() != nil {
 		if d.m == MINSERT {
 			curses.Stdwin.Move(0, d.Buffer().Line().gs)
 		} else {
-			curses.Stdwin.Move(0, d.Buffer().Line().c)
+			curses.Stdwin.Move(0, d.Buffer().Line().DebugCursor())
 		}
 	}
 
