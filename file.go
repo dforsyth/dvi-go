@@ -35,6 +35,7 @@ func NewReadFileEditBuffer(pathname string) *EditBuffer {
 		}
 		b.InsertLine(NewGapBuffer(l))
 	}
+	b.st = st
 
 	return b
 }
@@ -48,20 +49,25 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 	}
 	defer f.Close()
 
+	i := 0
 	for l := b.Lines().Front(); l != nil; l = l.Next() {
 		_, e := f.Write(l.Value.(*GapBuffer).GaplessBuffer())
 		if e != nil {
 			return nil, e
 		}
+		i++
 	}
+	Debug = "wrote " + string(i) + " lines"
 
 	st, e := f.Stat()
 	if e != nil {
 		return nil, e
 	}
 
-	// rename (i dont think this is dir smart.  i dont remember stat())
-	e = os.Rename(st.Name, b.st.Name)
+	if b.st != nil {
+		pathname = b.st.Name
+	}
+	e = os.Rename(st.Name, pathname)
 	if e != nil {
 		return nil, e
 	}

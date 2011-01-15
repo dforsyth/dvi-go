@@ -2,17 +2,17 @@ package main
 
 import (
 	"container/list"
-	// "fmt"
 	"os"
 )
 
 // todo: lockable
 type EditBuffer struct {
 	lines *list.List
-	line *list.Element
-	ln int
+	line  *list.Element
+	ln    int
 	title string
-	st *os.FileInfo
+	st    *os.FileInfo
+	dirty bool
 }
 
 func NewEditBuffer(title string) *EditBuffer {
@@ -24,11 +24,19 @@ func NewEditBuffer(title string) *EditBuffer {
 	b.title = title
 
 	return b
+}
 
+func (b *EditBuffer) Dirty() bool {
+	return b.dirty
+}
+
+func (b *EditBuffer) SetDirty(d bool) {
+	b.dirty = d
 }
 
 func (b *EditBuffer) InsertChar(ch byte) {
 	b.Line().InsertChar(ch)
+	b.SetDirty(true)
 }
 
 func (b *EditBuffer) BackSpace() {
@@ -43,7 +51,7 @@ func (b *EditBuffer) BackSpace() {
 			b.DeleteCurrLine()
 		}
 	} else {
-		b.Line().DeleteSpan(b.Line().gs - 1, 1)
+		b.Line().DeleteSpan(b.Line().gs-1, 1)
 	}
 }
 
@@ -53,6 +61,24 @@ func (b *EditBuffer) MoveCursorLeft() {
 
 func (b *EditBuffer) MoveCursorRight() {
 	b.Line().CursorRight()
+}
+
+func (b *EditBuffer) MoveCursorDown() {
+	if b.line != nil {
+		n := b.line.Next()
+		if n != nil {
+			b.line = n
+		}
+	}
+}
+
+func (b *EditBuffer) MoveCursorUp() {
+	if b.line != nil {
+		p := b.line.Prev()
+		if p != nil {
+			b.line = p
+		}
+	}
 }
 
 func (b *EditBuffer) DeleteSpan(p, l int) {
@@ -121,4 +147,3 @@ func (b *EditBuffer) Lines() *list.List {
 func (b *EditBuffer) Title() string {
 	return b.title
 }
-

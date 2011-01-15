@@ -21,13 +21,14 @@ import (
 	"container/list"
 	"curses"
 	"os"
+	"fmt"
 )
 
 const (
 	// strings
 	NaL string = "+" // char that shows that a line does not exist
 
-	TMPDIR = "."
+	TMPDIR    = "."
 	TMPPREFIX = "d.tmp." // temp file prefix
 
 	// modes
@@ -42,7 +43,7 @@ type D struct {
 	m string // current mode
 
 	bufs *list.List
-	buf *list.Element
+	buf  *list.Element
 
 	yank *list.List // list of lines in the current yank buff
 
@@ -145,7 +146,7 @@ func endScreen() {
 
 func (d *D) run() {
 
-	d.UpdateScreen()
+	d.UpdateDisplay()
 
 	for {
 
@@ -157,14 +158,23 @@ func (d *D) run() {
 				d.Buffer().MoveCursorLeft()
 			} else if i == 'k' {
 				Debug = "k"
+				d.Buffer().MoveCursorDown()
 			} else if i == 'l' {
 				Debug = "l"
+				d.Buffer().MoveCursorUp()
 			} else if i == ';' {
 				Debug = ";"
 				d.Buffer().MoveCursorRight()
 			} else if i == 'i' {
 				Debug = "insert"
 				d.ModeInsert()
+			} else if i == 'w' {
+				fi, e := WriteEditBuffer(d.Buffer().Title(), d.Buffer())
+				if e != nil {
+					Debug = "write failed " + e.String()
+				} else {
+					Debug = fmt.Sprintf("wrote %d bytes", fi.Size)
+				}
 			}
 		} else if d.Mode() == MINSERT {
 			if i == 27 {
@@ -174,7 +184,7 @@ func (d *D) run() {
 				d.Buffer().BackSpace()
 			} else if i == 0xd {
 				if d.Buffer().Line() != nil {
-					d.Buffer().InsertChar(byte(i))
+					d.Buffer().InsertChar(byte('\n'))
 				}
 				d.Buffer().InsertLine(NewGapBuffer([]byte("")))
 			} else {
@@ -185,34 +195,10 @@ func (d *D) run() {
 			}
 		}
 
-		d.UpdateScreen()
+		d.UpdateDisplay()
 	}
 }
 
-func (d *D) UpdateScreen() {
-
-	curses.Stdwin.Clear()
-
-	i := d.s
-	for l := d.Buffer().Lines().Front(); l != nil; l = l.Next() {
-		curses.Stdwin.Mvwaddnstr(i, 0, l.Value.(*GapBuffer).String(), *curses.Cols)
-		i++
-	}
-
-	curses.Stdwin.Mvwaddnstr(0, 0, d.Buffer().Title(), *curses.Cols)
-	curses.Stdwin.Mvwaddnstr(d.e, 0, d.StatusLine(), *curses.Cols)
-	Debug = ""
-	// cursor draw for debug at the moment
-	if d.Buffer().Line() != nil {
-		if d.m == MINSERT {
-			curses.Stdwin.Move(0, d.Buffer().Line().gs)
-		} else {
-			curses.Stdwin.Move(0, d.Buffer().Line().c)
-		}
-	}
-
-	curses.Stdwin.Refresh()
-}
 
 func (d *D) StatusLine() string {
 	return Debug

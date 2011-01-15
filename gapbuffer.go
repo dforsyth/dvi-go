@@ -8,13 +8,13 @@ import (
 
 const (
 	size = 64
-	max = 4096
+	max  = 4096
 )
 
 type GapBuffer struct {
-	buf []byte
+	buf    []byte
 	gs, ge int
-	c int // cursor
+	c      int // cursor
 }
 
 // Create a new gap buffer
@@ -90,7 +90,7 @@ func (g *GapBuffer) GrowGap(s int) {
 	b := make([]byte, s)
 
 	g.buf = append(g.buf, b...)
-	copy(g.buf[g.ge + s:], g.buf[g.ge:])
+	copy(g.buf[g.ge+s:], g.buf[g.ge:])
 	g.gs = g.ge
 	g.ge += s
 }
@@ -103,14 +103,19 @@ func (g *GapBuffer) MoveGap(p int) {
 
 	if p < g.gs {
 		s := g.gs - p
-		copy(g.buf[g.ge - s:g.ge], g.buf[p:g.gs])
+		copy(g.buf[g.ge-s:g.ge], g.buf[p:g.gs])
 		g.ge -= s
 	} else {
 		s := p - g.gs
-		copy(g.buf[g.gs:p], g.buf[g.ge:g.ge + s])
+		copy(g.buf[g.gs:p], g.buf[g.ge:g.ge+s])
 		g.ge += s
 	}
 	g.gs = p
+}
+
+// Combine (concat) two buffers, combining gaps.  Gap stays at g.gs
+func (g *GapBuffer) Combine(o *GapBuffer) {
+
 }
 
 func (g *GapBuffer) MoveGapToCursor() {
@@ -122,7 +127,7 @@ func (g *GapBuffer) Buffer() []byte {
 }
 
 func (g *GapBuffer) GaplessBuffer() []byte {
-	b := make([]byte, len(g.buf[:g.gs]) + len(g.buf[g.ge:]))
+	b := make([]byte, len(g.buf[:g.gs])+len(g.buf[g.ge:]))
 	copy(b, g.buf[:g.gs])
 	copy(b[:g.gs], g.buf[g.ge:])
 	return b
@@ -152,4 +157,3 @@ func (g *GapBuffer) DebugCursor() int {
 	}
 	return g.c
 }
-

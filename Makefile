@@ -6,6 +6,7 @@ TARG=   d
 GOFILES=    d.go \
             buffer.go \
             gapbuffer.go \
-            file.go
+            file.go \
+			view.go
 
 include $(GOROOT)/src/Make.cmd
