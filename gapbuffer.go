@@ -3,7 +3,7 @@ package main
 // A simple gap buffer implementation on slices.
 
 import (
-//	"fmt"
+	"fmt"
 )
 
 const (
@@ -68,6 +68,7 @@ func (g *GapBuffer) CursorLeft() {
 		return
 	}
 	g.MoveCursor(g.c - 1)
+	Debug = fmt.Sprintf("%d", g.c)
 }
 
 func (g *GapBuffer) CursorRight() {
@@ -111,11 +112,6 @@ func (g *GapBuffer) MoveGap(p int) {
 		g.ge += s
 	}
 	g.gs = p
-}
-
-// Combine (concat) two buffers, combining gaps.  Gap stays at g.gs
-func (g *GapBuffer) Combine(o *GapBuffer) {
-
 }
 
 func (g *GapBuffer) MoveGapToCursor() {

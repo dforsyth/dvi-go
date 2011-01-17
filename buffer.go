@@ -7,12 +7,12 @@ import (
 
 // todo: lockable
 type EditBuffer struct {
+	dirty bool
 	lines *list.List
 	line  *list.Element
-	ln    int
-	title string
+	lno	  int
 	st    *os.FileInfo
-	dirty bool
+	title string
 }
 
 func NewEditBuffer(title string) *EditBuffer {
@@ -20,7 +20,8 @@ func NewEditBuffer(title string) *EditBuffer {
 	b := new(EditBuffer)
 	b.lines = list.New()
 	b.line = nil
-	b.ln = 0
+	b.lno = 0
+	b.st = nil
 	b.title = title
 
 	return b
@@ -48,7 +49,11 @@ func (b *EditBuffer) BackSpace() {
 	if b.Line().gs == 0 {
 		if len(b.Line().buf) != (b.Line().ge - b.Line().gs) {
 		} else {
-			b.DeleteCurrLine()
+			if b.line.Prev() != nil {
+				b.DeleteCurrLine()
+			} else {
+				Beep()
+			}
 		}
 	} else {
 		b.Line().DeleteSpan(b.Line().gs-1, 1)

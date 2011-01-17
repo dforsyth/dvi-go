@@ -12,8 +12,5 @@
 - auto indent
 - open directory -> list files
 - open archive -> list files
-- actually error handling
-
-BUGS
-- handle newline correctly
-- moving the gap to the cursor is all sorts of fucked up
+- actual error handling
+- move state out of D

@@ -21,7 +21,6 @@ import (
 	"container/list"
 	"curses"
 	"os"
-	"fmt"
 )
 
 const (
@@ -32,15 +31,16 @@ const (
 	TMPPREFIX = "d.tmp." // temp file prefix
 
 	// modes
-	MNORMAL string = "NORMAL"
-	MINSERT string = "INSERT"
+	MODENORMAL int = 1
+	MODEINSERT int = 0
 )
 
 var Debug string = ""
 
 // global state for the editor
+// TODO kill this struct
 type D struct {
-	m string // current mode
+	mode int // current mode
 
 	bufs *list.List
 	buf  *list.Element
@@ -51,14 +51,18 @@ type D struct {
 	e int // number of rows we give to the editor
 
 	err string // error string to display
+
+	win *curses.Window
 }
+
+var win *curses.Window
 
 func Log(msg string) {
 	// send msg to dbg.txt
 }
 
 func (d *D) init(args []string) {
-	d.m = MNORMAL
+	d.mode = MODENORMAL
 
 	d.bufs = list.New()
 	if len(args) == 0 {
@@ -73,6 +77,10 @@ func (d *D) init(args []string) {
 
 	d.s = 1
 	d.e = *curses.Rows - 1
+	d.win = curses.Stdwin
+
+	// newer init
+	win = curses.Stdwin
 }
 
 func (d *D) Buffer() *EditBuffer {
@@ -98,30 +106,8 @@ func (d *D) NextBuffer() {
 	d.buf = d.buf.Next()
 }
 
-func (d *D) Mode() string {
-	return d.m
-}
-
-func (d *D) ModeNormal() {
-	d.m = MNORMAL
-
-	if d.Buffer() != nil && d.Buffer().Line() != nil {
-		d.Buffer().Line().UpdateCursor()
-	}
-}
-
-func (d *D) ModeInsert() {
-	d.m = MINSERT
-
-	if d.Buffer() == nil {
-		d.InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
-	}
-
-	if d.Buffer().Line() == nil {
-		d.Buffer().AppendLine()
-	}
-
-	d.Buffer().Line().MoveGapToCursor()
+func (d *D) Mode() int {
+	return d.mode
 }
 
 func (d *D) SetError(err string) {
@@ -146,57 +132,11 @@ func endScreen() {
 
 func (d *D) run() {
 
+	Debug = "normal"
 	d.UpdateDisplay()
+	// enter normal mode
+	d.NormalMode()
 
-	for {
-
-		i := curses.Stdwin.Getch()
-
-		if d.Mode() == MNORMAL {
-			if i == 'j' {
-				Debug = "j"
-				d.Buffer().MoveCursorLeft()
-			} else if i == 'k' {
-				Debug = "k"
-				d.Buffer().MoveCursorDown()
-			} else if i == 'l' {
-				Debug = "l"
-				d.Buffer().MoveCursorUp()
-			} else if i == ';' {
-				Debug = ";"
-				d.Buffer().MoveCursorRight()
-			} else if i == 'i' {
-				Debug = "insert"
-				d.ModeInsert()
-			} else if i == 'w' {
-				fi, e := WriteEditBuffer(d.Buffer().Title(), d.Buffer())
-				if e != nil {
-					Debug = "write failed " + e.String()
-				} else {
-					Debug = fmt.Sprintf("wrote %d bytes", fi.Size)
-				}
-			}
-		} else if d.Mode() == MINSERT {
-			if i == 27 {
-				d.ModeNormal()
-			} else if i == 0x7f {
-				// improperly handles the newline at the end of the prev line
-				d.Buffer().BackSpace()
-			} else if i == 0xd {
-				if d.Buffer().Line() != nil {
-					d.Buffer().InsertChar(byte('\n'))
-				}
-				d.Buffer().InsertLine(NewGapBuffer([]byte("")))
-			} else {
-				if d.Buffer().Line() == nil {
-					d.Buffer().InsertLine(NewGapBuffer([]byte("")))
-				}
-				d.Buffer().InsertChar(byte(i))
-			}
-		}
-
-		d.UpdateDisplay()
-	}
 }
 
 

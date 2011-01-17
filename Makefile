@@ -7,6 +7,8 @@ GOFILES=    d.go \
             buffer.go \
             gapbuffer.go \
             file.go \
-			view.go
+			view.go \
+		    normal.go \
+            insert.go
 
 include $(GOROOT)/src/Make.cmd
