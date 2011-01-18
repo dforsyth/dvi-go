@@ -5,6 +5,16 @@ import (
 	"fmt"
 )
 
+var cmdMap map[int]func(*D) = map[int]func(*D){
+	0: nil,
+	'>': ExCmd,
+	'i': InsertMode,
+	'j': nil,
+	'k': nil,
+	'l': nil,
+	';': nil,
+}
+
 // normal mode
 func (d *D) NormalMode() {
 
@@ -16,6 +26,12 @@ func (d *D) NormalMode() {
 		Debug = ""
 		k := curses.Stdwin.Getch()
 
+		fn, ok := cmdMap[k]
+		if !ok {
+			continue
+		}
+		fn(d)
+/*
 		switch k {
 		case 'i':
 			Debug = "insert"
@@ -37,14 +53,15 @@ func (d *D) NormalMode() {
 			d.ExCmd()
 			Debug = "normal"
 		}
-		Debug += fmt.Sprintf("normal: %x", k)
+*/
+		Debug += fmt.Sprintf("(%s) normal: %x", string(k), k)
 
 		d.UpdateDisplay()
 	}
 }
 
 func (d *D) ExCmd() {
-	ex := ":"
+	ex := EXPROMPT
 	UpdateLine(d.e, ex)
 	cmdBuff := NewGapBuffer([]byte(""))
 	for {
@@ -68,6 +85,11 @@ func (d *D) ExCmd() {
 		}
 		UpdateLine(d.e, ex + cmdBuff.String())
 	}
+}
+
+// not sure if i like this way better yet...
+func ExCmd(d *D) {
+	d.ExCmd()
 }
 
 func (d *D) NextEditBuffer() {

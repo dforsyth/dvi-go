@@ -33,6 +33,8 @@ const (
 	// modes
 	MODENORMAL int = 1
 	MODEINSERT int = 0
+
+	EXPROMPT string = ">"
 )
 
 var Debug string = ""

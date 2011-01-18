@@ -8,6 +8,7 @@ import (
 // insert mode
 func (d *D) InsertMode() {
 
+	// we shouldn't hit these anymore, but if we do we should be ready to deal with them...
 	if d.Buffer() == nil {
 		d.InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
 	}
@@ -44,5 +45,10 @@ func (d *D) InsertMode() {
 		}
 		d.UpdateDisplay()
 	}
+}
+
+// for cmd map
+func InsertMode(d *D) {
+	d.InsertMode()
 }
 

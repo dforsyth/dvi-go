@@ -8,7 +8,9 @@ import (
 
 func NewTempFileEditBuffer(prefix string) *EditBuffer {
 	// TODO: this.
-	return NewEditBuffer(prefix)
+	b := NewEditBuffer(prefix)
+	b.AppendLine()
+	return b
 }
 
 func NewReadFileEditBuffer(pathname string) *EditBuffer {
