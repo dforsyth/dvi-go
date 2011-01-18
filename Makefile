@@ -9,6 +9,7 @@ GOFILES=    d.go \
             file.go \
 			view.go \
 		    normal.go \
-            insert.go
+            insert.go \
+			ex.go
 
 include $(GOROOT)/src/Make.cmd
