@@ -40,84 +40,59 @@ const (
 var Debug string = ""
 
 // global state for the editor
-// TODO kill this struct
 type D struct {
 	mode int // current mode
 
-	bufs *list.List
-	buf  *list.Element
+	buf *EditBuffer
 
 	yank *list.List // list of lines in the current yank buff
 
-	s int // the first row we give to the edit buffer
-	e int // number of rows we give to the editor
-
-	err string // error string to display
-
-	win *curses.Window
+	view *View
 }
 
-var win *curses.Window
+// editor state
+var d D
 
 func Log(msg string) {
 	// send msg to dbg.txt
 }
 
-func (d *D) init(args []string) {
-	d.mode = MODENORMAL
-
-	d.bufs = list.New()
+func dInit(args []string) {
+	d.mode = -1
 	if len(args) == 0 {
-		d.InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
-		d.Buffer().FirstLine()
+		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
+		d.buf.FirstLine()
 	} else {
 		for _, path := range args {
-			d.InsertBuffer(NewReadFileEditBuffer(path))
-			d.Buffer().FirstLine()
+			InsertBuffer(NewReadFileEditBuffer(path))
+			d.buf.FirstLine()
 		}
 	}
 
-	d.s = 1
-	d.e = *curses.Rows - 1
-	d.win = curses.Stdwin
+	d.yank = list.New()
 
-	// newer init
-	win = curses.Stdwin
+	// ready view
+	d.view = new(View)
+	d.view.win = curses.Stdwin
+	d.view.rows = *curses.Rows
+	d.view.cols = *curses.Cols
 }
 
-func (d *D) Buffer() *EditBuffer {
+func InsertBuffer(b *EditBuffer) {
+	if d.buf == nil {
+		d.buf = b
+	} else {
+		d.buf.next = b
+	}
+}
+
+func NextBuffer() *EditBuffer {
 	if d.buf == nil {
 		return nil
 	}
-	return d.buf.Value.(*EditBuffer)
-}
 
-func (d *D) InsertBuffer(b *EditBuffer) {
-	if d.buf == nil {
-		d.buf = d.bufs.PushFront(b)
-	} else {
-		d.buf = d.bufs.InsertAfter(b, d.buf)
-	}
-}
-
-func (d *D) NextBuffer() {
-	if d.buf == nil {
-		return
-	}
-
-	d.buf = d.buf.Next()
-}
-
-func (d *D) Mode() int {
-	return d.mode
-}
-
-func (d *D) SetError(err string) {
-	d.err = err
-}
-
-func (d *D) Error() string {
-	return d.err
+	d.buf = d.buf.next
+	return d.buf
 }
 
 func startScreen() {
@@ -132,28 +107,25 @@ func endScreen() {
 	curses.Endwin()
 }
 
-func (d *D) run() {
+func dRun() {
 
-	Debug = "normal"
-	d.UpdateDisplay()
+	UpdateDisplay()
 	// enter normal mode
-	d.NormalMode()
+	NormalMode()
 
 }
 
-
-func (d *D) StatusLine() string {
+func statusLine() string {
 	return Debug
 }
 
 func main() {
 	/* init */
 	// Start in normal mode
-	d := new(D)
 	startScreen()
 	defer endScreen()
 
 	// init has to happen after startscreen
-	d.init(os.Args[1:])
-	d.run()
+	dInit(os.Args[1:])
+	dRun()
 }

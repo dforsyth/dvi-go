@@ -1,54 +1,48 @@
 package main
 
 import (
-	"curses"
 	"fmt"
 )
 
 // insert mode
-func (d *D) InsertMode() {
+func InsertMode() {
 
 	// we shouldn't hit these anymore, but if we do we should be ready to deal with them...
-	if d.Buffer() == nil {
-		d.InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
+	if d.buf == nil {
+		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
 	}
 
-	if d.Buffer().Line() == nil {
-		d.Buffer().AppendLine()
+	if d.buf.Line() == nil {
+		d.buf.AppendLine()
 	}
 
-	d.Buffer().Line().MoveGapToCursor()
+	d.buf.Line().MoveGapToCursor()
 
-	d.UpdateDisplay()
+	UpdateDisplay()
 	for {
 		Debug = ""
-		k := curses.Stdwin.Getch()
+		k := d.view.win.Getch()
 		switch k {
 		case 27 :
 			return
 		case 0x7f:
 			// improperly handles the newline at the end of the prev line
-			d.Buffer().BackSpace()
+			d.buf.BackSpace()
 		case 0xd, 0xa:
-			d.Buffer().InsertChar(byte('\n'))
-			d.Buffer().InsertLine(NewGapBuffer([]byte("")))
+			d.buf.InsertChar(byte('\n'))
+			d.buf.InsertLine(NewGapBuffer([]byte("")))
 		case 0x9:
 			// d.Buffer().InsertTab()
 		default:
 			Debug = "adding char "
-			d.Buffer().InsertChar(byte(k))
+			d.buf.InsertChar(byte(k))
 		}
 		Debug += fmt.Sprintf("insert: %x", k)
 
-		if d.Buffer().Line() != nil {
-			d.Buffer().Line().UpdateCursor()
+		if d.buf.Line() != nil {
+			d.buf.Line().UpdateCursor()
 		}
-		d.UpdateDisplay()
+		UpdateDisplay()
 	}
-}
-
-// for cmd map
-func InsertMode(d *D) {
-	d.InsertMode()
 }
 

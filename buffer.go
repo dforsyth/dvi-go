@@ -13,6 +13,8 @@ type EditBuffer struct {
 	lno	  int
 	st    *os.FileInfo
 	title string
+
+	prev, next *EditBuffer // roll ourselves because type assertions are pointless in this case.
 }
 
 func NewEditBuffer(title string) *EditBuffer {
@@ -23,6 +25,8 @@ func NewEditBuffer(title string) *EditBuffer {
 	b.lno = 0
 	b.st = nil
 	b.title = title
+	b.next = nil
+	b.prev = nil
 
 	return b
 }

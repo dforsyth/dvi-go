@@ -6,40 +6,48 @@ import (
 
 // buffer view
 
-type View struct{}
+type View struct{
+	win *curses.Window
+	cols, rows int
+}
 
 func Beep() {
 	curses.Beep()
 }
 
-func (d *D) UpdateDisplay() {
+func UpdateDisplay() {
 
-	win.Clear()
+	v := d.view
 
-	ln := d.Buffer().Lines().Front()
-	for i := d.s; i < d.e; i++ {
+	v.win.Clear()
+
+	ln := d.buf.Lines().Front()
+	for i := 1; i < v.rows - 2; i++ {
 		if ln != nil {
-			win.Mvwaddnstr(i, 0, ln.Value.(*GapBuffer).String(), *curses.Cols)
+			v.win.Mvwaddnstr(i, 0, ln.Value.(*GapBuffer).String(), v.cols)
 			ln = ln.Next()
 		} else {
-			win.Mvwaddnstr(i, 0, NaL, *curses.Cols)
+			v.win.Mvwaddnstr(i, 0, NaL, v.cols)
 		}
 	}
 
-	win.Mvwaddnstr(0, 0, d.Buffer().Title(), *curses.Cols)
-	win.Mvwaddnstr(d.e, 0, d.StatusLine(), *curses.Cols)
+	v.win.Mvwaddnstr(0, 0, d.buf.Title(), v.cols)
+	v.win.Mvwaddnstr(v.rows - 2, 0, statusLine(), v.cols)
 
-	if d.Buffer().Line() != nil {
-		win.Move(0, d.Buffer().Line().c)
+	if d.buf.Line() != nil {
+		v.win.Move(0, d.buf.Line().c)
 	}
 
-	win.Refresh()
+	v.win.Refresh()
 }
 
 // update line l with str and refresh
 func UpdateLine(l int, str string) {
-	win.Move(l, 0)
-	win.Clrtoeol()
-	win.Mvwaddnstr(l, 0, str, *curses.Cols)
-	win.Refresh()
+
+	v := d.view
+
+	v.win.Move(l, 0)
+	v.win.Clrtoeol()
+	v.win.Mvwaddnstr(l, 0, str, v.cols)
+	v.win.Refresh()
 }

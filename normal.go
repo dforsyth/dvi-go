@@ -1,11 +1,10 @@
 package main
 
 import (
-	"curses"
 	"fmt"
 )
 
-var cmdMap map[int]func(*D) = map[int]func(*D){
+var cmdMap map[int]func() = map[int]func(){
 	0: nil,
 	'>': ExCmd,
 	'i': InsertMode,
@@ -16,21 +15,21 @@ var cmdMap map[int]func(*D) = map[int]func(*D){
 }
 
 // normal mode
-func (d *D) NormalMode() {
+func NormalMode() {
 
-	if d.Buffer() != nil && d.Buffer().Line() != nil {
-		d.Buffer().Line().UpdateCursor()
+	if d.buf != nil && d.buf.Line() != nil {
+		d.buf.Line().UpdateCursor()
 	}
 
 	for {
 		Debug = ""
-		k := curses.Stdwin.Getch()
+		k := d.view.win.Getch()
 
-		fn, ok := cmdMap[k]
-		if !ok {
-			continue
+		if fn, ok := cmdMap[k]; ok {
+			fn()
+			Debug += fmt.Sprintf("(%s) normal: %x", string(k), k)
+			UpdateDisplay()
 		}
-		fn(d)
 /*
 		switch k {
 		case 'i':
@@ -54,18 +53,15 @@ func (d *D) NormalMode() {
 			Debug = "normal"
 		}
 */
-		Debug += fmt.Sprintf("(%s) normal: %x", string(k), k)
-
-		d.UpdateDisplay()
 	}
 }
 
-func (d *D) ExCmd() {
+func ExCmd() {
 	ex := EXPROMPT
-	UpdateLine(d.e, ex)
+	UpdateLine(d.view.rows - 2, ex)
 	cmdBuff := NewGapBuffer([]byte(""))
 	for {
-		k := d.win.Getch()
+		k := d.view.win.Getch()
 
 		switch k {
 		case 27:
@@ -83,25 +79,20 @@ func (d *D) ExCmd() {
 		default:
 			cmdBuff.InsertChar(byte(k))
 		}
-		UpdateLine(d.e, ex + cmdBuff.String())
+		UpdateLine(d.view.rows - 2, ex + cmdBuff.String())
 	}
-}
-
-// not sure if i like this way better yet...
-func ExCmd(d *D) {
-	d.ExCmd()
 }
 
 func (d *D) NextEditBuffer() {
 
-	n := d.buf.Next()
+	n := d.buf.next
 	if n != nil {
 		d.buf = n
 	}
 }
 
 func (d *D) PrevEditBuffer() {
-	p := d.buf.Prev()
+	p := d.buf.prev
 	if p != nil {
 		d.buf = p
 	}
