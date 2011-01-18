@@ -13,4 +13,4 @@
 - open directory -> list files
 - open archive -> list files
 - actual error handling
-- move state out of D
+- new line in the middle of a line doesn't work

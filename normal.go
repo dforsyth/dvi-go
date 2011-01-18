@@ -5,13 +5,13 @@ import (
 )
 
 var cmdMap map[int]func() = map[int]func(){
-	0: nil,
+	// 0: nil,
 	'>': ExCmd,
 	'i': InsertMode,
-	'j': nil,
-	'k': nil,
-	'l': nil,
-	';': nil,
+	// 'j': nil,
+	// 'k': nil,
+	// 'l': nil,
+	// ';': nil,
 }
 
 // normal mode
