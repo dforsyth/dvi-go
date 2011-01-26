@@ -63,9 +63,17 @@ func (g *GapBuffer) DeleteSpan(p, s int) {
 	}
 }
 
+func (g *GapBuffer) DeleteAfterGap() {
+	g.ge = len(g.buf)
+}
+
 // Move cursor to p.  p does not account for the gap.
 func (g *GapBuffer) MoveCursor(p int) {
-	g.c = p
+	if p > len(g.String()) {
+		g.c = len(g.String())
+	} else {
+		g.c = p
+	}
 }
 
 func (g *GapBuffer) CursorLeft() {

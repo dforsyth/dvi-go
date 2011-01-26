@@ -4,14 +4,14 @@ import (
 	"fmt"
 )
 
-var cmdMap map[int]func() = map[int]func(){
+var NCmdMap map[int]func() = map[int]func(){
 	// 0: nil,
 	'>': ExCmd,
 	'i': InsertMode,
-	// 'j': nil,
-	// 'k': nil,
-	// 'l': nil,
-	// ';': nil,
+	'j': NCursorLeft,
+	'k': NCursorDown,
+	'l': NCursorUp,
+	';': NCursorRight,
 }
 
 // normal mode
@@ -25,7 +25,7 @@ func NormalMode() {
 		Debug = ""
 		k := d.view.win.Getch()
 
-		if fn, ok := cmdMap[k]; ok {
+		if fn, ok := NCmdMap[k]; ok {
 			fn()
 			Debug += fmt.Sprintf("(%s) normal: %x", string(k), k)
 			UpdateDisplay()
@@ -54,6 +54,22 @@ func NormalMode() {
 		}
 */
 	}
+}
+
+func NCursorLeft() {
+	d.buf.MoveCursorLeft()
+}
+
+func NCursorDown() {
+	d.buf.MoveCursorDown()
+}
+
+func NCursorUp() {
+	d.buf.MoveCursorUp()
+}
+
+func NCursorRight() {
+	d.buf.MoveCursorRight()
 }
 
 func (d *D) NextEditBuffer() {

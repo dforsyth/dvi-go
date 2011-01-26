@@ -38,6 +38,7 @@ const (
 )
 
 var Debug string = ""
+var Message string = ""
 
 // global state for the editor
 type D struct {

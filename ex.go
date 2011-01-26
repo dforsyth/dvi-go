@@ -9,12 +9,12 @@ func ExCmd() {
 
 		switch k {
 		case 27:
+			handleCmd(cmdBuff.String())
 			return
 		case 0x7f:
 			if len(cmdBuff.String()) == 0 {
 				/* vim behavior is to kill ex.  we beep. */
 				Beep()
-				continue
 			} else {
 				cmdBuff.DeleteSpan(cmdBuff.gs - 1, 1)
 			}
@@ -27,3 +27,8 @@ func ExCmd() {
 	}
 }
 
+func handleCmd(cmd string) {
+	if cmd == "w" {
+		go WriteEditBuffer(d.buf.title, d.buf)
+	}
+}

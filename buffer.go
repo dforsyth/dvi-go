@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 	"os"
+	"fmt"
 )
 
 // todo: lockable
@@ -74,18 +75,24 @@ func (b *EditBuffer) MoveCursorRight() {
 
 func (b *EditBuffer) MoveCursorDown() {
 	if b.line != nil {
-		n := b.line.Next()
-		if n != nil {
+		if n := b.line.Next(); n != nil {
+			c := b.Line().c
 			b.line = n
+			b.Line().MoveCursor(c)
+			b.lno++
+			Message = fmt.Sprintf("down %d", b.lno, b.line.Value.(*GapBuffer).String())
 		}
 	}
 }
 
 func (b *EditBuffer) MoveCursorUp() {
 	if b.line != nil {
-		p := b.line.Prev()
-		if p != nil {
+		if p := b.line.Prev(); p != nil {
+			c := b.Line().c
 			b.line = p
+			b.Line().MoveCursor(c)
+			b.lno--
+			Message = fmt.Sprintf("up %d", b.lno, b.line.Value.(*GapBuffer).String())
 		}
 	}
 }
@@ -104,10 +111,19 @@ func (b *EditBuffer) InsertLine(g *GapBuffer) {
 		return
 	}
 	b.line = b.lines.InsertAfter(g, b.line)
+	b.lno++
 }
 
 func (b *EditBuffer) AppendLine() {
 	b.InsertLine(NewGapBuffer([]byte("")))
+}
+
+func (b *EditBuffer) NewLine(nlchar byte) {
+
+	newbuf := b.Line().String()[b.Line().c:]
+	b.Line().InsertChar(nlchar)
+	b.Line().DeleteAfterGap()
+	b.InsertLine(NewGapBuffer([]byte(newbuf)))
 }
 
 func (b *EditBuffer) Line() *GapBuffer {
@@ -121,6 +137,7 @@ func (b *EditBuffer) DeleteCurrLine() {
 	p := b.line.Prev()
 	b.lines.Remove(b.line)
 	b.line = p
+	b.lno--
 }
 
 // Move to line p

@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+
+
 // insert mode
 func InsertMode() {
 
@@ -29,8 +31,7 @@ func InsertMode() {
 			// improperly handles the newline at the end of the prev line
 			d.buf.BackSpace()
 		case 0xd, 0xa:
-			d.buf.InsertChar(byte('\n'))
-			d.buf.InsertLine(NewGapBuffer([]byte("")))
+			d.buf.NewLine(byte('\n'))
 		case 0x9:
 			// d.Buffer().InsertTab()
 		default:

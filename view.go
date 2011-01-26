@@ -34,8 +34,10 @@ func UpdateDisplay() {
 	v.win.Mvwaddnstr(0, 0, d.buf.Title(), v.cols)
 	v.win.Mvwaddnstr(v.rows - 2, 0, statusLine(), v.cols)
 
+	UpdateMessageLine();
+
 	if d.buf.Line() != nil {
-		v.win.Move(0, d.buf.Line().c)
+		DrawCursor()
 	}
 
 	v.win.Refresh()
@@ -50,4 +52,23 @@ func UpdateLine(l int, str string) {
 	v.win.Clrtoeol()
 	v.win.Mvwaddnstr(l, 0, str, v.cols)
 	v.win.Refresh()
+}
+
+func UpdateStatusLine() {
+	d.view.win.Mvwaddnstr(d.view.rows - 2, 0, statusLine(), d.view.cols)
+	d.view.win.Refresh()
+}
+
+func UpdateMessageLine() {
+	d.view.win.Mvwaddnstr(d.view.rows - 1, 0, Message, d.view.cols)
+	d.view.win.Refresh()
+}
+
+func DrawLine(y int, ln string) {
+	//if d.drawLno {
+	//}
+}
+
+func DrawCursor() {
+	d.view.win.Move(d.buf.lno + 1, d.buf.Line().c)
 }
