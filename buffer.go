@@ -28,6 +28,7 @@ func NewEditBuffer(title string) *EditBuffer {
 	b.title = title
 	b.next = nil
 	b.prev = nil
+	b.dirty = false
 
 	return b
 }
@@ -41,6 +42,7 @@ func (b *EditBuffer) SetDirty(d bool) {
 }
 
 func (b *EditBuffer) InsertChar(ch byte) {
+	b.dirty = true
 	b.Line().InsertChar(ch)
 	b.SetDirty(true)
 }
@@ -50,6 +52,8 @@ func (b *EditBuffer) BackSpace() {
 		Debug = "nothing to backspace"
 		return
 	}
+
+	b.dirty = true
 
 	if b.Line().gs == 0 {
 		if len(b.Line().buf) != (b.Line().ge - b.Line().gs) {
@@ -98,6 +102,7 @@ func (b *EditBuffer) MoveCursorUp() {
 }
 
 func (b *EditBuffer) DeleteSpan(p, l int) {
+	b.dirty = true
 	b.Line().DeleteSpan(p, l)
 }
 
@@ -106,6 +111,7 @@ func (b *EditBuffer) FirstLine() {
 }
 
 func (b *EditBuffer) InsertLine(g *GapBuffer) {
+	b.dirty = true
 	if b.line == nil {
 		b.line = b.lines.PushFront(g)
 		return
@@ -134,6 +140,7 @@ func (b *EditBuffer) Line() *GapBuffer {
 }
 
 func (b *EditBuffer) DeleteCurrLine() {
+	b.dirty = true
 	p := b.line.Prev()
 	b.lines.Remove(b.line)
 	b.line = p

@@ -37,6 +37,9 @@ func handleCmd(cmd string) {
 	}
 	if cmd == "q" {
 		// XXX make a read exit fn
+		if d.buf.dirty == true {
+
+		}
 		endScreen()
 		os.Exit(0)
 	}

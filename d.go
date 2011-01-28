@@ -21,6 +21,8 @@ import (
 	"container/list"
 	"curses"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -53,6 +55,22 @@ type D struct {
 
 // editor state
 var d D
+
+func sigHandler() {
+	for{
+		s := <-signal.Incoming
+		switch s.(signal.UnixSignal) {
+		case syscall.SIGINT:
+			Beep()
+		case syscall.SIGTERM:
+			Beep()
+		case syscall.SIGWINCH:
+			Beep()
+		default:
+			Message = s.String()
+		}
+	}
+}
 
 func Log(msg string) {
 	// send msg to dbg.txt
@@ -125,7 +143,7 @@ func main() {
 	// Start in normal mode
 	startScreen()
 	defer endScreen()
-
+	go sigHandler()
 	// init has to happen after startscreen
 	dInit(os.Args[1:])
 	dRun()
