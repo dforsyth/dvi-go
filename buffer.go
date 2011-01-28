@@ -121,7 +121,7 @@ func (b *EditBuffer) AppendLine() {
 func (b *EditBuffer) NewLine(nlchar byte) {
 
 	newbuf := b.Line().String()[b.Line().c:]
-	b.Line().InsertChar(nlchar)
+	// b.Line().InsertChar(nlchar)
 	b.Line().DeleteAfterGap()
 	b.InsertLine(NewGapBuffer([]byte(newbuf)))
 }
