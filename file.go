@@ -45,8 +45,6 @@ func NewReadFileEditBuffer(pathname string) *EditBuffer {
 // Do a naive write of the entire buffer to a temp file, then rename into place.
 func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
-	if b.dirty == false { return nil, nil }
-
 	f, e := ioutil.TempFile(TMPDIR, TMPPREFIX)
 	if e != nil {
 		return nil, e
@@ -77,6 +75,5 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 	}
 
 	b.st = st
-	b.dirty = false
 	return st, nil
 }
