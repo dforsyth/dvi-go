@@ -31,17 +31,8 @@ func NewEditBuffer(title string) *EditBuffer {
 	return b
 }
 
-func (b *EditBuffer) Dirty() bool {
-	return b.dirty
-}
-
-func (b *EditBuffer) SetDirty(d bool) {
-	b.dirty = d
-}
-
 func (b *EditBuffer) InsertChar(ch byte) {
 	b.Line().InsertChar(ch)
-	b.SetDirty(true)
 }
 
 func (b *EditBuffer) BackSpace() {

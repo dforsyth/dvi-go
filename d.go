@@ -53,6 +53,12 @@ type D struct {
 	view *View
 }
 
+type Status struct {
+	mode string
+	char byte
+	row, col int
+}
+
 // editor state
 var d D
 
