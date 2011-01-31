@@ -2,10 +2,6 @@ package main
 
 // A simple gap buffer implementation on slices.
 
-import (
-	"fmt"
-)
-
 const (
 	size = 64
 	max  = 4096
@@ -14,7 +10,6 @@ const (
 type GapBuffer struct {
 	buf    []byte
 	gs, ge int
-	c      int // cursor
 }
 
 // Create a new gap buffer
@@ -55,7 +50,7 @@ func (g *GapBuffer) InsertString(s string) {
 
 func (g *GapBuffer) DeleteSpan(p, s int) {
 	g.MoveGap(p + s)
-	for i := 0; i < s; i++ {
+	for i := int(0); i < s; i++ {
 		if g.gs == 0 {
 			return
 		}
@@ -65,35 +60,6 @@ func (g *GapBuffer) DeleteSpan(p, s int) {
 
 func (g *GapBuffer) DeleteAfterGap() {
 	g.ge = len(g.buf)
-}
-
-// Move cursor to p.  p does not account for the gap.
-func (g *GapBuffer) MoveCursor(p int) {
-	if p > len(g.String()) {
-		g.c = len(g.String())
-	} else {
-		g.c = p
-	}
-}
-
-func (g *GapBuffer) CursorLeft() {
-	if g.c == 0 {
-		return
-	}
-	g.MoveCursor(g.c - 1)
-	Debug = fmt.Sprintf("%d", g.c)
-}
-
-func (g *GapBuffer) CursorRight() {
-	if g.c == len(g.GaplessBuffer()) {
-		return
-	}
-	g.MoveCursor(g.c + 1)
-}
-
-// Move the cursor to g.gs
-func (g *GapBuffer) UpdateCursor() {
-	g.c = g.gs
 }
 
 // Grow the size of gap by s
@@ -127,10 +93,6 @@ func (g *GapBuffer) MoveGap(p int) {
 	g.gs = p
 }
 
-func (g *GapBuffer) MoveGapToCursor() {
-	g.MoveGap(g.c)
-}
-
 func (g *GapBuffer) Buffer() []byte {
 	return g.buf
 }
@@ -138,8 +100,9 @@ func (g *GapBuffer) Buffer() []byte {
 func (g *GapBuffer) GaplessBuffer() []byte {
 	b := make([]byte, len(g.buf[:g.gs])+len(g.buf[g.ge:]))
 	copy(b, g.buf[:g.gs])
-	copy(b[:g.gs], g.buf[g.ge:])
+	copy(b[g.gs:], g.buf[g.ge:])
 	return b
+	// return []byte(string(g.buf[:g.gs]) + string(g.buf[g.ge:]))
 }
 
 func (g *GapBuffer) String() string {
@@ -160,9 +123,3 @@ func (g *GapBuffer) DebugString() string {
 	return s
 }
 
-func (g *GapBuffer) DebugCursor() int {
-	if g.c > g.gs {
-		return g.c + (g.ge - g.gs)
-	}
-	return g.c
-}

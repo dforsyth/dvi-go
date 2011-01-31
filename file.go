@@ -35,7 +35,7 @@ func NewReadFileEditBuffer(pathname string) *EditBuffer {
 			Debug = e.String()
 			break
 		}
-		b.InsertLine(NewGapBuffer(l))
+		b.InsertLine(NewLine(l))
 	}
 	b.st = st
 
@@ -52,8 +52,8 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 	defer f.Close()
 
 	i := 0
-	for l := b.Lines().Front(); l != nil; l = l.Next() {
-		_, e := f.Write(l.Value.(*GapBuffer).GaplessBuffer())
+	for l := b.lines; l != nil; l = l.next {
+		_, e := f.Write(l.bytes())
 		if e != nil {
 			return nil, e
 		}

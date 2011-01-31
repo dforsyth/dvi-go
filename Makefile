@@ -6,6 +6,7 @@ TARG=   d
 GOFILES=    d.go \
             buffer.go \
             gapbuffer.go \
+            line.go \
             file.go \
 			view.go \
 		    normal.go \

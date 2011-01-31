@@ -8,9 +8,21 @@
 	- o // open
 	- tn // next buf
 	- tp // prev buf
-	- x // close
+	- q // quit
 - auto indent
 - open directory -> list files
 - open archive -> list files
 - actual error handling
-- new line in the middle of a line doesn't work
+
+Milestones:
+0.1:
+    - display tabs correctly
+    - multiple buffers
+    - scrolling
+    - line wrap
+    - write/quit, block quit on dirty
+    - status line
+0.2:
+    - tabs
+    - async message line
+    - auto indent

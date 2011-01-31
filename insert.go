@@ -14,11 +14,11 @@ func InsertMode() {
 		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
 	}
 
-	if d.buf.Line() == nil {
+	if d.buf.line == nil {
 		d.buf.AppendLine()
 	}
 
-	d.buf.Line().MoveGapToCursor()
+	d.buf.line.UpdateGap()
 
 	UpdateDisplay()
 	for {
@@ -40,9 +40,6 @@ func InsertMode() {
 		}
 		Debug += fmt.Sprintf("insert: %x", k)
 
-		if d.buf.Line() != nil {
-			d.buf.Line().UpdateCursor()
-		}
 		UpdateDisplay()
 	}
 }

@@ -1,18 +1,18 @@
 package main
 
 import (
-	"container/list"
 	"os"
 	"fmt"
 )
 
 // todo: lockable
 type EditBuffer struct {
-	lines *list.List
-	line  *list.Element
 	lno	  int
 	st    *os.FileInfo
 	title string
+
+	lines *Line
+	line *Line
 
 	prev, next *EditBuffer // roll ourselves because type assertions are pointless in this case.
 }
@@ -20,7 +20,8 @@ type EditBuffer struct {
 func NewEditBuffer(title string) *EditBuffer {
 
 	b := new(EditBuffer)
-	b.lines = list.New()
+
+	b.lines = new(Line)
 	b.line = nil
 	b.lno = 0
 	b.st = nil
@@ -32,109 +33,119 @@ func NewEditBuffer(title string) *EditBuffer {
 }
 
 func (b *EditBuffer) InsertChar(ch byte) {
-	b.Line().InsertChar(ch)
+	b.line.insertCharacter(ch)
 }
 
 func (b *EditBuffer) BackSpace() {
-	if b.Line() == nil {
+	if b.line == nil {
 		Debug = "nothing to backspace"
 		return
 	}
 
 
-	if b.Line().gs == 0 {
-		if len(b.Line().buf) != (b.Line().ge - b.Line().gs) {
+	if b.line.cursor == 0 {
+		if b.line.size != 0 {
+			// combine this line and the previous
 		} else {
-			if b.line.Prev() != nil {
+			if b.line.prev != nil {
 				b.DeleteCurrLine()
 			} else {
 				Beep()
 			}
 		}
 	} else {
-		b.Line().DeleteSpan(b.Line().gs-1, 1)
+		b.line.backspace()
 	}
 }
 
 func (b *EditBuffer) MoveCursorLeft() {
-	b.Line().CursorLeft()
+	if b.line.cursor == 0 {
+		Beep()
+	} else {
+		b.line.moveCursor(b.line.cursor - 1)
+	}
 }
 
 func (b *EditBuffer) MoveCursorRight() {
-	b.Line().CursorRight()
+	if b.line.CursorIsMax() {
+		Beep()
+		return
+	}
+	b.line.moveCursor(b.line.cursor + 1)
 }
 
 func (b *EditBuffer) MoveCursorDown() {
 	if b.line != nil {
-		if n := b.line.Next(); n != nil {
-			c := b.Line().c
+		if n := b.line.next; n != nil {
+			c := b.line.cursor
 			b.line = n
-			b.Line().MoveCursor(c)
+			b.line.moveCursor(c)
 			b.lno++
-			Message = fmt.Sprintf("down %d", b.lno, b.line.Value.(*GapBuffer).String())
+			Message = fmt.Sprintf("down %d", b.lno, b.line.bytes())
 		}
 	}
 }
 
 func (b *EditBuffer) MoveCursorUp() {
 	if b.line != nil {
-		if p := b.line.Prev(); p != nil {
-			c := b.Line().c
+		if p := b.line.prev; p != nil {
+			c := b.line.cursor
 			b.line = p
-			b.Line().MoveCursor(c)
+			b.line.moveCursor(c)
 			b.lno--
-			Message = fmt.Sprintf("up %d", b.lno, b.line.Value.(*GapBuffer).String())
+			Message = fmt.Sprintf("up %d", b.lno, b.line.bytes())
 		}
 	}
 }
 
 func (b *EditBuffer) DeleteSpan(p, l int) {
-	b.Line().DeleteSpan(p, l)
+	b.line.delete(p, l)
 }
 
 func (b *EditBuffer) FirstLine() {
-	b.line = b.lines.Front()
+	b.line = b.lines
 }
 
-func (b *EditBuffer) InsertLine(g *GapBuffer) {
+func (b *EditBuffer) InsertLine(line *Line) {
 	if b.line == nil {
-		b.line = b.lines.PushFront(g)
-		return
+		b.lines = line
+	} else {
+		b.line.next = line
 	}
-	b.line = b.lines.InsertAfter(g, b.line)
+	b.line = line
 	b.lno++
 }
 
 func (b *EditBuffer) AppendLine() {
-	b.InsertLine(NewGapBuffer([]byte("")))
+	b.InsertLine(NewLine([]byte("")))
 }
+
 
 func (b *EditBuffer) NewLine(nlchar byte) {
 
-	newbuf := b.Line().String()[b.Line().c:]
+	// newbuf := b.line.bytes()[b.line.cursor:]
 	// b.Line().InsertChar(nlchar)
-	b.Line().DeleteAfterGap()
-	b.InsertLine(NewGapBuffer([]byte(newbuf)))
-}
-
-func (b *EditBuffer) Line() *GapBuffer {
-	if b.line == nil {
-		return nil
-	}
-	return b.line.Value.(*GapBuffer)
+	// b.Line().DeleteAfterGap()
+	// b.InsertLine(NewGapBuffer([]byte(newbuf)))
 }
 
 func (b *EditBuffer) DeleteCurrLine() {
-	p := b.line.Prev()
-	b.lines.Remove(b.line)
-	b.line = p
-	b.lno--
+	p, n := b.line.prev, b.line.next
+	if p != nil {
+		p.next = n
+		b.line = p
+		b.lno--
+	} else if n != nil {
+		n.prev = p
+		b.line = n
+		// line number doesn't change
+	}
 }
 
 // Move to line p
 func (b *EditBuffer) MoveLine(p int) {
 	i := 0
-	for l := b.lines.Front(); l != nil; l = l.Next() {
+	for l := b.lines; l != nil; l = l.next {
 		if i == p {
 			b.line = l
 			return
@@ -144,20 +155,20 @@ func (b *EditBuffer) MoveLine(p int) {
 }
 
 func (b *EditBuffer) MoveLineNext() {
-	n := b.line.Next()
+	n := b.line.next
 	if n != nil {
 		b.line = n
 	}
 }
 
 func (b *EditBuffer) MoveLinePrev() {
-	p := b.line.Prev()
+	p := b.line.prev
 	if p != nil {
 		b.line = p
 	}
 }
 
-func (b *EditBuffer) Lines() *list.List {
+func (b *EditBuffer) Lines() *Line {
 	return b.lines
 }
 

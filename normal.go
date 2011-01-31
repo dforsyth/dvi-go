@@ -17,8 +17,8 @@ var NCmdMap map[int]func() = map[int]func(){
 // normal mode
 func NormalMode() {
 
-	if d.buf != nil && d.buf.Line() != nil {
-		d.buf.Line().UpdateCursor()
+	if d.buf != nil && d.buf.line != nil {
+		d.buf.line.UpdateCursor()
 	}
 
 	for {

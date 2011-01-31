@@ -21,11 +21,11 @@ func UpdateDisplay() {
 
 	v.win.Clear()
 
-	ln := d.buf.Lines().Front()
+	ln := d.buf.lines
 	for i := 1; i < v.rows - 2; i++ {
 		if ln != nil {
-			v.win.Mvwaddnstr(i, 0, ln.Value.(*GapBuffer).String(), v.cols)
-			ln = ln.Next()
+			v.win.Mvwaddnstr(i, 0, string(ln.bytes()), v.cols)
+			ln = ln.next
 		} else {
 			v.win.Mvwaddnstr(i, 0, NaL, v.cols)
 		}
@@ -36,7 +36,7 @@ func UpdateDisplay() {
 
 	UpdateMessageLine();
 
-	if d.buf.Line() != nil {
+	if d.buf.line != nil {
 		DrawCursor()
 	}
 
@@ -64,11 +64,16 @@ func UpdateMessageLine() {
 	d.view.win.Refresh()
 }
 
-func DrawLine(y int, ln string) {
-	//if d.drawLno {
-	//}
+func (v *View) DrawLine(lno int, line *Line) {
+	for _, c := range line.bytes() {
+		switch c {
+		case '\t':
+		case '\n':
+		default:
+		}
+	}
 }
 
 func DrawCursor() {
-	d.view.win.Move(d.buf.lno + 1, d.buf.Line().c)
+	d.view.win.Move(d.buf.lno, d.buf.line.cursor)
 }
