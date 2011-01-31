@@ -43,10 +43,12 @@ func (b *EditBuffer) BackSpace() {
 	}
 
 
+	Message = fmt.Sprintf("%d", b.line.cursor)
 	if b.line.cursor == 0 {
-		if b.line.size != 0 {
+		if b.line.size != 0 && b.line.prev != nil {
 			// combine this line and the previous
 		} else {
+
 			if b.line.prev != nil {
 				b.DeleteCurrLine()
 			} else {
@@ -59,19 +61,15 @@ func (b *EditBuffer) BackSpace() {
 }
 
 func (b *EditBuffer) MoveCursorLeft() {
-	if b.line.cursor == 0 {
+	if b.line.moveCursor(b.line.cursor - 1) < 0 {
 		Beep()
-	} else {
-		b.line.moveCursor(b.line.cursor - 1)
 	}
 }
 
 func (b *EditBuffer) MoveCursorRight() {
-	if b.line.CursorIsMax() {
+	if b.line.moveCursor(b.line.cursor + 1) < 0 {
 		Beep()
-		return
 	}
-	b.line.moveCursor(b.line.cursor + 1)
 }
 
 func (b *EditBuffer) MoveCursorDown() {
@@ -82,6 +80,8 @@ func (b *EditBuffer) MoveCursorDown() {
 			b.line.moveCursor(c)
 			b.lno++
 			Message = fmt.Sprintf("down %d", b.lno, b.line.bytes())
+		} else {
+			Beep()
 		}
 	}
 }
@@ -94,6 +94,8 @@ func (b *EditBuffer) MoveCursorUp() {
 			b.line.moveCursor(c)
 			b.lno--
 			Message = fmt.Sprintf("up %d", b.lno, b.line.bytes())
+		} else {
+			Beep()
 		}
 	}
 }
@@ -110,6 +112,11 @@ func (b *EditBuffer) InsertLine(line *Line) {
 	if b.line == nil {
 		b.lines = line
 	} else {
+		line.prev = b.line
+		line.next = b.line.next
+		if b.line.next != nil {
+			b.line.next.prev = line
+		}
 		b.line.next = line
 	}
 	b.line = line
@@ -123,10 +130,11 @@ func (b *EditBuffer) AppendLine() {
 
 func (b *EditBuffer) NewLine(nlchar byte) {
 
-	// newbuf := b.line.bytes()[b.line.cursor:]
-	// b.Line().InsertChar(nlchar)
-	// b.Line().DeleteAfterGap()
-	// b.InsertLine(NewGapBuffer([]byte(newbuf)))
+	newbuf := b.line.bytes()[b.line.cursor:]
+	b.line.insertCharacter(nlchar)
+	b.line.ClearAfterCursor()
+	b.line.size -= len(newbuf)
+	b.InsertLine(NewLine(newbuf))
 }
 
 func (b *EditBuffer) DeleteCurrLine() {
