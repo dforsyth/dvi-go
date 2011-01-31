@@ -1,12 +1,12 @@
 package main
 
 type Line struct {
-	gb *GapBuffer
+	gb         *GapBuffer
 	hasNewLine bool
-	size int
+	size       int
 	next, prev *Line
-	cursor int
-	mark int
+	cursor     int
+	mark       int
 }
 
 func NewLine(s []byte) *Line {
@@ -39,7 +39,7 @@ func (l *Line) bytes() []byte {
 
 // Backspace
 func (l *Line) backspace() {
-	l.gb.DeleteSpan(l.gb.gs - 1, 1)
+	l.gb.DeleteSpan(l.gb.gs-1, 1)
 	l.size--
 	l.UpdateCursor()
 }

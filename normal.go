@@ -63,4 +63,3 @@ func (d *D) PrevEditBuffer() {
 		d.buf = p
 	}
 }
-

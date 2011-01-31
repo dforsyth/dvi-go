@@ -5,7 +5,6 @@ import (
 )
 
 
-
 // insert mode
 func InsertMode() {
 
@@ -25,7 +24,7 @@ func InsertMode() {
 		Debug = ""
 		k := d.view.win.Getch()
 		switch k {
-		case 27 :
+		case 27:
 			return
 		case 0x7f:
 			// improperly handles the newline at the end of the prev line
@@ -43,4 +42,3 @@ func InsertMode() {
 		UpdateDisplay()
 	}
 }
-

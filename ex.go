@@ -6,7 +6,7 @@ import (
 
 func ExCmd() {
 	ex := EXPROMPT
-	UpdateLine(d.view.rows - 2, ex)
+	UpdateLine(d.view.rows-2, ex)
 	cmdBuff := NewGapBuffer([]byte(""))
 	for {
 		k := d.view.win.Getch()
@@ -19,7 +19,7 @@ func ExCmd() {
 				/* vim behavior is to kill ex.  we beep. */
 				Beep()
 			} else {
-				cmdBuff.DeleteSpan(cmdBuff.gs - 1, 1)
+				cmdBuff.DeleteSpan(cmdBuff.gs-1, 1)
 			}
 		case 0xd:
 			handleCmd(cmdBuff.String())
@@ -27,7 +27,7 @@ func ExCmd() {
 		default:
 			cmdBuff.InsertChar(byte(k))
 		}
-		UpdateLine(d.view.rows - 2, ex + cmdBuff.String())
+		UpdateLine(d.view.rows-2, ex+cmdBuff.String())
 	}
 }
 

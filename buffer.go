@@ -7,12 +7,12 @@ import (
 
 // todo: lockable
 type EditBuffer struct {
-	lno	  int
-	st    *os.FileInfo
-	title string
+	lno, lco int
+	st       *os.FileInfo
+	title    string
 
 	lines *Line
-	line *Line
+	line  *Line
 
 	prev, next *EditBuffer // roll ourselves because type assertions are pointless in this case.
 }
@@ -21,9 +21,12 @@ func NewEditBuffer(title string) *EditBuffer {
 
 	b := new(EditBuffer)
 
-	b.lines = new(Line)
+	// XXX it would be better to init this to nil and add the line from another
+	// place so that the file loader can use this
+	b.lines = NewLine([]byte(""))
 	b.line = nil
 	b.lno = 0
+	b.lco = 0
 	b.st = nil
 	b.title = title
 	b.next = nil
@@ -41,7 +44,6 @@ func (b *EditBuffer) BackSpace() {
 		Debug = "nothing to backspace"
 		return
 	}
-
 
 	Message = fmt.Sprintf("%d", b.line.cursor)
 	if b.line.cursor == 0 {
@@ -61,46 +63,38 @@ func (b *EditBuffer) BackSpace() {
 }
 
 func (b *EditBuffer) MoveCursorLeft() {
-	if b.line.moveCursor(b.line.cursor - 1) < 0 {
+	if b.line.moveCursor(b.line.cursor-1) < 0 {
 		Beep()
 	}
 }
 
 func (b *EditBuffer) MoveCursorRight() {
-	if b.line.moveCursor(b.line.cursor + 1) < 0 {
+	if b.line.moveCursor(b.line.cursor+1) < 0 {
 		Beep()
 	}
 }
 
 func (b *EditBuffer) MoveCursorDown() {
-	if b.line != nil {
-		if n := b.line.next; n != nil {
-			c := b.line.cursor
-			b.line = n
-			if b.line.moveCursor(c) < 0 {
-				b.line.moveCursor(b.line.cursorMax())
-			}
-			b.lno++
-			Message = fmt.Sprintf("down %d", b.lno, b.line.bytes())
-		} else {
-			Beep()
+	if n := b.line.next; n != nil {
+		if n.moveCursor(b.line.cursor) < 0 {
+			n.moveCursor(b.line.cursorMax())
 		}
+		b.line = n
+		b.lno++
+	} else {
+		Beep()
 	}
 }
 
 func (b *EditBuffer) MoveCursorUp() {
-	if b.line != nil {
-		if p := b.line.prev; p != nil {
-			c := b.line.cursor
-			b.line = p
-			if b.line.moveCursor(c) < 0 {
-				b.line.moveCursor(b.line.cursorMax())
-			}
-			b.lno--
-			Message = fmt.Sprintf("up %d", b.lno, b.line.bytes())
-		} else {
-			Beep()
+	if p := b.line.prev; p != nil {
+		if p.moveCursor(b.line.cursor) < 0 {
+			p.moveCursor(b.line.cursorMax())
 		}
+		b.line = p
+		b.lno--
+	} else {
+		Beep()
 	}
 }
 

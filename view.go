@@ -6,8 +6,8 @@ import (
 
 // buffer view
 
-type View struct{
-	win *curses.Window
+type View struct {
+	win        *curses.Window
 	cols, rows int
 }
 
@@ -22,7 +22,7 @@ func UpdateDisplay() {
 	v.win.Clear()
 
 	ln := d.buf.lines
-	for i := 1; i < v.rows - 2; i++ {
+	for i := 1; i < v.rows-2; i++ {
 		if ln != nil {
 			v.win.Mvwaddnstr(i, 0, string(ln.bytes()), v.cols)
 			ln = ln.next
@@ -32,9 +32,9 @@ func UpdateDisplay() {
 	}
 
 	v.win.Mvwaddnstr(0, 0, d.buf.Title(), v.cols)
-	v.win.Mvwaddnstr(v.rows - 2, 0, statusLine(), v.cols)
+	v.win.Mvwaddnstr(v.rows-2, 0, statusLine(), v.cols)
 
-	UpdateMessageLine();
+	UpdateMessageLine()
 
 	if d.buf.line != nil {
 		DrawCursor()
@@ -55,12 +55,12 @@ func UpdateLine(l int, str string) {
 }
 
 func UpdateStatusLine() {
-	d.view.win.Mvwaddnstr(d.view.rows - 2, 0, statusLine(), d.view.cols)
+	d.view.win.Mvwaddnstr(d.view.rows-2, 0, statusLine(), d.view.cols)
 	d.view.win.Refresh()
 }
 
 func UpdateMessageLine() {
-	d.view.win.Mvwaddnstr(d.view.rows - 1, 0, Message, d.view.cols)
+	d.view.win.Mvwaddnstr(d.view.rows-1, 0, Message, d.view.cols)
 	d.view.win.Refresh()
 }
 

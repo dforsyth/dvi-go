@@ -54,8 +54,8 @@ type D struct {
 }
 
 type Status struct {
-	mode string
-	char byte
+	mode     string
+	char     byte
 	row, col int
 }
 
@@ -63,7 +63,7 @@ type Status struct {
 var d D
 
 func sigHandler() {
-	for{
+	for {
 		s := <-signal.Incoming
 		switch s.(signal.UnixSignal) {
 		case syscall.SIGINT:

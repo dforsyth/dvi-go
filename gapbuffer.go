@@ -15,7 +15,7 @@ type GapBuffer struct {
 // Create a new gap buffer
 func NewGapBuffer(t []byte) *GapBuffer {
 	g := new(GapBuffer)
-	g.buf = make([]byte, len(t) + size)
+	g.buf = make([]byte, len(t)+size)
 
 	copy(g.buf[:len(t)], t)
 
@@ -25,9 +25,9 @@ func NewGapBuffer(t []byte) *GapBuffer {
 
 	// ghetto hack to make this work easily
 	/*
-	for _, b := range t {
-		g.InsertChar(b)
-	}
+		for _, b := range t {
+			g.InsertChar(b)
+		}
 	*/
 	g.MoveGap(0)
 	return g
@@ -122,4 +122,3 @@ func (g *GapBuffer) DebugString() string {
 
 	return s
 }
-
