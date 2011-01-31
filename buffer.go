@@ -77,7 +77,9 @@ func (b *EditBuffer) MoveCursorDown() {
 		if n := b.line.next; n != nil {
 			c := b.line.cursor
 			b.line = n
-			b.line.moveCursor(c)
+			if b.line.moveCursor(c) < 0 {
+				b.line.moveCursor(b.line.cursorMax())
+			}
 			b.lno++
 			Message = fmt.Sprintf("down %d", b.lno, b.line.bytes())
 		} else {
@@ -91,7 +93,9 @@ func (b *EditBuffer) MoveCursorUp() {
 		if p := b.line.prev; p != nil {
 			c := b.line.cursor
 			b.line = p
-			b.line.moveCursor(c)
+			if b.line.moveCursor(c) < 0 {
+				b.line.moveCursor(b.line.cursorMax())
+			}
 			b.lno--
 			Message = fmt.Sprintf("up %d", b.lno, b.line.bytes())
 		} else {
