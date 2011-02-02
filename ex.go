@@ -28,15 +28,19 @@ func ExCmd() {
 			cmdBuff.InsertChar(byte(k))
 		}
 		UpdateLine(d.view.rows-2, ex+cmdBuff.String())
+		UpdateMessageLine()
 	}
 }
 
 func handleCmd(cmd string) {
+
+	Message = "got ex: " + cmd
+
 	if cmd == "w" {
 		go WriteEditBuffer(d.buf.title, d.buf)
 	}
 	if cmd == "q" {
-		// XXX make a read exit fn
+		// XXX make a real exit fn
 		endScreen()
 		os.Exit(0)
 	}

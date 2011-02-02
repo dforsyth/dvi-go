@@ -11,12 +11,20 @@ type View struct {
 	cols, rows int
 }
 
+type MessageMsg struct {
+	msg string
+	cnt uint
+}
+
+type StatusMsg struct {
+	msg string
+}
+
 func Beep() {
 	curses.Beep()
 }
 
 func UpdateDisplay() {
-
 	v := d.view
 
 	v.win.Clear()
@@ -34,13 +42,11 @@ func UpdateDisplay() {
 	v.win.Mvwaddnstr(0, 0, d.buf.Title(), v.cols)
 	v.win.Mvwaddnstr(v.rows-2, 0, statusLine(), v.cols)
 
-	UpdateMessageLine()
+	// UpdateMessageLine()
 
 	if d.buf.line != nil {
 		DrawCursor()
 	}
-
-	v.win.Refresh()
 }
 
 // update line l with str and refresh
@@ -51,17 +57,15 @@ func UpdateLine(l int, str string) {
 	v.win.Move(l, 0)
 	v.win.Clrtoeol()
 	v.win.Mvwaddnstr(l, 0, str, v.cols)
-	v.win.Refresh()
 }
 
 func UpdateStatusLine() {
 	d.view.win.Mvwaddnstr(d.view.rows-2, 0, statusLine(), d.view.cols)
-	d.view.win.Refresh()
 }
 
 func UpdateMessageLine() {
-	d.view.win.Mvwaddnstr(d.view.rows-1, 0, Message, d.view.cols)
-	d.view.win.Refresh()
+	UpdateLine(d.view.rows-1, Message)
+	DrawCursor()
 }
 
 func (v *View) DrawLine(lno int, line *Line) {

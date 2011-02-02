@@ -10,6 +10,7 @@ type EditBuffer struct {
 	lno, lco int
 	st       *os.FileInfo
 	title    string
+	dirty bool
 
 	lines *Line
 	line  *Line
@@ -31,12 +32,14 @@ func NewEditBuffer(title string) *EditBuffer {
 	b.title = title
 	b.next = nil
 	b.prev = nil
+	b.dirty = false
 
 	return b
 }
 
 func (b *EditBuffer) InsertChar(ch byte) {
 	b.line.insertCharacter(ch)
+	b.dirty = true
 }
 
 func (b *EditBuffer) BackSpace() {
@@ -100,6 +103,7 @@ func (b *EditBuffer) MoveCursorUp() {
 
 func (b *EditBuffer) DeleteSpan(p, l int) {
 	b.line.delete(p, l)
+	b.dirty = true
 }
 
 func (b *EditBuffer) FirstLine() {
@@ -119,6 +123,7 @@ func (b *EditBuffer) InsertLine(line *Line) {
 	}
 	b.line = line
 	b.lno++
+	b.dirty = true
 }
 
 func (b *EditBuffer) AppendLine() {
@@ -146,6 +151,7 @@ func (b *EditBuffer) DeleteCurrLine() {
 		b.line = n
 		// line number doesn't change
 	}
+	b.dirty = true
 }
 
 // Move to line p

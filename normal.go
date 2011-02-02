@@ -6,8 +6,9 @@ import (
 
 var NCmdMap map[int]func() = map[int]func(){
 	// 0: nil,
-	'>': ExCmd,
+	int(EXPROMPT[0]): ExCmd,
 	'i': InsertMode,
+	'a': AppendInsertMode,
 	'j': NCursorLeft,
 	'k': NCursorDown,
 	'l': NCursorUp,
@@ -21,13 +22,13 @@ func NormalMode() {
 		d.buf.line.UpdateCursor()
 	}
 
+	UpdateDisplay()
 	for {
-		Debug = ""
 		k := d.view.win.Getch()
 
 		if fn, ok := NCmdMap[k]; ok {
 			fn()
-			Debug += fmt.Sprintf("(%s) normal: %x", string(k), k)
+			Debug = fmt.Sprintf("(%s) normal: %x", string(k), k)
 			UpdateDisplay()
 		}
 	}

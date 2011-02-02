@@ -30,13 +30,13 @@ const (
 	NaL string = "+" // char that shows that a line does not exist
 
 	TMPDIR    = "."
-	TMPPREFIX = "d.tmp." // temp file prefix
+	TMPPREFIX = "d." // temp file prefix
 
 	// modes
 	MODENORMAL int = 1
 	MODEINSERT int = 0
 
-	EXPROMPT string = ">"
+	EXPROMPT string = ":"
 )
 
 var Debug string = ""
@@ -51,6 +51,7 @@ type D struct {
 	yank *list.List // list of lines in the current yank buff
 
 	view *View
+
 }
 
 type Status struct {
@@ -62,7 +63,7 @@ type Status struct {
 // editor state
 var d D
 
-func sigHandler() {
+func SigHandler() {
 	for {
 		s := <-signal.Incoming
 		switch s.(signal.UnixSignal) {
@@ -76,10 +77,6 @@ func sigHandler() {
 			Message = s.String()
 		}
 	}
-}
-
-func Log(msg string) {
-	// send msg to dbg.txt
 }
 
 func dInit(args []string) {
@@ -149,8 +146,9 @@ func main() {
 	// Start in normal mode
 	startScreen()
 	defer endScreen()
-	go sigHandler()
+	go SigHandler()
 	// init has to happen after startscreen
 	dInit(os.Args[1:])
 	dRun()
 }
+

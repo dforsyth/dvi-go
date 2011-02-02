@@ -4,6 +4,9 @@ import (
 	"fmt"
 )
 
+func AppendInsertMode() {
+
+}
 
 // insert mode
 func InsertMode() {
@@ -38,7 +41,7 @@ func InsertMode() {
 			d.buf.InsertChar(byte(k))
 		}
 		Debug += fmt.Sprintf("insert: %x", k)
-
 		UpdateDisplay()
 	}
 }
+
