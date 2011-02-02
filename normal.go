@@ -18,13 +18,13 @@ var NCmdMap map[int]func() = map[int]func(){
 // normal mode
 func NormalMode() {
 
-	if d.buf != nil && d.buf.line != nil {
-		d.buf.line.UpdateCursor()
+	if eb != nil && eb.line != nil {
+		eb.line.UpdateCursor()
 	}
 
 	UpdateDisplay()
 	for {
-		k := d.view.win.Getch()
+		k := vw.win.Getch()
 
 		if fn, ok := NCmdMap[k]; ok {
 			fn()
@@ -35,32 +35,18 @@ func NormalMode() {
 }
 
 func NCursorLeft() {
-	d.buf.MoveCursorLeft()
+	eb.MoveCursorLeft()
 }
 
 func NCursorDown() {
-	d.buf.MoveCursorDown()
+	eb.MoveCursorDown()
 }
 
 func NCursorUp() {
-	d.buf.MoveCursorUp()
+	eb.MoveCursorUp()
 }
 
 func NCursorRight() {
-	d.buf.MoveCursorRight()
+	eb.MoveCursorRight()
 }
 
-func (d *D) NextEditBuffer() {
-
-	n := d.buf.next
-	if n != nil {
-		d.buf = n
-	}
-}
-
-func (d *D) PrevEditBuffer() {
-	p := d.buf.prev
-	if p != nil {
-		d.buf = p
-	}
-}

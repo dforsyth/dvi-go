@@ -18,8 +18,8 @@
 package main
 
 import (
-	"container/list"
 	"curses"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,28 +40,34 @@ const (
 )
 
 var Debug string = ""
-var Message string = ""
 
-// global state for the editor
-type D struct {
-	mode int // current mode
-
-	buf *EditBuffer
-
-	yank *list.List // list of lines in the current yank buff
-
-	view *View
-
+type Message interface {
+	String() string
 }
 
-type Status struct {
+// Modeline
+type Modeline struct {
 	mode     string
 	char     byte
-	row, col int
+	lno, col int
 }
 
-// editor state
-var d D
+type Exline struct {
+	prompt	string
+	command	string
+}
+
+func (e *Exline) String() string {
+	return fmt.Sprintf("%s%s", e.prompt, e.command)
+}
+
+func (m *Modeline) String() string {
+	return fmt.Sprintf("%s %b %d-%d", m.mode, m.char, m.lno, m.col)
+}
+
+var eb *EditBuffer
+var ml *Modeline
+var vw *View
 
 func SigHandler() {
 	for {
@@ -74,47 +80,51 @@ func SigHandler() {
 		case syscall.SIGWINCH:
 			Beep()
 		default:
-			Message = s.String()
+			ml.mode = s.String()
 		}
 	}
 }
 
-func dInit(args []string) {
-	d.mode = -1
+func Init(args []string) {
 	if len(args) == 0 {
 		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
-		d.buf.FirstLine()
+		eb.FirstLine()
 	} else {
 		for _, path := range args {
 			InsertBuffer(NewReadFileEditBuffer(path))
-			d.buf.FirstLine()
+			eb.FirstLine()
 		}
 	}
 
-	d.yank = list.New()
+	// Setup view
+	vw = new(View)
+	vw.win = curses.Stdwin
+	vw.rows = *curses.Rows
+	vw.cols = *curses.Cols
 
-	// ready view
-	d.view = new(View)
-	d.view.win = curses.Stdwin
-	d.view.rows = *curses.Rows
-	d.view.cols = *curses.Cols
+	// Setup modeline
+	ml = new(Modeline)
+	ml.mode = ""
+	ml.char = '@'
+	ml.lno = 0
+	ml.col = 0
 }
 
 func InsertBuffer(b *EditBuffer) {
-	if d.buf == nil {
-		d.buf = b
+	if eb == nil {
+		eb = b
 	} else {
-		d.buf.next = b
+		eb.next = b
 	}
 }
 
 func NextBuffer() *EditBuffer {
-	if d.buf == nil {
+	if eb == nil {
 		return nil
 	}
 
-	d.buf = d.buf.next
-	return d.buf
+	eb = eb.next
+	return eb
 }
 
 func startScreen() {
@@ -129,7 +139,7 @@ func endScreen() {
 	curses.Endwin()
 }
 
-func dRun() {
+func Run() {
 
 	UpdateDisplay()
 	// enter normal mode
@@ -148,7 +158,7 @@ func main() {
 	defer endScreen()
 	go SigHandler()
 	// init has to happen after startscreen
-	dInit(os.Args[1:])
-	dRun()
+	Init(os.Args[1:])
+	Run()
 }
 

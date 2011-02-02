@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"fmt"
 )
 
 // todo: lockable
@@ -48,7 +47,6 @@ func (b *EditBuffer) BackSpace() {
 		return
 	}
 
-	Message = fmt.Sprintf("%d", b.line.cursor)
 	if b.line.cursor == 0 {
 		if b.line.size != 0 && b.line.prev != nil {
 			// combine this line and the previous

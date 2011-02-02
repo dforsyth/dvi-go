@@ -57,7 +57,6 @@ func (l *Line) moveCursor(p int) int {
 func (l *Line) cursorMax() int {
 	// dont allow the cursor to pass the newline char
 	if l.hasNewLine {
-		Message = "has new line"
 		return l.size - 1
 	}
 	return l.size

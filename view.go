@@ -11,73 +11,38 @@ type View struct {
 	cols, rows int
 }
 
-type MessageMsg struct {
-	msg string
-	cnt uint
-}
-
-type StatusMsg struct {
-	msg string
-}
-
 func Beep() {
 	curses.Beep()
 }
 
 func UpdateDisplay() {
-	v := d.view
+	vw.win.Clear()
 
-	v.win.Clear()
-
-	ln := d.buf.lines
-	for i := 1; i < v.rows-2; i++ {
+	ln := eb.lines
+	for i := 1; i < vw.rows-1; i++ {
 		if ln != nil {
-			v.win.Mvwaddnstr(i, 0, string(ln.bytes()), v.cols)
+			vw.win.Mvwaddnstr(i, 0, string(ln.bytes()), vw.cols)
 			ln = ln.next
 		} else {
-			v.win.Mvwaddnstr(i, 0, NaL, v.cols)
+			vw.win.Mvwaddnstr(i, 0, NaL, vw.cols)
 		}
 	}
 
-	v.win.Mvwaddnstr(0, 0, d.buf.Title(), v.cols)
-	v.win.Mvwaddnstr(v.rows-2, 0, statusLine(), v.cols)
+	vw.win.Mvwaddnstr(0, 0, eb.Title(), vw.cols)
+	UpdateModeLine(ml)
 
-	// UpdateMessageLine()
-
-	if d.buf.line != nil {
+	if eb.line != nil {
 		DrawCursor()
 	}
 }
 
-// update line l with str and refresh
-func UpdateLine(l int, str string) {
-
-	v := d.view
-
-	v.win.Move(l, 0)
-	v.win.Clrtoeol()
-	v.win.Mvwaddnstr(l, 0, str, v.cols)
-}
-
-func UpdateStatusLine() {
-	d.view.win.Mvwaddnstr(d.view.rows-2, 0, statusLine(), d.view.cols)
-}
-
-func UpdateMessageLine() {
-	UpdateLine(d.view.rows-1, Message)
-	DrawCursor()
-}
-
-func (v *View) DrawLine(lno int, line *Line) {
-	for _, c := range line.bytes() {
-		switch c {
-		case '\t':
-		case '\n':
-		default:
-		}
-	}
+func UpdateModeLine(m Message) {
+	l := vw.rows-1
+	vw.win.Move(l, 0)
+	vw.win.Clrtoeol()
+	vw.win.Mvwaddnstr(l, 0, m.String(), vw.cols)
 }
 
 func DrawCursor() {
-	d.view.win.Move(d.buf.lno, d.buf.line.cursor)
+	vw.win.Move(eb.lno, eb.line.cursor)
 }

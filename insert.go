@@ -12,33 +12,33 @@ func AppendInsertMode() {
 func InsertMode() {
 
 	// we shouldn't hit these anymore, but if we do we should be ready to deal with them...
-	if d.buf == nil {
+	if eb == nil {
 		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
 	}
 
-	if d.buf.line == nil {
-		d.buf.AppendLine()
+	if eb.line == nil {
+		eb.AppendLine()
 	}
 
-	d.buf.line.UpdateGap()
+	eb.line.UpdateGap()
 
 	UpdateDisplay()
 	for {
 		Debug = ""
-		k := d.view.win.Getch()
+		k := vw.win.Getch()
 		switch k {
 		case 27:
 			return
 		case 0x7f:
 			// improperly handles the newline at the end of the prev line
-			d.buf.BackSpace()
+			eb.BackSpace()
 		case 0xd, 0xa:
-			d.buf.NewLine(byte('\n'))
+			eb.NewLine(byte('\n'))
 		case 0x9:
-			// d.Buffer().InsertTab()
+			// ebfer().InsertTab()
 		default:
 			Debug = "adding char "
-			d.buf.InsertChar(byte(k))
+			eb.InsertChar(byte(k))
 		}
 		Debug += fmt.Sprintf("insert: %x", k)
 		UpdateDisplay()

@@ -5,11 +5,13 @@ import (
 )
 
 func ExCmd() {
-	ex := EXPROMPT
-	UpdateLine(d.view.rows-2, ex)
+	ex := new(Exline)
+	ex.prompt = EXPROMPT
+	ex.command = ""
 	cmdBuff := NewGapBuffer([]byte(""))
+	UpdateModeLine(ex)
 	for {
-		k := d.view.win.Getch()
+		k := vw.win.Getch()
 
 		switch k {
 		case 27:
@@ -27,17 +29,15 @@ func ExCmd() {
 		default:
 			cmdBuff.InsertChar(byte(k))
 		}
-		UpdateLine(d.view.rows-2, ex+cmdBuff.String())
-		UpdateMessageLine()
+		ex.command = cmdBuff.String()
+		UpdateModeLine(ex)
 	}
 }
 
 func handleCmd(cmd string) {
 
-	Message = "got ex: " + cmd
-
 	if cmd == "w" {
-		go WriteEditBuffer(d.buf.title, d.buf)
+		go WriteEditBuffer(eb.title, eb)
 	}
 	if cmd == "q" {
 		// XXX make a real exit fn
