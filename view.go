@@ -18,22 +18,37 @@ func Beep() {
 func UpdateDisplay() {
 	vw.win.Clear()
 
+	UpdateTitleLine()
+
 	ln := eb.lines
 	for i := 1; i < vw.rows-1; i++ {
 		if ln != nil {
-			vw.win.Mvwaddnstr(i, 0, string(ln.bytes()), vw.cols)
+			for j, c := range ln.bytes() {
+				vw.win.Addch(i, j, int32(c), 0)
+			}
 			ln = ln.next
 		} else {
 			vw.win.Mvwaddnstr(i, 0, NaL, vw.cols)
 		}
 	}
 
-	vw.win.Mvwaddnstr(0, 0, eb.Title(), vw.cols)
 	UpdateModeLine(ml)
 
 	if eb.line != nil {
 		DrawCursor()
 	}
+}
+
+func UpdateLine(rno int, ln *Line) {
+}
+
+func UpdateLineAndAfter(rno, ln *Line) {
+}
+
+func UpdateTitleLine() {
+	vw.win.Move(0, 0)
+	vw.win.Clrtoeol()
+	vw.win.Mvwaddnstr(0, 0, eb.Title(), vw.cols)
 }
 
 func UpdateModeLine(m Message) {

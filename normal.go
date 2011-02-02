@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 var NCmdMap map[int]func() = map[int]func(){
 	// 0: nil,
 	int(EXPROMPT[0]): ExCmd,
@@ -28,7 +24,6 @@ func NormalMode() {
 
 		if fn, ok := NCmdMap[k]; ok {
 			fn()
-			Debug = fmt.Sprintf("(%s) normal: %x", string(k), k)
 			UpdateDisplay()
 		}
 	}

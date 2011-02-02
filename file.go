@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -52,14 +53,17 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 	defer f.Close()
 
 	i := 0
+	wr := 0
 	for l := b.lines; l != nil; l = l.next {
-		_, e := f.Write(l.bytes())
+		n, e := f.Write(l.bytes())
 		if e != nil {
 			return nil, e
 		}
 		i++
+		wr += n
 	}
-	Debug = "wrote " + string(i) + " lines"
+
+	ml.mode = fmt.Sprintf("\"%s\", %d bytes", pathname, wr)
 
 	st, e := f.Stat()
 	if e != nil {
