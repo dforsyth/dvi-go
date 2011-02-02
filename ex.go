@@ -38,10 +38,13 @@ func handleCmd(cmd string) {
 
 	if cmd == "w" {
 		go WriteEditBuffer(eb.title, eb)
+		return
 	}
 	if cmd == "q" {
 		// XXX make a real exit fn
 		endScreen()
 		os.Exit(0)
 	}
+
+	ml.mode = "Did not recognize: " + cmd
 }

@@ -33,7 +33,7 @@ func (l *Line) insertCharacter(c byte) {
 }
 
 // Get the bytes in this line
-func (l *Line) bytes() []byte {
+func (l *Line) raw() []byte {
 	return []byte(l.gb.GaplessBuffer())
 }
 
@@ -67,7 +67,7 @@ func (l *Line) Mark() {
 	l.mark = l.cursor
 }
 
-func (l *Line) delete(pos, len int) {
+func (l *Line) delete(pos, length int) {
 }
 
 func (l *Line) UpdateCursor() {

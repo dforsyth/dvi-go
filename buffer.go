@@ -9,12 +9,12 @@ type EditBuffer struct {
 	lno, lco int
 	st       *os.FileInfo
 	title    string
-	dirty bool
+	dirty    bool
 
 	lines *Line
 	line  *Line
 
-	prev, next *EditBuffer // roll ourselves because type assertions are pointless in this case.
+	prev, next *EditBuffer // roll ourselves because type assertions are pobyteless in this case.
 }
 
 func NewEditBuffer(title string) *EditBuffer {
@@ -131,7 +131,7 @@ func (b *EditBuffer) AppendLine() {
 
 func (b *EditBuffer) NewLine(nlchar byte) {
 
-	newbuf := b.line.bytes()[b.line.cursor:]
+	newbuf := b.line.raw()[b.line.cursor:]
 	b.line.insertCharacter(nlchar)
 	b.line.ClearAfterCursor()
 	b.line.size -= len(newbuf)

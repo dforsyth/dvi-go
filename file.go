@@ -14,17 +14,15 @@ func NewTempFileEditBuffer(prefix string) *EditBuffer {
 	return b
 }
 
-func NewReadFileEditBuffer(pathname string) *EditBuffer {
+func NewReadFileEditBuffer(pathname string) (*EditBuffer, os.Error) {
 	st, e := os.Stat(pathname)
 	if e != nil {
-		Debug = e.String()
-		return nil
+		return nil, e
 	}
 
 	f, e := os.Open(pathname, os.O_RDONLY, 0444)
 	if e != nil {
-		Debug = e.String()
-		return nil
+		return nil, e
 	}
 	defer f.Close()
 
@@ -33,14 +31,13 @@ func NewReadFileEditBuffer(pathname string) *EditBuffer {
 	for {
 		l, e := r.ReadBytes(byte('\n'))
 		if e != nil {
-			Debug = e.String()
-			break
+			return nil, e
 		}
 		b.InsertLine(NewLine(l))
 	}
 	b.st = st
 
-	return b
+	return b, nil
 }
 
 // Do a naive write of the entire buffer to a temp file, then rename into place.
@@ -55,7 +52,7 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 	i := 0
 	wr := 0
 	for l := b.lines; l != nil; l = l.next {
-		n, e := f.Write(l.bytes())
+		n, e := f.Write(l.raw())
 		if e != nil {
 			return nil, e
 		}

@@ -3,12 +3,12 @@ package main
 var NCmdMap map[int]func() = map[int]func(){
 	// 0: nil,
 	int(EXPROMPT[0]): ExCmd,
-	'i': InsertMode,
-	'a': AppendInsertMode,
-	'j': NCursorLeft,
-	'k': NCursorDown,
-	'l': NCursorUp,
-	';': NCursorRight,
+	'i':              InsertMode,
+	'a':              AppendInsertMode,
+	'j':              NCursorLeft,
+	'k':              NCursorDown,
+	'l':              NCursorUp,
+	';':              NCursorRight,
 }
 
 // normal mode
@@ -44,4 +44,3 @@ func NCursorUp() {
 func NCursorRight() {
 	eb.MoveCursorRight()
 }
-

@@ -23,7 +23,7 @@ func UpdateDisplay() {
 	ln := eb.lines
 	for i := 1; i < vw.rows-1; i++ {
 		if ln != nil {
-			for j, c := range ln.bytes() {
+			for j, c := range ln.raw() {
 				vw.win.Addch(i, j, int32(c), 0)
 			}
 			ln = ln.next
@@ -52,7 +52,7 @@ func UpdateTitleLine() {
 }
 
 func UpdateModeLine(m Message) {
-	l := vw.rows-1
+	l := vw.rows - 1
 	vw.win.Move(l, 0)
 	vw.win.Clrtoeol()
 	vw.win.Mvwaddnstr(l, 0, m.String(), vw.cols)

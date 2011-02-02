@@ -50,7 +50,7 @@ func (g *GapBuffer) InsertString(s string) {
 
 func (g *GapBuffer) DeleteSpan(p, s int) {
 	g.MoveGap(p + s)
-	for i := int(0); i < s; i++ {
+	for i := 0; i < s; i++ {
 		if g.gs == 0 {
 			return
 		}
@@ -75,7 +75,7 @@ func (g *GapBuffer) GrowGap(s int) {
 	g.ge += s
 }
 
-// Move the gap to p.  p does not take the gap into account.
+// Move the gap to p.  p does not take the gap byteo account.
 func (g *GapBuffer) MoveGap(p int) {
 	if g.gs == p {
 		return

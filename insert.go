@@ -1,11 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
-
 func AppendInsertMode() {
-
 }
 
 // insert mode
@@ -37,11 +32,8 @@ func InsertMode() {
 		case 0x9:
 			// ebfer().InsertTab()
 		default:
-			Debug = "adding char "
 			eb.InsertChar(byte(k))
 		}
-		Debug += fmt.Sprintf("insert: %x", k)
 		UpdateDisplay()
 	}
 }
-

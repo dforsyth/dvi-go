@@ -27,16 +27,11 @@ import (
 
 const (
 	// strings
-	NaL string = "+" // char that shows that a line does not exist
+	NaL string = "~" // char that shows that a line does not exist
+	EXPROMPT string = ":"
 
 	TMPDIR    = "."
 	TMPPREFIX = "d." // temp file prefix
-
-	// modes
-	MODENORMAL int = 1
-	MODEINSERT int = 0
-
-	EXPROMPT string = ":"
 )
 
 var Debug string = ""
@@ -53,8 +48,8 @@ type Modeline struct {
 }
 
 type Exline struct {
-	prompt	string
-	command	string
+	prompt  string
+	command string
 }
 
 func (e *Exline) String() string {
@@ -91,8 +86,10 @@ func Init(args []string) {
 		eb.FirstLine()
 	} else {
 		for _, path := range args {
-			InsertBuffer(NewReadFileEditBuffer(path))
-			eb.FirstLine()
+			if b, e := NewReadFileEditBuffer(path); e == nil {
+				InsertBuffer(b)
+				eb.FirstLine()
+			}
 		}
 	}
 
@@ -161,4 +158,3 @@ func main() {
 	Init(os.Args[1:])
 	Run()
 }
-
