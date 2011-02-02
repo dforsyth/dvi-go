@@ -14,13 +14,13 @@ var NCmdMap map[int]func() = map[int]func(){
 // normal mode
 func NormalMode() {
 
-	if eb != nil && eb.line != nil {
-		eb.line.UpdateCursor()
+	if Eb != nil && Eb.line != nil {
+		Eb.line.UpdateCursor()
 	}
 
 	UpdateDisplay()
 	for {
-		k := vw.win.Getch()
+		k := Vw.win.Getch()
 
 		if fn, ok := NCmdMap[k]; ok {
 			fn()
@@ -30,17 +30,17 @@ func NormalMode() {
 }
 
 func NCursorLeft() {
-	eb.MoveCursorLeft()
+	Eb.MoveCursorLeft()
 }
 
 func NCursorDown() {
-	eb.MoveCursorDown()
+	Eb.MoveCursorDown()
 }
 
 func NCursorUp() {
-	eb.MoveCursorUp()
+	Eb.MoveCursorUp()
 }
 
 func NCursorRight() {
-	eb.MoveCursorRight()
+	Eb.MoveCursorRight()
 }

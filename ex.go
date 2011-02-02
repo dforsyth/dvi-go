@@ -11,7 +11,7 @@ func ExCmd() {
 	cmdBuff := NewGapBuffer([]byte(""))
 	UpdateModeLine(ex)
 	for {
-		k := vw.win.Getch()
+		k := Vw.win.Getch()
 
 		switch k {
 		case 27:
@@ -37,7 +37,7 @@ func ExCmd() {
 func handleCmd(cmd string) {
 
 	if cmd == "w" {
-		go WriteEditBuffer(eb.title, eb)
+		go WriteEditBuffer(Eb.title, Eb)
 		return
 	}
 	if cmd == "q" {
@@ -46,5 +46,5 @@ func handleCmd(cmd string) {
 		os.Exit(0)
 	}
 
-	ml.mode = "Did not recognize: " + cmd
+	Ml.mode = "Did not recognize: " + cmd
 }

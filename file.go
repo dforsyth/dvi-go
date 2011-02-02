@@ -60,7 +60,7 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 		wr += n
 	}
 
-	ml.mode = fmt.Sprintf("\"%s\", %d bytes", pathname, wr)
+	Ml.mode = fmt.Sprintf("\"%s\", %d bytes", pathname, wr)
 
 	st, e := f.Stat()
 	if e != nil {

@@ -34,7 +34,7 @@ const (
 	TMPPREFIX = "d." // temp file prefix
 )
 
-var Debug string = ""
+var DEbug string = ""
 
 type Message interface {
 	String() string
@@ -60,9 +60,9 @@ func (m *Modeline) String() string {
 	return fmt.Sprintf("%s %b %d-%d", m.mode, m.char, m.lno, m.col)
 }
 
-var eb *EditBuffer
-var ml *Modeline
-var vw *View
+var Eb *EditBuffer
+var Ml *Modeline
+var Vw *View
 
 func SigHandler() {
 	for {
@@ -75,7 +75,7 @@ func SigHandler() {
 		case syscall.SIGWINCH:
 			Beep()
 		default:
-			ml.mode = s.String()
+			Ml.mode = s.String()
 		}
 	}
 }
@@ -83,45 +83,45 @@ func SigHandler() {
 func Init(args []string) {
 	if len(args) == 0 {
 		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
-		eb.FirstLine()
+		Eb.FirstLine()
 	} else {
 		for _, path := range args {
 			if b, e := NewReadFileEditBuffer(path); e == nil {
 				InsertBuffer(b)
-				eb.FirstLine()
+				Eb.FirstLine()
 			}
 		}
 	}
 
 	// Setup view
-	vw = new(View)
-	vw.win = curses.Stdwin
-	vw.rows = *curses.Rows
-	vw.cols = *curses.Cols
+	Vw = new(View)
+	Vw.win = curses.Stdwin
+	Vw.rows = *curses.Rows
+	Vw.cols = *curses.Cols
 
 	// Setup modeline
-	ml = new(Modeline)
-	ml.mode = ""
-	ml.char = '@'
-	ml.lno = 0
-	ml.col = 0
+	Ml = new(Modeline)
+	Ml.mode = ""
+	Ml.char = '@'
+	Ml.lno = 0
+	Ml.col = 0
 }
 
 func InsertBuffer(b *EditBuffer) {
-	if eb == nil {
-		eb = b
+	if Eb == nil {
+		Eb = b
 	} else {
-		eb.next = b
+		Eb.next = b
 	}
 }
 
 func NextBuffer() *EditBuffer {
-	if eb == nil {
+	if Eb == nil {
 		return nil
 	}
 
-	eb = eb.next
-	return eb
+	Eb = Eb.next
+	return Eb
 }
 
 func startScreen() {
@@ -145,7 +145,7 @@ func Run() {
 }
 
 func statusLine() string {
-	return Debug
+	return DEbug
 }
 
 func main() {

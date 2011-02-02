@@ -7,32 +7,32 @@ func AppendInsertMode() {
 func InsertMode() {
 
 	// we shouldn't hit these anymore, but if we do we should be ready to deal with them...
-	if eb == nil {
+	if Eb == nil {
 		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
 	}
 
-	if eb.line == nil {
-		eb.AppendLine()
+	if Eb.line == nil {
+		Eb.AppendLine()
 	}
 
-	eb.line.UpdateGap()
+	Eb.line.UpdateGap()
 
 	UpdateDisplay()
 	for {
-		Debug = ""
-		k := vw.win.Getch()
+		DEbug = ""
+		k := Vw.win.Getch()
 		switch k {
 		case 27:
 			return
 		case 0x7f:
 			// improperly handles the newline at the end of the prev line
-			eb.BackSpace()
+			Eb.BackSpace()
 		case 0xd, 0xa:
-			eb.NewLine(byte('\n'))
+			Eb.NewLine(byte('\n'))
 		case 0x9:
-			// ebfer().InsertTab()
+			// Ebfer().InsertTab()
 		default:
-			eb.InsertChar(byte(k))
+			Eb.InsertChar(byte(k))
 		}
 		UpdateDisplay()
 	}

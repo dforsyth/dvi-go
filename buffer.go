@@ -43,7 +43,7 @@ func (b *EditBuffer) InsertChar(ch byte) {
 
 func (b *EditBuffer) BackSpace() {
 	if b.line == nil {
-		Debug = "nothing to backspace"
+		Beep()
 		return
 	}
 

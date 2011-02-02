@@ -16,25 +16,25 @@ func Beep() {
 }
 
 func UpdateDisplay() {
-	vw.win.Clear()
+	Vw.win.Clear()
 
 	UpdateTitleLine()
 
-	ln := eb.lines
-	for i := 1; i < vw.rows-1; i++ {
+	ln := Eb.lines
+	for i := 1; i < Vw.rows-1; i++ {
 		if ln != nil {
 			for j, c := range ln.raw() {
-				vw.win.Addch(i, j, int32(c), 0)
+				Vw.win.Addch(i, j, int32(c), 0)
 			}
 			ln = ln.next
 		} else {
-			vw.win.Mvwaddnstr(i, 0, NaL, vw.cols)
+			Vw.win.Mvwaddnstr(i, 0, NaL, Vw.cols)
 		}
 	}
 
-	UpdateModeLine(ml)
+	UpdateModeLine(Ml)
 
-	if eb.line != nil {
+	if Eb.line != nil {
 		DrawCursor()
 	}
 }
@@ -46,18 +46,18 @@ func UpdateLineAndAfter(rno, ln *Line) {
 }
 
 func UpdateTitleLine() {
-	vw.win.Move(0, 0)
-	vw.win.Clrtoeol()
-	vw.win.Mvwaddnstr(0, 0, eb.Title(), vw.cols)
+	Vw.win.Move(0, 0)
+	Vw.win.Clrtoeol()
+	Vw.win.Mvwaddnstr(0, 0, Eb.Title(), Vw.cols)
 }
 
 func UpdateModeLine(m Message) {
-	l := vw.rows - 1
-	vw.win.Move(l, 0)
-	vw.win.Clrtoeol()
-	vw.win.Mvwaddnstr(l, 0, m.String(), vw.cols)
+	l := Vw.rows - 1
+	Vw.win.Move(l, 0)
+	Vw.win.Clrtoeol()
+	Vw.win.Mvwaddnstr(l, 0, m.String(), Vw.cols)
 }
 
 func DrawCursor() {
-	vw.win.Move(eb.lno, eb.line.cursor)
+	Vw.win.Move(Eb.lno, Eb.line.cursor)
 }
