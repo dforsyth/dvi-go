@@ -32,7 +32,7 @@ const (
 
 	TMPDIR    = "."
 	TMPPREFIX = "d." // temp file prefix
-	ESC = 27
+	ESC       = 27
 )
 
 // Message lines
@@ -149,7 +149,6 @@ func Run() {
 	UpdateDisplay()
 	// enter normal mode
 	NormalMode()
-
 }
 
 func main() {

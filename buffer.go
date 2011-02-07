@@ -244,23 +244,33 @@ func (b *EditBuffer) Map() int {
 		if cnt == 0 {
 			cnt = 1
 		}
-		first := true
+		wrap := 0
 		for lmt := i + cnt; i < lmt; i++ {
 			str := make([]byte, b.view.Cols)
-			//for j := 0; j < offset; j++ {
-			//	str[j] = ' '
-			//}
-			if first {
+			// XXX this is the first part of the line, the optional
+			// line number.  if this isn't the first screen line of
+			// a line (for a wrapped line), then just draw empty
+			// space if line numbers are on
+			if wrap == 0 {
 				lno := []byte(fmt.Sprintf("%*d ", offset-1, ln.lno))
 				copy(str[0:offset], lno)
-				first = false
 			} else {
 				for j := 0; j < offset; j++ {
 					str[j] = ' '
 				}
 			}
-			copy(str[offset:], ln.raw())
+
+			// XXX the second part of the line, which shows actual
+			// text that the user is viewing
+			actual := b.view.Cols - offset
+			start := actual * wrap
+			if start + actual - 1 < len(ln.raw()) {
+				copy(str[offset:], ln.raw()[start:start+actual - 1])
+			} else {
+				copy(str[offset:], ln.raw()[start:len(ln.raw())])
+			}
 			b.view.Lines[i] = string(str)
+			wrap++
 		}
 	}
 	for ; i < b.view.Rows-1; i++ {
