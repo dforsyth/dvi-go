@@ -24,7 +24,8 @@ func ExCmd() {
 			} else {
 				cmdBuff.DeleteSpan(cmdBuff.gs-1, 1)
 			}
-		case curses.KEY_ENTER:
+		// case curses.KEY_ENTER:
+		case 0xd:
 			handleCmd(cmdBuff.String())
 			return
 		default:

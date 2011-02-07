@@ -34,7 +34,7 @@ func InsertMode() {
 		case curses.KEY_BACKSPACE:
 			// improperly handles the newline at the end of the prev line
 			Eb.BackSpace()
-		case curses.KEY_ENTER:
+		case 0xd, 0xa:
 			Eb.NewLine(byte('\n'))
 		case 0x9:
 			// Ebfer().InsertTab()
