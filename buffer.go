@@ -235,6 +235,7 @@ func (b *EditBuffer) ScreenLines(ln *Line) int {
 	return int(math.Ceil(float64(len(ln.raw())) / float64(actual)))
 }
 
+// Maps every visible line to a position on the screen.  This is a super-slow complete refresh.
 func (b *EditBuffer) Map() int {
 	offset := b.LnoOffset()
 	i := 0
