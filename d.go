@@ -27,26 +27,30 @@ import (
 
 const (
 	// strings
-	NaL string = "~" // char that shows that a line does not exist
+	NaL      string = "~" // char that shows that a line does not exist
 	EXPROMPT string = ":"
 
 	TMPDIR    = "."
 	TMPPREFIX = "d." // temp file prefix
 )
 
-var DEbug string = ""
-
+// Message lines
 type Message interface {
 	String() string
 }
 
 // Modeline
 type Modeline struct {
-	mode     string
-	char     byte
-	lno, col int
+	mode          string
+	char          int
+	lno, lco, col int
 }
 
+func (m *Modeline) String() string {
+	return fmt.Sprintf("%s %c/%d %d/%d-%d", m.mode, m.char, m.char, m.lno, m.lco, m.col)
+}
+
+// ex line
 type Exline struct {
 	prompt  string
 	command string
@@ -56,9 +60,7 @@ func (e *Exline) String() string {
 	return fmt.Sprintf("%s%s", e.prompt, e.command)
 }
 
-func (m *Modeline) String() string {
-	return fmt.Sprintf("%s %b %d-%d", m.mode, m.char, m.lno, m.col)
-}
+var OptLineNumbers = true
 
 var Eb *EditBuffer
 var Ml *Modeline
@@ -81,30 +83,36 @@ func SigHandler() {
 }
 
 func Init(args []string) {
+	// Setup modeline
+	Ml = new(Modeline)
+	Ml.mode = ""
+	Ml.char = '@'
+	Ml.lno = 0
+	Ml.lco = 0
+	Ml.col = 0
+
+	// Setup view
+	Vw = NewView()
+
 	if len(args) == 0 {
 		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
+		// XXX this is a workaround for my lazy design.  get rid
+		// of this asap.
+		Eb.InsertLine(NewLine([]byte("")))
+		Eb.anchor = Eb.lines.Front()
 		Eb.FirstLine()
 	} else {
 		for _, path := range args {
 			if b, e := NewReadFileEditBuffer(path); e == nil {
 				InsertBuffer(b)
 				Eb.FirstLine()
+			} else {
+				InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
+				Eb.FirstLine()
+				Ml.mode = "Error opening " + path + ": " + e.String()
 			}
 		}
 	}
-
-	// Setup view
-	Vw = new(View)
-	Vw.win = curses.Stdwin
-	Vw.rows = *curses.Rows
-	Vw.cols = *curses.Cols
-
-	// Setup modeline
-	Ml = new(Modeline)
-	Ml.mode = ""
-	Ml.char = '@'
-	Ml.lno = 0
-	Ml.col = 0
 }
 
 func InsertBuffer(b *EditBuffer) {
@@ -137,15 +145,10 @@ func endScreen() {
 }
 
 func Run() {
-
 	UpdateDisplay()
 	// enter normal mode
 	NormalMode()
 
-}
-
-func statusLine() string {
-	return DEbug
 }
 
 func main() {

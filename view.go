@@ -4,11 +4,27 @@ import (
 	"curses"
 )
 
-// buffer view
-
+// A view displays a title bar (always), a text buffer (when available), and a
+// message line (always).
 type View struct {
 	win        *curses.Window
-	cols, rows int
+	Cols, Rows int
+	StartRow   uint
+	Lines      []string
+}
+
+func NewView() *View {
+	v := new(View)
+
+	v.win = curses.Stdwin
+	v.Rows, v.Cols = *curses.Rows, *curses.Cols
+	v.Lines = make([]string, v.Rows)
+	return v
+}
+
+type ScrLine struct {
+	str string
+	// XXX we can put color bolding information in here later...
 }
 
 func Beep() {
@@ -20,16 +36,12 @@ func UpdateDisplay() {
 
 	UpdateTitleLine()
 
-	ln := Eb.lines
-	for i := 1; i < Vw.rows-1; i++ {
-		if ln != nil {
-			for j, c := range ln.raw() {
-				Vw.win.Addch(i, j, int32(c), 0)
-			}
-			ln = ln.next
-		} else {
-			Vw.win.Mvwaddnstr(i, 0, NaL, Vw.cols)
-		}
+	Eb.Map()
+	xmax := Vw.Cols
+	for i, row := range Vw.Lines {
+		Vw.win.Move(i+1, 0)
+		Vw.win.Clrtoeol()
+		Vw.win.Mvwaddnstr(i+1, 0, row, xmax)
 	}
 
 	UpdateModeLine(Ml)
@@ -38,6 +50,7 @@ func UpdateDisplay() {
 		DrawCursor()
 	}
 }
+
 
 func UpdateLine(rno int, ln *Line) {
 }
@@ -48,16 +61,17 @@ func UpdateLineAndAfter(rno, ln *Line) {
 func UpdateTitleLine() {
 	Vw.win.Move(0, 0)
 	Vw.win.Clrtoeol()
-	Vw.win.Mvwaddnstr(0, 0, Eb.Title(), Vw.cols)
+	Vw.win.Mvwaddnstr(0, 0, Eb.Title(), Vw.Cols)
 }
 
 func UpdateModeLine(m Message) {
-	l := Vw.rows - 1
+	l := Vw.Rows - 1
 	Vw.win.Move(l, 0)
 	Vw.win.Clrtoeol()
-	Vw.win.Mvwaddnstr(l, 0, m.String(), Vw.cols)
+	Vw.win.Mvwaddnstr(l, 0, m.String(), Vw.Cols)
 }
 
 func DrawCursor() {
-	Vw.win.Move(Eb.lno, Eb.line.cursor)
+	x, y := Eb.CursorCoord()
+	Vw.win.Move(y, x)
 }

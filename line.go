@@ -1,12 +1,26 @@
 package main
 
+type Liner interface {
+	Screen() *View
+	ScreenLines() int
+	// Draw(y int)
+}
+
 type Line struct {
+	lno        uint
 	gb         *GapBuffer
 	hasNewLine bool
 	size       int
-	next, prev *Line
 	cursor     int
 	mark       int
+}
+
+func (l *Line) Screen() *View {
+	return Vw
+}
+
+func (l *Line) ScreenLines() int {
+	return len(l.raw()) / l.Screen().Cols
 }
 
 func NewLine(s []byte) *Line {

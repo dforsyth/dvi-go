@@ -35,6 +35,9 @@ func ExCmd() {
 }
 
 func handleCmd(cmd string) {
+	if cmd == "" {
+		return
+	}
 
 	if cmd == "w" {
 		go WriteEditBuffer(Eb.title, Eb)
@@ -42,6 +45,12 @@ func handleCmd(cmd string) {
 	}
 	if cmd == "q" {
 		// XXX make a real exit fn
+		/*
+			if Eb.dirty {
+				Ml.mode = "Unsaved changes in " + Eb.title
+				return
+			}
+		*/
 		endScreen()
 		os.Exit(0)
 	}

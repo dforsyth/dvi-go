@@ -9,9 +9,7 @@ import (
 
 func NewTempFileEditBuffer(prefix string) *EditBuffer {
 	// TODO: this.
-	b := NewEditBuffer(prefix)
-	b.AppendLine()
-	return b
+	return NewEditBuffer(prefix)
 }
 
 func NewReadFileEditBuffer(pathname string) (*EditBuffer, os.Error) {
@@ -31,11 +29,20 @@ func NewReadFileEditBuffer(pathname string) (*EditBuffer, os.Error) {
 	for {
 		l, e := r.ReadBytes(byte('\n'))
 		if e != nil {
-			return nil, e
+			// XXX gross.
+			if e != os.EOF {
+				return nil, e
+			} else {
+				b.InsertLine(NewLine(l))
+				break
+			}
 		}
 		b.InsertLine(NewLine(l))
 	}
 	b.st = st
+
+	// XXX as in d.go, this is a workaround for my lazy design.  fix asap.
+	b.anchor = b.lines.Front()
 
 	return b, nil
 }
@@ -51,8 +58,8 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
 	i := 0
 	wr := 0
-	for l := b.lines; l != nil; l = l.next {
-		n, e := f.Write(l.raw())
+	for l := b.lines.Front(); l != nil; l = l.Next() {
+		n, e := f.Write(l.Value.(*Line).raw())
 		if e != nil {
 			return nil, e
 		}
