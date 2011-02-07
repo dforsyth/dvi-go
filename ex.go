@@ -1,6 +1,7 @@
 package main
 
 import (
+	"curses"
 	"os"
 )
 
@@ -14,16 +15,16 @@ func ExCmd() {
 		k := Vw.win.Getch()
 
 		switch k {
-		case 27:
+		case ESC:
 			return
-		case 0x7f:
+		case curses.KEY_BACKSPACE:
 			if len(cmdBuff.String()) == 0 {
 				/* vim behavior is to kill ex.  we beep. */
 				Beep()
 			} else {
 				cmdBuff.DeleteSpan(cmdBuff.gs-1, 1)
 			}
-		case 0xd:
+		case curses.KEY_ENTER:
 			handleCmd(cmdBuff.String())
 			return
 		default:

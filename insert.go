@@ -1,5 +1,9 @@
 package main
 
+import (
+	"curses"
+)
+
 func AppendInsertMode() {
 }
 
@@ -24,13 +28,13 @@ func InsertMode() {
 	for {
 		k := Vw.win.Getch()
 		switch k {
-		case 27:
+		case ESC:
 			Ml.mode = oldMode
 			return
-		case 0x7f:
+		case curses.KEY_BACKSPACE:
 			// improperly handles the newline at the end of the prev line
 			Eb.BackSpace()
-		case 0xd, 0xa:
+		case curses.KEY_ENTER:
 			Eb.NewLine(byte('\n'))
 		case 0x9:
 			// Ebfer().InsertTab()

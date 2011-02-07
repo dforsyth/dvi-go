@@ -32,6 +32,7 @@ const (
 
 	TMPDIR    = "."
 	TMPPREFIX = "d." // temp file prefix
+	ESC = 27
 )
 
 // Message lines
