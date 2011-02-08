@@ -218,7 +218,7 @@ func (b *EditBuffer) MoveLinePrev() {
 }
 
 func (b *EditBuffer) LnoOffset() int {
-	// if we show line numbers, we reserve at least 3 lines.
+	// if we show line numbers, we reserve at least 3 columns.
 	if b.OptLineNo {
 		if dg := math.Log10(float64(b.lco)) + 1; dg > 2 {
 			return int(dg) + 1
@@ -232,7 +232,7 @@ func (b *EditBuffer) LnoOffset() int {
 func (b *EditBuffer) ScreenLines(ln *Line) int {
 	offset := b.LnoOffset()
 	actual := b.view.Cols - offset
-	return int(math.Ceil(float64(len(ln.raw())) / float64(actual)))
+	return int(math.Ceil(float64(ln.DisplayLength()) / float64(actual)))
 }
 
 // Maps every visible line to a position on the screen.  This is a super-slow complete refresh.
@@ -265,10 +265,10 @@ func (b *EditBuffer) Map() int {
 			// text that the user is viewing
 			actual := b.view.Cols - offset
 			start := actual * wrap
-			if start + actual - 1 < len(ln.raw()) {
+			if start + actual - 1 < ln.DisplayLength() {
 				copy(str[offset:], ln.raw()[start:start+actual - 1])
 			} else {
-				copy(str[offset:], ln.raw()[start:len(ln.raw())])
+				copy(str[offset:], ln.raw()[start:ln.DisplayLength()])
 			}
 			b.view.Lines[i] = string(str)
 			wrap++

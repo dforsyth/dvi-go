@@ -23,6 +23,13 @@ func (l *Line) ScreenLines() int {
 	return len(l.raw()) / l.Screen().Cols
 }
 
+func (l *Line) DisplayLength() int {
+	if l.hasNewLine {
+		return l.size - 1
+	}
+	return l.size
+}
+
 func NewLine(s []byte) *Line {
 	l := new(Line)
 	l.gb = NewGapBuffer(s)
