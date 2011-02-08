@@ -19,7 +19,7 @@ func InsertMode() {
 		Eb.AppendLine()
 	}
 
-	Eb.line.Value.(*Line).UpdateGap()
+	Eb.line.Value.(*EditLine).UpdateGap()
 
 	oldMode := Ml.mode
 	Ml.mode = "insert"
@@ -42,9 +42,9 @@ func InsertMode() {
 			Eb.InsertChar(byte(k))
 		}
 		Ml.char = k
-		Ml.lno = int(Eb.line.Value.(*Line).lno)
+		Ml.lno = int(Eb.line.Value.(*EditLine).lno)
 		Ml.lco = int(Eb.lco)
-		Ml.col = int(Eb.line.Value.(*Line).cursor)
+		Ml.col = int(Eb.line.Value.(*EditLine).cursor)
 		UpdateDisplay()
 	}
 }

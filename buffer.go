@@ -7,11 +7,6 @@ import (
 	"os"
 )
 
-type Screen interface {
-	Map() int // draw the screen in the views map
-	View() *View
-	SetView(*View)
-}
 
 // XXX editbuffers are editable text buffers
 
@@ -60,7 +55,7 @@ func NewEditBuffer(title string) *EditBuffer {
 }
 
 func (b *EditBuffer) InsertChar(ch byte) {
-	if l, ok := b.line.Value.(*Line); ok {
+	if l, ok := b.line.Value.(*EditLine); ok {
 		l.insertCharacter(ch)
 	}
 	b.dirty = true
@@ -72,7 +67,7 @@ func (b *EditBuffer) BackSpace() {
 		return
 	}
 
-	if l, ok := b.line.Value.(*Line); ok {
+	if l, ok := b.line.Value.(*EditLine); ok {
 		if l.cursor == 0 {
 			if l.size != 0 && b.line.Prev() != nil {
 				// combine this line and the previous
@@ -100,15 +95,15 @@ func (b *EditBuffer) MoveRight() {
 }
 
 func (b *EditBuffer) MoveCursor(d int) {
-	if l, ok := b.line.Value.(*Line); ok && l.moveCursor(l.cursor+d) < 0 {
+	if l, ok := b.line.Value.(*EditLine); ok && l.moveCursor(l.cursor+d) < 0 {
 		Beep()
 	}
 }
 
 func (b *EditBuffer) MoveDown() {
-	if l, ok := b.line.Value.(*Line); ok {
+	if l, ok := b.line.Value.(*EditLine); ok {
 		if n := b.line.Next(); n != nil {
-			ln := n.Value.(*Line)
+			ln := n.Value.(*EditLine)
 			if ln.moveCursor(l.cursor) < 0 {
 				ln.moveCursor(ln.cursorMax())
 			}
@@ -120,9 +115,9 @@ func (b *EditBuffer) MoveDown() {
 }
 
 func (b *EditBuffer) MoveUp() {
-	if l, ok := b.line.Value.(*Line); ok {
+	if l, ok := b.line.Value.(*EditLine); ok {
 		if p := b.line.Prev(); p != nil {
-			lp := p.Value.(*Line)
+			lp := p.Value.(*EditLine)
 			if lp.moveCursor(l.cursor) < 0 {
 				lp.moveCursor(lp.cursorMax())
 			}
@@ -134,7 +129,7 @@ func (b *EditBuffer) MoveUp() {
 }
 
 func (b *EditBuffer) DeleteSpan(p, l int) {
-	if ln, ok := b.line.Value.(*Line); ok {
+	if ln, ok := b.line.Value.(*EditLine); ok {
 		ln.delete(p, l)
 		b.dirty = true
 	}
@@ -146,17 +141,17 @@ func (b *EditBuffer) FirstLine() {
 
 // Insert a new line after line
 // XXX this doesn't really work as desired (can't insert at 0, for instance)
-func (b *EditBuffer) InsertLine(line *Line) {
+func (b *EditBuffer) InsertLine(line *EditLine) {
 	if b.line == nil {
 		b.line = b.lines.PushFront(line)
-		l := b.line.Value.(*Line)
+		l := b.line.Value.(*EditLine)
 		l.lno = 1
 	} else {
 		b.line = b.lines.InsertAfter(line, b.line)
-		l := b.line.Value.(*Line)
-		l.lno = b.line.Prev().Value.(*Line).lno + 1
+		l := b.line.Value.(*EditLine)
+		l.lno = b.line.Prev().Value.(*EditLine).lno + 1
 		for p := b.line.Next(); p != nil; p = p.Next() {
-			p.Value.(*Line).lno++
+			p.Value.(*EditLine).lno++
 		}
 	}
 	b.lco++
@@ -169,7 +164,7 @@ func (b *EditBuffer) AppendLine() {
 
 
 func (b *EditBuffer) NewLine(nlchar byte) {
-	if l, ok := b.line.Value.(*Line); ok {
+	if l, ok := b.line.Value.(*EditLine); ok {
 		newbuf := l.raw()[l.cursor:]
 		l.insertCharacter(nlchar)
 		l.ClearAfterCursor()
@@ -229,7 +224,7 @@ func (b *EditBuffer) LnoOffset() int {
 	return 0
 }
 
-func (b *EditBuffer) ScreenLines(ln *Line) int {
+func (b *EditBuffer) ScreenLines(ln *EditLine) int {
 	offset := b.LnoOffset()
 	actual := b.view.Cols - offset
 	return int(math.Ceil(float64(ln.DisplayLength()) / float64(actual)))
@@ -240,7 +235,7 @@ func (b *EditBuffer) Map() int {
 	offset := b.LnoOffset()
 	i := 0
 	for l := b.anchor; l != nil && i < b.view.Rows; l = l.Next() {
-		ln := l.Value.(*Line)
+		ln := l.Value.(*EditLine)
 		cnt := b.ScreenLines(ln)
 		if cnt == 0 {
 			cnt = 1
@@ -281,7 +276,7 @@ func (b *EditBuffer) Map() int {
 }
 
 func (b *EditBuffer) CursorCoord() (int, int) {
-	l := b.line.Value.(*Line)
+	l := b.line.Value.(*EditLine)
 	return int(l.cursor) + b.LnoOffset(), int(l.lno)
 }
 

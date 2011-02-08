@@ -4,6 +4,12 @@ import (
 	"curses"
 )
 
+type Screen interface {
+	Map() int // draw the screen in the views map
+	View() *View
+	SetView(*View)
+}
+
 // A view displays a title bar (always), a text buffer (when available), and a
 // message line (always).
 type View struct {

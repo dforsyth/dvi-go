@@ -15,7 +15,7 @@ var NCmdMap map[int]func() = map[int]func(){
 func NormalMode() {
 
 	if Eb != nil && Eb.line != nil {
-		Eb.line.Value.(*Line).UpdateCursor()
+		Eb.line.Value.(*EditLine).UpdateCursor()
 	}
 
 	UpdateDisplay()
@@ -24,9 +24,9 @@ func NormalMode() {
 
 		if fn, ok := NCmdMap[k]; ok {
 			fn()
-			Ml.lno = int(Eb.line.Value.(*Line).lno)
+			Ml.lno = int(Eb.line.Value.(*EditLine).lno)
 			Ml.lco = int(Eb.lco)
-			Ml.col = int(Eb.line.Value.(*Line).cursor)
+			Ml.col = int(Eb.line.Value.(*EditLine).cursor)
 			UpdateDisplay()
 		}
 	}

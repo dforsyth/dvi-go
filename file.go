@@ -59,7 +59,7 @@ func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 	i := 0
 	wr := 0
 	for l := b.lines.Front(); l != nil; l = l.Next() {
-		n, e := f.Write(l.Value.(*Line).raw())
+		n, e := f.Write(l.Value.(*EditLine).raw())
 		if e != nil {
 			return nil, e
 		}
