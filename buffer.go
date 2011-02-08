@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+const (
+	NilLinePanicString = "current EditBuffer line is nil"
+)
+
 
 // XXX editbuffers are editable text buffers that happen to also be a screen.
 
@@ -103,31 +107,55 @@ func (b *EditBuffer) MoveCursor(d int) {
 	}
 }
 
+func (b *EditBuffer) ScreenRange(a, l *list.Element) int {
+	// aln, bln := a.Value.(*EditLine), l.Value.(*EditLine)
+	cnt := 0
+	for c := a; c != nil && c != l.Next(); c = c.Next() {
+		// XXX hacks on hacks
+		cnt += b.ScreenLines(c.Value.(*EditLine))
+	}
+	return cnt
+}
+
 func (b *EditBuffer) MoveDown() {
-	if l, ok := b.line.Value.(*EditLine); ok {
-		if n := b.line.Next(); n != nil {
-			ln := n.Value.(*EditLine)
-			if ln.moveCursor(l.cursor) < 0 {
-				ln.moveCursor(ln.cursorMax())
-			}
-			b.line = n
-		} else {
-			Beep()
+	if b.line == nil {
+		panic(NilLinePanicString)
+	}
+
+	if n := b.line.Next(); n != nil {
+		ln := n.Value.(*EditLine)
+		if ln.moveCursor(b.line.Value.(*EditLine).cursor) < 0 {
+			ln.moveCursor(ln.cursorMax())
 		}
+		b.line = n
+		// We are now at line n.  We need to adjust anchor properly so that we can
+		// remap the buffer.
+		for b.ScreenRange(b.anchor, b.line) > b.view.Rows - 2 && b.anchor != b.line {
+			b.anchor = b.anchor.Next()
+		}
+	} else {
+		Beep()
 	}
 }
 
 func (b *EditBuffer) MoveUp() {
-	if l, ok := b.line.Value.(*EditLine); ok {
-		if p := b.line.Prev(); p != nil {
-			lp := p.Value.(*EditLine)
-			if lp.moveCursor(l.cursor) < 0 {
-				lp.moveCursor(lp.cursorMax())
-			}
-			b.line = p
-		} else {
-			Beep()
+	if b.line == nil {
+		panic(NilLinePanicString)
+	}
+
+	if p := b.line.Prev(); p != nil {
+		lp := p.Value.(*EditLine)
+		if lp.moveCursor(b.line.Value.(*EditLine).cursor) < 0 {
+			lp.moveCursor(lp.cursorMax())
 		}
+		b.line = p
+		// We are now at line p.  We need to adjust the anchor in case we've moved
+		// above it.  If we have, there is a need for an entire screen remap :(
+		for b.line.Value.(*EditLine).lno < b.anchor.Value.(*EditLine).lno && b.anchor != b.line {
+			b.anchor = b.anchor.Prev()
+		}
+	} else {
+		Beep()
 	}
 }
 
@@ -149,6 +177,7 @@ func (b *EditBuffer) InsertLine(line *EditLine) {
 		b.line = b.lines.PushFront(line)
 		l := b.line.Value.(*EditLine)
 		l.lno = 1
+		b.anchor = b.line
 	} else {
 		b.line = b.lines.InsertAfter(line, b.line)
 		l := b.line.Value.(*EditLine)
@@ -230,7 +259,12 @@ func (b *EditBuffer) LnoOffset() int {
 func (b *EditBuffer) ScreenLines(ln *EditLine) int {
 	offset := b.LnoOffset()
 	actual := b.view.Cols - offset
-	return int(math.Ceil(float64(ln.DisplayLength()) / float64(actual)))
+	// XXX this is an example of why displaylength needs to be fixed.
+	sz := ln.DisplayLength()
+	if sz == 0 && ln.hasNewLine {
+		sz = 1
+	}
+	return int(math.Ceil(float64(sz) / float64(actual)))
 }
 
 // Maps every visible line to a position on the screen.  This is a super-slow complete refresh.

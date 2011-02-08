@@ -21,10 +21,10 @@ type View struct {
 	Lines      []string
 }
 
-func NewView() *View {
+func NewView(window *curses.Window) *View {
 	v := new(View)
 
-	v.win = curses.Stdwin
+	v.win = window
 	v.Rows, v.Cols = *curses.Rows, *curses.Cols
 	v.Lines = make([]string, v.Rows)
 	return v

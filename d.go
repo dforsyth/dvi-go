@@ -29,7 +29,6 @@ const (
 	// strings
 	NaL      string = "~" // char that shows that a line does not exist
 	EXPROMPT string = ":"
-
 	TMPDIR    = "."
 	TMPPREFIX = "d." // temp file prefix
 	ESC       = 27
@@ -93,7 +92,7 @@ func Init(args []string) {
 	Ml.col = 0
 
 	// Setup view
-	Vw = NewView()
+	Vw = NewView(curses.Stdwin)
 
 	if len(args) == 0 {
 		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
