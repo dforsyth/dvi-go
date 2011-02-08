@@ -6,6 +6,8 @@ import (
 
 type Screen interface {
 	Map() int // draw the screen in the views map
+	InsertLine() int
+	RemoveLine() int
 	View() *View
 	SetView(*View)
 }
@@ -79,5 +81,5 @@ func UpdateModeLine(m Message) {
 
 func DrawCursor() {
 	x, y := Eb.CursorCoord()
-	Vw.win.Move(y, x)
+	Vw.win.Move(y+1, x)
 }

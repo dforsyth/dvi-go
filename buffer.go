@@ -8,7 +8,7 @@ import (
 )
 
 
-// XXX editbuffers are editable text buffers
+// XXX editbuffers are editable text buffers that happen to also be a screen.
 
 // todo: lockable
 type EditBuffer struct {
@@ -25,15 +25,17 @@ type EditBuffer struct {
 
 	anchor *list.Element // first line to draw
 	view   *View         // view this buffer draws to
+	curs_x, curs_y int // cursor position
 
 	hist *list.List
 
 	prev, next *EditBuffer // roll ourselves because type assertions are pobyteless in this case.
 
-	OptLineNo bool
+	OptLineNo bool // draw line numbers
+	OptHLLine bool // highlight the current line
 }
 
-func NewEditBuffer(title string) *EditBuffer {
+func NewEditBuffer(title string, optLineNo, optHLLine bool, view *View) *EditBuffer {
 
 	b := new(EditBuffer)
 
@@ -48,8 +50,9 @@ func NewEditBuffer(title string) *EditBuffer {
 	b.prev = nil
 	b.dirty = false
 
-	b.view = Vw
-	b.OptLineNo = true
+	b.view = view
+	b.OptLineNo = optLineNo
+	b.OptHLLine = optHLLine
 
 	return b
 }
@@ -260,10 +263,15 @@ func (b *EditBuffer) Map() int {
 			// text that the user is viewing
 			actual := b.view.Cols - offset
 			start := actual * wrap
-			if start + actual - 1 < ln.DisplayLength() {
-				copy(str[offset:], ln.raw()[start:start+actual - 1])
-			} else {
-				copy(str[offset:], ln.raw()[start:ln.DisplayLength()])
+			end := start + actual - 1
+			if end >= ln.DisplayLength() {
+				end = ln.DisplayLength()
+			}
+			copy(str[offset:], ln.raw()[start:end])
+
+			if b.line == l && (ln.cursor >= start || ln.cursor <= end) {
+				b.curs_y = i
+				b.curs_x = b.LnoOffset() + (ln.cursor - start)
 			}
 			b.view.Lines[i] = string(str)
 			wrap++
@@ -276,8 +284,7 @@ func (b *EditBuffer) Map() int {
 }
 
 func (b *EditBuffer) CursorCoord() (int, int) {
-	l := b.line.Value.(*EditLine)
-	return int(l.cursor) + b.LnoOffset(), int(l.lno)
+	return b.curs_x, b.curs_y
 }
 
 func (b *EditBuffer) Lines() *list.List {
