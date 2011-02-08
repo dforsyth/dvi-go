@@ -71,8 +71,8 @@ func (b *EditBuffer) BackSpace() {
 	}
 
 	if l, ok := b.line.Value.(*EditLine); ok {
-		if l.cursor == 0 {
-			if l.size != 0 && b.line.Prev() != nil {
+		if (l.cursor == 0 && !l.hasNewLine) || (l.cursor == 1 && l.hasNewLine) {
+			if l.DisplayLength() != 0 && b.line.Prev() != nil {
 				// combine this line and the previous
 			} else {
 
@@ -244,6 +244,7 @@ func (b *EditBuffer) Map() int {
 			cnt = 1
 		}
 		wrap := 0
+		raw := ln.raw()
 		for lmt := i + cnt; i < lmt; i++ {
 			str := make([]byte, b.view.Cols)
 			// XXX this is the first part of the line, the optional
@@ -267,7 +268,7 @@ func (b *EditBuffer) Map() int {
 			if end >= ln.DisplayLength() {
 				end = ln.DisplayLength()
 			}
-			copy(str[offset:], ln.raw()[start:end])
+			copy(str[offset:], raw[start:end])
 
 			if b.line == l && (ln.cursor >= start || ln.cursor <= end) {
 				b.curs_y = i
