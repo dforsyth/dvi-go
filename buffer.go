@@ -9,8 +9,12 @@ import (
 
 const (
 	NilLinePanicString = "current EditBuffer line is nil"
+	CacheMax = 5
 )
 
+// XXX once a better drawing interface is figured out, there should be an lru
+// cache of computed lines.  the way things are mapped now (rangeless) doesn't
+// really let me cache the way i want to.
 
 // XXX editbuffers are editable text buffers that happen to also be a screen.
 
@@ -27,9 +31,9 @@ type EditBuffer struct {
 	lines *list.List    // list of lines
 	line  *list.Element // current line
 
-	anchor *list.Element // first line to draw
-	view   *View         // view this buffer draws to
-	curs_x, curs_y int // cursor position
+	anchor         *list.Element // first line to draw
+	view           *View         // view this buffer draws to
+	curs_x, curs_y int           // cursor position
 
 	hist *list.List
 
@@ -130,7 +134,7 @@ func (b *EditBuffer) MoveDown() {
 		b.line = n
 		// We are now at line n.  We need to adjust anchor properly so that we can
 		// remap the buffer.
-		for b.ScreenRange(b.anchor, b.line) > b.view.Rows - 2 && b.anchor != b.line {
+		for b.ScreenRange(b.anchor, b.line) > b.view.Rows-2 && b.anchor != b.line {
 			b.anchor = b.anchor.Next()
 		}
 	} else {

@@ -27,8 +27,8 @@ import (
 
 const (
 	// strings
-	NaL      string = "~" // char that shows that a line does not exist
-	EXPROMPT string = ":"
+	NaL       string = "~" // char that shows that a line does not exist
+	EXPROMPT  string = ":"
 	TMPDIR    = "."
 	TMPPREFIX = "d." // temp file prefix
 	ESC       = 27
