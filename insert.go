@@ -12,7 +12,7 @@ func InsertMode() {
 
 	// we shouldn't hit these anymore, but if we do we should be ready to deal with them...
 	if Eb == nil {
-		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
+		InsertBuffer(NewTempFileFile(TMPPREFIX))
 	}
 
 	if Eb.line == nil {
@@ -31,7 +31,7 @@ func InsertMode() {
 		case ESC:
 			Ml.mode = oldMode
 			return
-		case curses.KEY_BACKSPACE:
+		case 127, curses.KEY_BACKSPACE:
 			// improperly handles the newline at the end of the prev line
 			Eb.BackSpace()
 		case 0xd, 0xa:

@@ -1,87 +1,335 @@
 package main
 
 import (
-	"bufio"
+	"container/list"
 	"fmt"
-	"io/ioutil"
+	"math"
 	"os"
 )
 
-func NewTempFileEditBuffer(prefix string) *EditBuffer {
-	// TODO: this.
-	return NewEditBuffer(prefix, true, false, Vw)
+const (
+	NilLinePanicString = "current File line is nil"
+	CacheMax = 5
+)
+
+// XXX once a better drawing interface is figured out, there should be an lru
+// cache of computed lines.  the way things are mapped now (rangeless) doesn't
+// really let me cache the way i want to.
+
+// XXX editbuffers are editable text buffers that happen to also be a screen.
+
+// todo: lockable
+type File struct {
+	st                             *os.FileInfo // file info
+	fromDisk, fromArchive, fromNet bool
+
+	lco   uint   // line count
+	title string // buffer title
+	dirty bool   // dirty
+
+	// XXX text
+	lines *list.List    // list of lines
+	line  *list.Element // current line
+
+	anchor         *list.Element // first line to draw
+	view           *View         // view this buffer draws to
+	curs_x, curs_y int           // cursor position
+
+	hist *list.List
+
+	prev, next *File // roll ourselves because type assertions are pobyteless in this case.
+
+	OptLineNo bool // draw line numbers
+	OptHLLine bool // highlight the current line
 }
 
-func NewReadFileEditBuffer(pathname string) (*EditBuffer, os.Error) {
-	st, e := os.Stat(pathname)
-	if e != nil {
-		return nil, e
+func NewFile(title string, optLineNo, optHLLine bool, view *View) *File {
+
+	b := new(File)
+
+	// XXX it would be better to init this to nil and add the line from another
+	// place so that the file loader can use this
+	b.lines = list.New()
+	// b.InsertLine(NewLine([]byte("")))
+	b.anchor = b.line
+	b.st = nil
+	b.title = title
+	b.next = nil
+	b.prev = nil
+	b.dirty = false
+
+	b.view = view
+	b.OptLineNo = optLineNo
+	b.OptHLLine = optHLLine
+
+	return b
+}
+
+func (b *File) InsertChar(ch byte) {
+	if l, ok := b.line.Value.(*EditLine); ok {
+		l.insertCharacter(ch)
+	}
+	b.dirty = true
+}
+
+func (b *File) BackSpace() {
+	if b.line == nil {
+		Beep()
+		return
 	}
 
-	f, e := os.Open(pathname, os.O_RDONLY, 0444)
-	if e != nil {
-		return nil, e
-	}
-	defer f.Close()
-
-	b := NewEditBuffer(st.Name, true, false, Vw)
-	r := bufio.NewReader(f)
-	for {
-		l, e := r.ReadBytes(byte('\n'))
-		if e != nil {
-			// XXX gross.
-			if e != os.EOF {
-				return nil, e
+	if l, ok := b.line.Value.(*EditLine); ok {
+		if (l.cursor == 0 && !l.hasNewLine) || (l.cursor == 1 && l.hasNewLine) {
+			if l.DisplayLength() != 0 && b.line.Prev() != nil {
+				// combine this line and the previous
 			} else {
-				b.InsertLine(NewLine(l))
-				break
+
+				if b.line.Prev() != nil {
+					b.DeleteCurrLine()
+					b.lco--
+				} else {
+					Beep()
+				}
 			}
+		} else {
+			l.backspace()
 		}
-		b.InsertLine(NewLine(l))
 	}
-	b.st = st
-
-	// XXX as in d.go, this is a workaround for my lazy design.  fix asap.
-	b.anchor = b.lines.Front()
-
-	return b, nil
 }
 
-// Do a naive write of the entire buffer to a temp file, then rename into place.
-func WriteEditBuffer(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
+func (b *File) MoveLeft() {
+	b.MoveCursor(-1)
+}
 
-	f, e := ioutil.TempFile(TMPDIR, TMPPREFIX)
-	if e != nil {
-		return nil, e
+func (b *File) MoveRight() {
+	b.MoveCursor(1)
+}
+
+func (b *File) MoveCursor(d int) {
+	if l, ok := b.line.Value.(*EditLine); ok && l.moveCursor(l.cursor+d) < 0 {
+		Beep()
 	}
-	defer f.Close()
+}
 
+func (b *File) ScreenRange(a, l *list.Element) int {
+	// aln, bln := a.Value.(*EditLine), l.Value.(*EditLine)
+	cnt := 0
+	for c := a; c != nil && c != l.Next(); c = c.Next() {
+		// XXX hacks on hacks
+		cnt += b.ScreenLines(c.Value.(*EditLine))
+	}
+	return cnt
+}
+
+func (b *File) MoveDown() {
+	if b.line == nil {
+		panic(NilLinePanicString)
+	}
+
+	if n := b.line.Next(); n != nil {
+		ln := n.Value.(*EditLine)
+		if ln.moveCursor(b.line.Value.(*EditLine).cursor) < 0 {
+			ln.moveCursor(ln.cursorMax())
+		}
+		b.line = n
+		// We are now at line n.  We need to adjust anchor properly so that we can
+		// remap the buffer.
+		for b.ScreenRange(b.anchor, b.line) > b.view.Rows-2 && b.anchor != b.line {
+			b.anchor = b.anchor.Next()
+		}
+	} else {
+		Beep()
+	}
+}
+
+func (b *File) MoveUp() {
+	if b.line == nil {
+		panic(NilLinePanicString)
+	}
+
+	if p := b.line.Prev(); p != nil {
+		lp := p.Value.(*EditLine)
+		if lp.moveCursor(b.line.Value.(*EditLine).cursor) < 0 {
+			lp.moveCursor(lp.cursorMax())
+		}
+		b.line = p
+		// We are now at line p.  We need to adjust the anchor in case we've moved
+		// above it.  If we have, there is a need for an entire screen remap :(
+		for b.line.Value.(*EditLine).lno < b.anchor.Value.(*EditLine).lno && b.anchor != b.line {
+			b.anchor = b.anchor.Prev()
+		}
+	} else {
+		Beep()
+	}
+}
+
+func (b *File) DeleteSpan(p, l int) {
+	if ln, ok := b.line.Value.(*EditLine); ok {
+		ln.delete(p, l)
+		b.dirty = true
+	}
+}
+
+func (b *File) FirstLine() {
+	b.line = b.lines.Front()
+}
+
+// Insert a new line after line
+// XXX this doesn't really work as desired (can't insert at 0, for instance)
+func (b *File) InsertLine(line *EditLine) {
+	if b.line == nil {
+		b.line = b.lines.PushFront(line)
+		l := b.line.Value.(*EditLine)
+		l.lno = 1
+		b.anchor = b.line
+	} else {
+		b.line = b.lines.InsertAfter(line, b.line)
+		l := b.line.Value.(*EditLine)
+		l.lno = b.line.Prev().Value.(*EditLine).lno + 1
+		for p := b.line.Next(); p != nil; p = p.Next() {
+			p.Value.(*EditLine).lno++
+		}
+	}
+	b.lco++
+	b.dirty = true
+}
+
+func (b *File) AppendLine() {
+	b.InsertLine(NewLine([]byte("")))
+}
+
+
+func (b *File) NewLine(nlchar byte) {
+	if l, ok := b.line.Value.(*EditLine); ok {
+		newbuf := l.raw()[l.cursor:]
+		l.insertCharacter(nlchar)
+		l.ClearAfterCursor()
+		l.size -= len(newbuf)
+		b.InsertLine(NewLine(newbuf))
+	}
+}
+
+func (b *File) DeleteCurrLine() {
+	if b.line.Prev() != nil {
+		p := b.line.Prev()
+		b.lines.Remove(b.line)
+		b.line = p
+	} else if b.line.Next() != nil {
+		n := b.line.Next()
+		b.lines.Remove(b.line)
+		b.line = n
+	} else {
+		return
+	}
+	b.dirty = true
+}
+
+// Move to line p
+func (b *File) MoveLine(p int) {
 	i := 0
-	wr := 0
 	for l := b.lines.Front(); l != nil; l = l.Next() {
-		n, e := f.Write(l.Value.(*EditLine).raw())
-		if e != nil {
-			return nil, e
+		if i == p {
+			b.line = l
+			return
 		}
 		i++
-		wr += n
 	}
+}
 
-	Ml.mode = fmt.Sprintf("\"%s\", %d bytes", pathname, wr)
-
-	st, e := f.Stat()
-	if e != nil {
-		return nil, e
+func (b *File) MoveLineNext() {
+	if n := b.line.Next(); n != nil {
+		b.line = n
 	}
+}
 
-	if b.st != nil {
-		pathname = b.st.Name
+func (b *File) MoveLinePrev() {
+	if p := b.line.Prev(); p != nil {
+		b.line = p
 	}
-	e = os.Rename(st.Name, pathname)
-	if e != nil {
-		return nil, e
-	}
+}
 
-	b.st = st
-	return st, nil
+func (b *File) LnoOffset() int {
+	// if we show line numbers, we reserve at least 3 columns.
+	if b.OptLineNo {
+		if dg := math.Log10(float64(b.lco)) + 1; dg > 2 {
+			return int(dg) + 1
+		} else {
+			return 3
+		}
+	}
+	return 0
+}
+
+func (b *File) ScreenLines(ln *EditLine) int {
+	offset := b.LnoOffset()
+	actual := b.view.Cols - offset
+	// XXX this is an example of why displaylength needs to be fixed.
+	sz := ln.DisplayLength()
+	if sz == 0 && ln.hasNewLine {
+		sz = 1
+	}
+	return int(math.Ceil(float64(sz) / float64(actual)))
+}
+
+// Maps every visible line to a position on the screen.  This is a super-slow complete refresh.
+func (b *File) Map() int {
+	offset := b.LnoOffset()
+	i := 0
+	for l := b.anchor; l != nil && i < b.view.Rows; l = l.Next() {
+		ln := l.Value.(*EditLine)
+		cnt := b.ScreenLines(ln)
+		if cnt == 0 {
+			cnt = 1
+		}
+		wrap := 0
+		raw := ln.raw()
+		for lmt := i + cnt; i < lmt; i++ {
+			str := make([]byte, b.view.Cols)
+			// XXX this is the first part of the line, the optional
+			// line number.  if this isn't the first screen line of
+			// a line (for a wrapped line), then just draw empty
+			// space if line numbers are on
+			if wrap == 0 {
+				lno := []byte(fmt.Sprintf("%*d ", offset-1, ln.lno))
+				copy(str[0:offset], lno)
+			} else {
+				for j := 0; j < offset; j++ {
+					str[j] = ' '
+				}
+			}
+
+			// XXX the second part of the line, which shows actual
+			// text that the user is viewing
+			actual := b.view.Cols - offset
+			start := actual * wrap
+			end := start + actual - 1
+			if end >= ln.DisplayLength() {
+				end = ln.DisplayLength()
+			}
+			copy(str[offset:], raw[start:end])
+
+			if b.line == l && (ln.cursor >= start || ln.cursor <= end) {
+				b.curs_y = i
+				b.curs_x = b.LnoOffset() + (ln.cursor - start)
+			}
+			b.view.Lines[i] = string(str)
+			wrap++
+		}
+	}
+	for ; i < b.view.Rows-1; i++ {
+		b.view.Lines[i] = NaL
+	}
+	return 0
+}
+
+func (b *File) CursorCoord() (int, int) {
+	return b.curs_x, b.curs_y
+}
+
+func (b *File) Lines() *list.List {
+	return b.lines
+}
+
+func (b *File) Title() string {
+	return b.title
 }

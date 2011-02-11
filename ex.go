@@ -41,7 +41,7 @@ func handleCmd(cmd string) {
 	}
 
 	if cmd == "w" {
-		go WriteEditBuffer(Eb.title, Eb)
+		go WriteFile(Eb.title, Eb)
 		return
 	}
 	if cmd == "q" {

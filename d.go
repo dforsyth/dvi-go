@@ -62,7 +62,7 @@ func (e *Exline) String() string {
 
 var OptLineNumbers = true
 
-var Eb *EditBuffer
+var Eb *File
 var Ml *Modeline
 var Vw *View
 
@@ -95,7 +95,7 @@ func Init(args []string) {
 	Vw = NewView(curses.Stdwin)
 
 	if len(args) == 0 {
-		InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
+		InsertBuffer(NewTempFileFile(TMPPREFIX))
 		// XXX this is a workaround for my lazy design.  get rid
 		// of this asap.
 		Eb.InsertLine(NewLine([]byte("")))
@@ -103,11 +103,11 @@ func Init(args []string) {
 		Eb.FirstLine()
 	} else {
 		for _, path := range args {
-			if b, e := NewReadFileEditBuffer(path); e == nil {
+			if b, e := NewReadFileFile(path); e == nil {
 				InsertBuffer(b)
 				Eb.FirstLine()
 			} else {
-				InsertBuffer(NewTempFileEditBuffer(TMPPREFIX))
+				InsertBuffer(NewTempFileFile(TMPPREFIX))
 				Eb.FirstLine()
 				Ml.mode = "Error opening " + path + ": " + e.String()
 			}
@@ -115,7 +115,7 @@ func Init(args []string) {
 	}
 }
 
-func InsertBuffer(b *EditBuffer) {
+func InsertBuffer(b *File) {
 	if Eb == nil {
 		Eb = b
 	} else {
@@ -123,7 +123,7 @@ func InsertBuffer(b *EditBuffer) {
 	}
 }
 
-func NextBuffer() *EditBuffer {
+func NextBuffer() *File {
 	if Eb == nil {
 		return nil
 	}

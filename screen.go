@@ -30,11 +30,6 @@ func NewView(window *curses.Window) *View {
 	return v
 }
 
-type ScrLine struct {
-	str string
-	// XXX we can put color bolding information in here later...
-}
-
 func Beep() {
 	curses.Beep()
 }

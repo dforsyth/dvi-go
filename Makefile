@@ -4,11 +4,11 @@ include $(GOROOT)/src/Make.inc
 
 TARG=   d
 GOFILES=    d.go \
-            buffer.go \
+            file.go \
             gapbuffer.go \
             line.go \
-            file.go \
-			view.go \
+            disk.go \
+			screen.go \
 		    normal.go \
             insert.go \
 			ex.go
