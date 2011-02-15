@@ -4,9 +4,9 @@ include $(GOROOT)/src/Make.inc
 
 TARG=   d
 GOFILES=    d.go \
-            file.go \
             gapbuffer.go \
-            line.go \
+            editline.go \
+            editbuffer.go \
             disk.go \
 			screen.go \
 		    normal.go \

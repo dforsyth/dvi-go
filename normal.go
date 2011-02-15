@@ -14,36 +14,39 @@ var NCmdMap map[int]func() = map[int]func(){
 // normal mode
 func NormalMode() {
 
-	if Eb != nil && Eb.line != nil {
-		Eb.line.Value.(*EditLine).UpdateCursor()
+	if curr != nil && curr.line != nil {
+		curr.line.Value.(*EditLine).UpdateCursor()
 	}
 
-	UpdateDisplay()
+	screen.SetMessage(ml) // switch to modeline
+	screen.RedrawAfter(0)
+	screen.RedrawCursor(curr.CursorCoord())
 	for {
-		k := Vw.win.Getch()
+		k := screen.Window.Getch()
 
 		if fn, ok := NCmdMap[k]; ok {
 			fn()
-			Ml.lno = int(Eb.line.Value.(*EditLine).lno)
-			Ml.lco = int(Eb.lco)
-			Ml.col = int(Eb.line.Value.(*EditLine).cursor)
-			UpdateDisplay()
+			ml.lno = int(curr.line.Value.(*EditLine).lno)
+			ml.col = int(curr.line.Value.(*EditLine).cursor)
+			screen.RedrawAfter(0)
+			screen.RedrawMessage()
 		}
+		screen.RedrawCursor(curr.CursorCoord())
 	}
 }
 
 func NCursorLeft() {
-	Eb.MoveLeft()
+	curr.MoveLeft()
 }
 
 func NCursorDown() {
-	Eb.MoveDown()
+	curr.MoveDown()
 }
 
 func NCursorUp() {
-	Eb.MoveUp()
+	curr.MoveUp()
 }
 
 func NCursorRight() {
-	Eb.MoveRight()
+	curr.MoveRight()
 }

@@ -1,11 +1,5 @@
 package main
 
-type Line interface {
-	Screen() *View
-	ScreenLines() int
-	// Draw(y int)
-}
-
 type EditLine struct {
 	lno        uint
 	gb         *GapBuffer
@@ -15,8 +9,8 @@ type EditLine struct {
 	mark       int
 }
 
-func (l *EditLine) Screen() *View {
-	return Vw
+func (l *EditLine) Screen() *Screen {
+	return screen
 }
 
 func (l *EditLine) ScreenLines() int {

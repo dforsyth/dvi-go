@@ -6,13 +6,17 @@ import (
 )
 
 func ExCmd() {
-	ex := new(Exline)
-	ex.prompt = EXPROMPT
-	ex.command = ""
+	if ex == nil {
+		ex := new(Exline)
+		ex.prompt = EXPROMPT
+	}
+
+	screen.SetMessage(ex) // switch to ex
 	cmdBuff := NewGapBuffer([]byte(""))
-	UpdateModeLine(ex)
+	ex.command = cmdBuff.String()
+	screen.RedrawMessage()
 	for {
-		k := Vw.win.Getch()
+		k := screen.Window.Getch()
 
 		switch k {
 		case ESC:
@@ -31,7 +35,7 @@ func ExCmd() {
 			cmdBuff.InsertChar(byte(k))
 		}
 		ex.command = cmdBuff.String()
-		UpdateModeLine(ex)
+		screen.RedrawMessage()
 	}
 }
 
@@ -41,14 +45,14 @@ func handleCmd(cmd string) {
 	}
 
 	if cmd == "w" {
-		go WriteFile(Eb.title, Eb)
+		go WriteFile(curr.name, curr)
 		return
 	}
 	if cmd == "q" {
 		// XXX make a real exit fn
 		/*
-			if Eb.dirty {
-				Ml.mode = "Unsaved changes in " + Eb.title
+			if currfile.dirty {
+				Ml.mode = "Unsaved changes in " + currfile.title
 				return
 			}
 		*/
@@ -56,5 +60,6 @@ func handleCmd(cmd string) {
 		os.Exit(0)
 	}
 
-	Ml.mode = "Did not recognize: " + cmd
+	ml.mode = "Did not recognize: " + cmd
+	screen.SetMessage(ml)
 }

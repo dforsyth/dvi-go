@@ -2,17 +2,17 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"os"
 )
 
-func NewTempFileFile(prefix string) *File {
+func NewTempEditBuffer(prefix string) *EditBuffer {
 	// TODO: this.
-	return NewFile(prefix, true, false, Vw)
+	return NewEditBuffer(prefix, screen)
 }
 
-func NewReadFileFile(pathname string) (*File, os.Error) {
+func NewReadEditBuffer(pathname string) (*EditBuffer, os.Error) {
 	st, e := os.Stat(pathname)
 	if e != nil {
 		return nil, e
@@ -24,7 +24,7 @@ func NewReadFileFile(pathname string) (*File, os.Error) {
 	}
 	defer f.Close()
 
-	b := NewFile(st.Name, true, false, Vw)
+	b := NewEditBuffer(st.Name, screen)
 	r := bufio.NewReader(f)
 	for {
 		l, e := r.ReadBytes(byte('\n'))
@@ -39,7 +39,7 @@ func NewReadFileFile(pathname string) (*File, os.Error) {
 		}
 		b.InsertLine(NewLine(l))
 	}
-	b.st = st
+	b.fi = st
 
 	// XXX as in d.go, this is a workaround for my lazy design.  fix asap.
 	b.anchor = b.lines.Front()
@@ -48,7 +48,7 @@ func NewReadFileFile(pathname string) (*File, os.Error) {
 }
 
 // Do a naive write of the entire buffer to a temp file, then rename into place.
-func WriteFile(pathname string, b *File) (*os.FileInfo, os.Error) {
+func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
 	f, e := ioutil.TempFile(TMPDIR, TMPPREFIX)
 	if e != nil {
@@ -67,21 +67,21 @@ func WriteFile(pathname string, b *File) (*os.FileInfo, os.Error) {
 		wr += n
 	}
 
-	Ml.mode = fmt.Sprintf("\"%s\", %d bytes", pathname, wr)
+	// Ml.mode = fmt.Sprintf("\"%s\", %d bytes", pathname, wr)
 
 	st, e := f.Stat()
 	if e != nil {
 		return nil, e
 	}
 
-	if b.st != nil {
-		pathname = b.st.Name
+	if b.fi != nil {
+		pathname = b.fi.Name
 	}
 	e = os.Rename(st.Name, pathname)
 	if e != nil {
 		return nil, e
 	}
 
-	b.st = st
+	b.fi = st
 	return st, nil
 }

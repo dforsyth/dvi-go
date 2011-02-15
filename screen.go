@@ -4,29 +4,27 @@ import (
 	"curses"
 )
 
-type Screen interface {
-	Map() int // draw the screen in the views map
-	InsertLine() int
-	RemoveLine() int
-	View() *View
-	SetView(*View)
+// Message lines
+type Message interface {
+	String() string
 }
 
 // A view displays a title bar (always), a text buffer (when available), and a
 // message line (always).
-type View struct {
-	win        *curses.Window
+type Screen struct {
+	Window     *curses.Window
 	Cols, Rows int
 	StartRow   uint
 	Lines      []string
+	msg        Message
 }
 
-func NewView(window *curses.Window) *View {
-	v := new(View)
+func NewScreen(window *curses.Window) *Screen {
+	v := new(Screen)
 
-	v.win = window
+	v.Window = window
 	v.Rows, v.Cols = *curses.Rows, *curses.Cols
-	v.Lines = make([]string, v.Rows)
+	v.Lines = make([]string, v.Rows-1)
 	return v
 }
 
@@ -34,47 +32,43 @@ func Beep() {
 	curses.Beep()
 }
 
-func UpdateDisplay() {
-	Vw.win.Clear()
-
-	UpdateTitleLine()
-
-	Eb.Map()
-	xmax := Vw.Cols
-	for i, row := range Vw.Lines {
-		Vw.win.Move(i+1, 0)
-		Vw.win.Clrtoeol()
-		Vw.win.Mvwaddnstr(i+1, 0, row, xmax)
+func (scr *Screen) RedrawRange(s, e int) {
+	for i := s; i < e; i++ {
+		scr.Window.Move(i, 0)
+		scr.Window.Clrtoeol()
+		scr.Window.Mvwaddnstr(i, 0, scr.Lines[i], scr.Cols)
 	}
-
-	UpdateModeLine(Ml)
-
-	if Eb.line != nil {
+	if curr.line != nil {
 		DrawCursor()
 	}
 }
 
-
-func UpdateLine(rno int, ln *Line) {
+func (scr *Screen) RedrawAfter(r int) {
+	scr.RedrawRange(r, scr.Rows-1)
 }
 
-func UpdateLineAndAfter(rno, ln *Line) {
+func (scr *Screen) RedrawMessage() {
+	scr.Window.Move(scr.Rows-1, 0)
+	scr.Window.Clrtoeol()
+	scr.Window.Mvwaddnstr(scr.Rows-1, 0, scr.msg.String(), scr.Cols)
 }
 
-func UpdateTitleLine() {
-	Vw.win.Move(0, 0)
-	Vw.win.Clrtoeol()
-	Vw.win.Mvwaddnstr(0, 0, Eb.Title(), Vw.Cols)
+func (scr *Screen) SetMessage(m Message) {
+	scr.msg = m
+}
+
+func (scr *Screen) RedrawCursor(y, x int) {
+	scr.Window.Move(y, x)
 }
 
 func UpdateModeLine(m Message) {
-	l := Vw.Rows - 1
-	Vw.win.Move(l, 0)
-	Vw.win.Clrtoeol()
-	Vw.win.Mvwaddnstr(l, 0, m.String(), Vw.Cols)
+	l := screen.Rows - 1
+	screen.Window.Move(l, 0)
+	screen.Window.Clrtoeol()
+	screen.Window.Mvwaddnstr(l, 0, m.String(), screen.Cols)
 }
 
 func DrawCursor() {
-	x, y := Eb.CursorCoord()
-	Vw.win.Move(y+1, x)
+	x, y := curr.CursorCoord()
+	screen.Window.Move(y, x)
 }

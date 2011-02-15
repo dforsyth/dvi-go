@@ -34,20 +34,17 @@ const (
 	ESC       = 27
 )
 
-// Message lines
-type Message interface {
-	String() string
-}
 
 // Modeline
 type Modeline struct {
 	mode          string
 	char          int
 	lno, lco, col int
+	name          string
 }
 
 func (m *Modeline) String() string {
-	return fmt.Sprintf("%s %c/%d %d/%d-%d", m.mode, m.char, m.char, m.lno, m.lco, m.col)
+	return fmt.Sprintf("%s %c/%d %d/%d-%d %s", m.mode, m.char, m.char, m.lno, m.lco, m.col, m.name)
 }
 
 // ex line
@@ -60,13 +57,16 @@ func (e *Exline) String() string {
 	return fmt.Sprintf("%s%s", e.prompt, e.command)
 }
 
-var OptLineNumbers = true
+var curr *EditBuffer
+var screen *Screen
+var ex *Exline
+var ml *Modeline
 
-var Eb *File
-var Ml *Modeline
-var Vw *View
+// options
+var optLineNo = false
 
 func SigHandler() {
+	m := new(Modeline)
 	for {
 		s := <-signal.Incoming
 		switch s.(signal.UnixSignal) {
@@ -77,59 +77,45 @@ func SigHandler() {
 		case syscall.SIGWINCH:
 			Beep()
 		default:
-			Ml.mode = s.String()
+			m.mode = s.String()
 		}
 	}
 }
 
 func Init(args []string) {
-	// Setup modeline
-	Ml = new(Modeline)
-	Ml.mode = ""
-	Ml.char = '@'
-	Ml.lno = 0
-	Ml.lco = 0
-	Ml.col = 0
-
 	// Setup view
-	Vw = NewView(curses.Stdwin)
+	screen = NewScreen(curses.Stdwin)
+	ml = new(Modeline)
 
+	ex = new(Exline)
+	ex.prompt = EXPROMPT
+
+	var file *EditBuffer
 	if len(args) == 0 {
-		InsertBuffer(NewTempFileFile(TMPPREFIX))
+		file = NewTempEditBuffer(TMPPREFIX)
 		// XXX this is a workaround for my lazy design.  get rid
 		// of this asap.
-		Eb.InsertLine(NewLine([]byte("")))
-		Eb.anchor = Eb.lines.Front()
-		Eb.FirstLine()
+		file.InsertLine(NewLine([]byte("")))
+		file.anchor = file.lines.Front()
+		file.FirstLine()
 	} else {
 		for _, path := range args {
-			if b, e := NewReadFileFile(path); e == nil {
-				InsertBuffer(b)
-				Eb.FirstLine()
+			if file, e := NewReadEditBuffer(path); e == nil {
+				file.FirstLine()
 			} else {
-				InsertBuffer(NewTempFileFile(TMPPREFIX))
-				Eb.FirstLine()
-				Ml.mode = "Error opening " + path + ": " + e.String()
+				file = NewTempEditBuffer(TMPPREFIX)
+				file.FirstLine()
+				// Ml.mode = "Error opening " + path + ": " + e.String()
 			}
 		}
 	}
+	SetCurrentFile(file)
 }
 
-func InsertBuffer(b *File) {
-	if Eb == nil {
-		Eb = b
-	} else {
-		Eb.next = b
-	}
-}
-
-func NextBuffer() *File {
-	if Eb == nil {
-		return nil
-	}
-
-	Eb = Eb.next
-	return Eb
+func SetCurrentFile(eb *EditBuffer) {
+	// call Map whenever a file becomes currfile
+	curr = eb
+	curr.Map()
 }
 
 func startScreen() {
@@ -145,7 +131,7 @@ func endScreen() {
 }
 
 func Run() {
-	UpdateDisplay()
+	// UpdateDisplay()
 	// enter normal mode
 	NormalMode()
 }

@@ -11,40 +11,41 @@ func AppendInsertMode() {
 func InsertMode() {
 
 	// we shouldn't hit these anymore, but if we do we should be ready to deal with them...
-	if Eb == nil {
-		InsertBuffer(NewTempFileFile(TMPPREFIX))
+	if curr == nil {
+		curr = NewTempEditBuffer(TMPPREFIX)
 	}
 
-	if Eb.line == nil {
-		Eb.AppendLine()
+	if curr.line == nil {
+		curr.AppendLine()
 	}
 
-	Eb.line.Value.(*EditLine).UpdateGap()
+	curr.line.Value.(*EditLine).UpdateGap()
 
-	oldMode := Ml.mode
-	Ml.mode = "insert"
+	screen.SetMessage(ml) // switch to modeline
+	ml.mode = "insert"
+	ml.name = curr.name
 
-	UpdateDisplay()
+	screen.RedrawCursor(curr.CursorCoord())
 	for {
-		k := Vw.win.Getch()
+		k := screen.Window.Getch()
 		switch k {
 		case ESC:
-			Ml.mode = oldMode
 			return
 		case 127, curses.KEY_BACKSPACE:
 			// improperly handles the newline at the end of the prev line
-			Eb.BackSpace()
+			curr.BackSpace()
 		case 0xd, 0xa:
-			Eb.NewLine(byte('\n'))
+			curr.NewLine(byte('\n'))
 		case 0x9:
-			// Ebfer().InsertTab()
+			// currfilefer().InsertTab()
 		default:
-			Eb.InsertChar(byte(k))
+			curr.Insert(byte(k))
 		}
-		Ml.char = k
-		Ml.lno = int(Eb.line.Value.(*EditLine).lno)
-		Ml.lco = int(Eb.lco)
-		Ml.col = int(Eb.line.Value.(*EditLine).cursor)
-		UpdateDisplay()
+		ml.char = k
+		ml.lno = int(curr.line.Value.(*EditLine).lno)
+		ml.col = int(curr.line.Value.(*EditLine).cursor)
+		screen.RedrawAfter(0)
+		screen.RedrawMessage()
+		screen.RedrawCursor(curr.CursorCoord())
 	}
 }

@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	NilLinePanicString = "current File line is nil"
-	CacheMax = 5
+	NilLinePanicString = "current EditBuffer line is nil"
+	CacheMax           = 5
 )
 
 // XXX once a better drawing interface is figured out, there should be an lru
@@ -19,60 +19,48 @@ const (
 // XXX editbuffers are editable text buffers that happen to also be a screen.
 
 // todo: lockable
-type File struct {
-	st                             *os.FileInfo // file info
-	fromDisk, fromArchive, fromNet bool
-
-	lco   uint   // line count
-	title string // buffer title
-	dirty bool   // dirty
-
-	// XXX text
-	lines *list.List    // list of lines
-	line  *list.Element // current line
+type EditBuffer struct {
+	fi     *os.FileInfo /* EditBuffer info. */
+	name   string
+	dirty  bool
+	rdonly bool
+	lines  *list.List    /* List of lines in the file. */
+	line   *list.Element /* Current line in the file. */
+	edits  *list.List    /* Edit history. */
 
 	anchor         *list.Element // first line to draw
-	view           *View         // view this buffer draws to
+	view           *Screen       // view this buffer draws to
 	curs_x, curs_y int           // cursor position
-
-	hist *list.List
-
-	prev, next *File // roll ourselves because type assertions are pobyteless in this case.
-
-	OptLineNo bool // draw line numbers
-	OptHLLine bool // highlight the current line
 }
 
-func NewFile(title string, optLineNo, optHLLine bool, view *View) *File {
 
-	b := new(File)
+func NewEditBuffer(name string, view *Screen) *EditBuffer {
 
+	f := new(EditBuffer)
+	f.name = name
 	// XXX it would be better to init this to nil and add the line from another
 	// place so that the file loader can use this
-	b.lines = list.New()
+	f.lines = list.New()
 	// b.InsertLine(NewLine([]byte("")))
-	b.anchor = b.line
-	b.st = nil
-	b.title = title
-	b.next = nil
-	b.prev = nil
-	b.dirty = false
+	f.anchor = f.line
+	f.dirty = false
 
-	b.view = view
-	b.OptLineNo = optLineNo
-	b.OptHLLine = optHLLine
-
-	return b
+	f.view = view
+	return f
 }
 
-func (b *File) InsertChar(ch byte) {
+func (b *EditBuffer) Insert(ch byte) {
 	if l, ok := b.line.Value.(*EditLine); ok {
 		l.insertCharacter(ch)
 	}
 	b.dirty = true
+	for b.ScreenRange(b.anchor, b.line) > b.view.Rows-1 && b.anchor != b.line {
+		b.anchor = b.anchor.Next()
+	}
+	b.Map()
 }
 
-func (b *File) BackSpace() {
+func (b *EditBuffer) BackSpace() {
 	if b.line == nil {
 		Beep()
 		return
@@ -86,7 +74,6 @@ func (b *File) BackSpace() {
 
 				if b.line.Prev() != nil {
 					b.DeleteCurrLine()
-					b.lco--
 				} else {
 					Beep()
 				}
@@ -95,23 +82,27 @@ func (b *File) BackSpace() {
 			l.backspace()
 		}
 	}
+	for b.ScreenRange(b.anchor, b.line) > b.view.Rows-1 && b.anchor != b.line {
+		b.anchor = b.anchor.Next()
+	}
+	b.Map()
 }
 
-func (b *File) MoveLeft() {
+func (b *EditBuffer) MoveLeft() {
 	b.MoveCursor(-1)
 }
 
-func (b *File) MoveRight() {
+func (b *EditBuffer) MoveRight() {
 	b.MoveCursor(1)
 }
 
-func (b *File) MoveCursor(d int) {
+func (b *EditBuffer) MoveCursor(d int) {
 	if l, ok := b.line.Value.(*EditLine); ok && l.moveCursor(l.cursor+d) < 0 {
 		Beep()
 	}
 }
 
-func (b *File) ScreenRange(a, l *list.Element) int {
+func (b *EditBuffer) ScreenRange(a, l *list.Element) int {
 	// aln, bln := a.Value.(*EditLine), l.Value.(*EditLine)
 	cnt := 0
 	for c := a; c != nil && c != l.Next(); c = c.Next() {
@@ -121,7 +112,7 @@ func (b *File) ScreenRange(a, l *list.Element) int {
 	return cnt
 }
 
-func (b *File) MoveDown() {
+func (b *EditBuffer) MoveDown() {
 	if b.line == nil {
 		panic(NilLinePanicString)
 	}
@@ -134,15 +125,16 @@ func (b *File) MoveDown() {
 		b.line = n
 		// We are now at line n.  We need to adjust anchor properly so that we can
 		// remap the buffer.
-		for b.ScreenRange(b.anchor, b.line) > b.view.Rows-2 && b.anchor != b.line {
+		for b.ScreenRange(b.anchor, b.line) > b.view.Rows-1 && b.anchor != b.line {
 			b.anchor = b.anchor.Next()
 		}
+		curr.Map()
 	} else {
 		Beep()
 	}
 }
 
-func (b *File) MoveUp() {
+func (b *EditBuffer) MoveUp() {
 	if b.line == nil {
 		panic(NilLinePanicString)
 	}
@@ -158,100 +150,78 @@ func (b *File) MoveUp() {
 		for b.line.Value.(*EditLine).lno < b.anchor.Value.(*EditLine).lno && b.anchor != b.line {
 			b.anchor = b.anchor.Prev()
 		}
+		curr.Map()
 	} else {
 		Beep()
 	}
 }
 
-func (b *File) DeleteSpan(p, l int) {
+func (b *EditBuffer) DeleteSpan(p, l int) {
 	if ln, ok := b.line.Value.(*EditLine); ok {
 		ln.delete(p, l)
 		b.dirty = true
 	}
 }
 
-func (b *File) FirstLine() {
+func (b *EditBuffer) FirstLine() {
 	b.line = b.lines.Front()
 }
 
 // Insert a new line after line
 // XXX this doesn't really work as desired (can't insert at 0, for instance)
-func (b *File) InsertLine(line *EditLine) {
+func (b *EditBuffer) InsertLine(line *EditLine) {
 	if b.line == nil {
 		b.line = b.lines.PushFront(line)
 		l := b.line.Value.(*EditLine)
 		l.lno = 1
 		b.anchor = b.line
 	} else {
-		b.line = b.lines.InsertAfter(line, b.line)
-		l := b.line.Value.(*EditLine)
-		l.lno = b.line.Prev().Value.(*EditLine).lno + 1
-		for p := b.line.Next(); p != nil; p = p.Next() {
+		e := b.lines.InsertAfter(line, b.line)
+		l := e.Value.(*EditLine)
+		l.lno = e.Prev().Value.(*EditLine).lno + 1
+		for p := e.Next(); p != nil; p = p.Next() {
 			p.Value.(*EditLine).lno++
 		}
 	}
-	b.lco++
 	b.dirty = true
+	b.MoveDown() // does the mapping
 }
 
-func (b *File) AppendLine() {
+func (b *EditBuffer) AppendLine() {
 	b.InsertLine(NewLine([]byte("")))
 }
 
 
-func (b *File) NewLine(nlchar byte) {
+func (b *EditBuffer) NewLine(dlm byte) {
 	if l, ok := b.line.Value.(*EditLine); ok {
 		newbuf := l.raw()[l.cursor:]
-		l.insertCharacter(nlchar)
+		l.insertCharacter(dlm)
 		l.ClearAfterCursor()
 		l.size -= len(newbuf)
 		b.InsertLine(NewLine(newbuf))
 	}
 }
 
-func (b *File) DeleteCurrLine() {
+func (b *EditBuffer) DeleteCurrLine() {
 	if b.line.Prev() != nil {
-		p := b.line.Prev()
-		b.lines.Remove(b.line)
-		b.line = p
+		rm := b.line
+		b.MoveUp()
+		b.lines.Remove(rm)
 	} else if b.line.Next() != nil {
-		n := b.line.Next()
-		b.lines.Remove(b.line)
-		b.line = n
+		rm := b.line
+		b.MoveDown()
+		b.lines.Remove(rm)
 	} else {
 		return
 	}
 	b.dirty = true
+	// moveup and movedown take care of mapping
 }
 
-// Move to line p
-func (b *File) MoveLine(p int) {
-	i := 0
-	for l := b.lines.Front(); l != nil; l = l.Next() {
-		if i == p {
-			b.line = l
-			return
-		}
-		i++
-	}
-}
-
-func (b *File) MoveLineNext() {
-	if n := b.line.Next(); n != nil {
-		b.line = n
-	}
-}
-
-func (b *File) MoveLinePrev() {
-	if p := b.line.Prev(); p != nil {
-		b.line = p
-	}
-}
-
-func (b *File) LnoOffset() int {
+func (b *EditBuffer) LnoOffset() int {
 	// if we show line numbers, we reserve at least 3 columns.
-	if b.OptLineNo {
-		if dg := math.Log10(float64(b.lco)) + 1; dg > 2 {
+	if optLineNo {
+		if dg := math.Log10(float64(b.lines.Len())) + 1; dg > 2 {
 			return int(dg) + 1
 		} else {
 			return 3
@@ -260,7 +230,7 @@ func (b *File) LnoOffset() int {
 	return 0
 }
 
-func (b *File) ScreenLines(ln *EditLine) int {
+func (b *EditBuffer) ScreenLines(ln *EditLine) int {
 	offset := b.LnoOffset()
 	actual := b.view.Cols - offset
 	// XXX this is an example of why displaylength needs to be fixed.
@@ -268,19 +238,21 @@ func (b *File) ScreenLines(ln *EditLine) int {
 	if sz == 0 && ln.hasNewLine {
 		sz = 1
 	}
-	return int(math.Ceil(float64(sz) / float64(actual)))
+
+	l := int(math.Ceil(float64(sz) / float64(actual)))
+	if l == 0 {
+		l = 1
+	}
+	return l
 }
 
-// Maps every visible line to a position on the screen.  This is a super-slow complete refresh.
-func (b *File) Map() int {
+// Maps every visible line to a position on the screen.
+func (b *EditBuffer) Map() int {
 	offset := b.LnoOffset()
 	i := 0
-	for l := b.anchor; l != nil && i < b.view.Rows; l = l.Next() {
+	for l := b.anchor; l != nil && i < b.view.Rows-1; l = l.Next() {
 		ln := l.Value.(*EditLine)
 		cnt := b.ScreenLines(ln)
-		if cnt == 0 {
-			cnt = 1
-		}
 		wrap := 0
 		raw := ln.raw()
 		for lmt := i + cnt; i < lmt; i++ {
@@ -322,14 +294,10 @@ func (b *File) Map() int {
 	return 0
 }
 
-func (b *File) CursorCoord() (int, int) {
-	return b.curs_x, b.curs_y
+func (b *EditBuffer) CursorCoord() (int, int) {
+	return b.curs_y, b.curs_x
 }
 
-func (b *File) Lines() *list.List {
+func (b *EditBuffer) Lines() *list.List {
 	return b.lines
-}
-
-func (b *File) Title() string {
-	return b.title
 }
