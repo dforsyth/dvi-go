@@ -90,10 +90,12 @@ func (b *EditBuffer) BackSpace() {
 
 func (b *EditBuffer) MoveLeft() {
 	b.MoveCursor(-1)
+	b.Map()
 }
 
 func (b *EditBuffer) MoveRight() {
 	b.MoveCursor(1)
+	b.Map()
 }
 
 func (b *EditBuffer) MoveCursor(d int) {
