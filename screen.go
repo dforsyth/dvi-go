@@ -20,8 +20,6 @@ type Screen struct {
 	update	chan int
 }
 
-var wait = make(chan bool)
-
 func (s *Screen) ScreenRoutine() {
 	go func() {
 		<-s.update
@@ -39,9 +37,7 @@ func (s *Screen) ScreenRoutine() {
 		s.RedrawAfter(0)
 		s.RedrawMessage()
 		*/
-		wait <- true
 		s.Window.Refresh()
-		<-wait
 	}()
 }
 
