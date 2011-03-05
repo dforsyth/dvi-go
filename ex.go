@@ -16,7 +16,7 @@ func ExCmd() {
 	ex.command = cmdBuff.String()
 	screen.RedrawMessage()
 	for {
-		k := screen.Window.Getch()
+		k := <-input // screen.Window.Getch()
 
 		switch k {
 		case ESC:

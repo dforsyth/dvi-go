@@ -17,6 +17,32 @@ type Screen struct {
 	StartRow   uint
 	Lines      []string
 	msg        Message
+	update	chan int
+}
+
+var wait = make(chan bool)
+
+func (s *Screen) ScreenRoutine() {
+	go func() {
+		<-s.update
+		/*
+		switch t := upd.(type) {
+		case []string:
+			s.Lines = t
+			s.RedrawAfter(0)
+		case Message:
+			s.msg = t
+			s.RedrawMessage()
+		default:
+		}
+		//panic("i made it!")
+		s.RedrawAfter(0)
+		s.RedrawMessage()
+		*/
+		wait <- true
+		s.Window.Refresh()
+		<-wait
+	}()
 }
 
 func NewScreen(window *curses.Window) *Screen {
@@ -25,6 +51,7 @@ func NewScreen(window *curses.Window) *Screen {
 	v.Window = window
 	v.Rows, v.Cols = *curses.Rows, *curses.Cols
 	v.Lines = make([]string, v.Rows-1)
+	v.update = make(chan int)
 	return v
 }
 

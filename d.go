@@ -62,6 +62,8 @@ var screen *Screen
 var ex *Exline
 var ml *Modeline
 
+var input chan int
+
 // options
 var optLineNo = false
 
@@ -73,12 +75,19 @@ func SigHandler() {
 		case syscall.SIGINT:
 			Beep()
 		case syscall.SIGTERM:
-			Beep()
+			panic("sigterm")
+			// Beep()
 		case syscall.SIGWINCH:
 			Beep()
 		default:
 			m.mode = s.String()
 		}
+	}
+}
+
+func Input() {
+	for {
+		input <-screen.Window.Getch()
 	}
 }
 
@@ -110,6 +119,8 @@ func Init(args []string) {
 		}
 	}
 	SetCurrentFile(file)
+
+	input = make(chan int)
 }
 
 func SetCurrentFile(eb *EditBuffer) {
@@ -133,6 +144,7 @@ func endScreen() {
 func Run() {
 	// UpdateDisplay()
 	// enter normal mode
+	screen.ScreenRoutine()
 	NormalMode()
 }
 
@@ -144,5 +156,6 @@ func main() {
 	go SigHandler()
 	// init has to happen after startscreen
 	Init(os.Args[1:])
+	go Input()
 	Run()
 }

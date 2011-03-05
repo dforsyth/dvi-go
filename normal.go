@@ -21,8 +21,9 @@ func NormalMode() {
 	screen.SetMessage(ml) // switch to modeline
 	screen.RedrawAfter(0)
 	screen.RedrawCursor(curr.CursorCoord())
+	screen.Window.Refresh()
 	for {
-		k := screen.Window.Getch()
+		k := <-input // screen.Window.Getch()
 
 		if fn, ok := NCmdMap[k]; ok {
 			fn()
@@ -32,6 +33,7 @@ func NormalMode() {
 			screen.RedrawMessage()
 		}
 		screen.RedrawCursor(curr.CursorCoord())
+		screen.Window.Refresh()
 	}
 }
 

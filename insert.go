@@ -27,7 +27,7 @@ func InsertMode() {
 
 	screen.RedrawCursor(curr.CursorCoord())
 	for {
-		k := screen.Window.Getch()
+		k := <-input // screen.Window.Getch()
 		switch k {
 		case ESC:
 			return
@@ -47,5 +47,7 @@ func InsertMode() {
 		screen.RedrawAfter(0)
 		screen.RedrawMessage()
 		screen.RedrawCursor(curr.CursorCoord())
+		// screen.update <-1
+		screen.Window.Refresh()
 	}
 }
