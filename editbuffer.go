@@ -73,19 +73,19 @@ func (b *editBuffer) mapToScreen() {
 }
 
 func (b *editBuffer) backspace() {
-	if b.l != nil {
-		l := b.l.Value.(*editLine)
-		if (l.b.gs == 0) {
-			if b.l.Prev() != nil {
-				b.deleteLine()
-			} else {
-				Beep()
-			}
+	if b.l == nil {
+		panic(NilLine)
+	}
+
+	l := b.l.Value.(*editLine)
+	if (l.b.gs == 0) {
+		if b.l.Prev() != nil {
+			// XXX
 		} else {
-			l.delete(1)
+			Beep()
 		}
 	} else {
-		panic(NilLine)
+		l.delete(1)
 	}
 	b.mapToScreen()
 }
