@@ -15,39 +15,38 @@ func InsertMode() {
 		curr = NewTempEditBuffer(TMPPREFIX)
 	}
 
-	if curr.line == nil {
-		curr.AppendLine()
+	if curr.l == nil {
+		curr.appendLine()
 	}
 
-	curr.line.Value.(*EditLine).UpdateGap()
+	// curr.line.Value.(*EditLine).UpdateGap()
 
-	screen.SetMessage(ml) // switch to modeline
 	ml.mode = "insert"
 	ml.name = curr.name
+	screen.msg = ml // switch to modeline
 
-	screen.RedrawCursor(curr.CursorCoord())
 	for {
-		k := <-input // screen.Window.Getch()
+		screen.RedrawAfter(0)
+		screen.RedrawMessage()
+		screen.RedrawCursor(curr.y, curr.x)
+		screen.update <- 1
+		k := <-inputch
+
 		switch k {
 		case ESC:
 			return
 		case 127, curses.KEY_BACKSPACE:
 			// improperly handles the newline at the end of the prev line
-			curr.BackSpace()
+			curr.backspace()
 		case 0xd, 0xa:
-			curr.NewLine(byte('\n'))
+			curr.newLine(byte('\n'))
 		case 0x9:
 			// currfilefer().InsertTab()
 		default:
-			curr.Insert(byte(k))
+			curr.insertChar(byte(k))
 		}
 		ml.char = k
-		ml.lno = int(curr.line.Value.(*EditLine).lno)
-		ml.col = int(curr.line.Value.(*EditLine).cursor)
-		screen.RedrawAfter(0)
-		screen.RedrawMessage()
-		screen.RedrawCursor(curr.CursorCoord())
-		// screen.update <-1
-		screen.Window.Refresh()
+		// ml.lno = int(curr.line.Value.(*EditLine).lno)
+		// ml.col = int(curr.l.Value.(*editLine).cursor)
 	}
 }

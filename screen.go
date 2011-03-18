@@ -17,28 +17,14 @@ type Screen struct {
 	StartRow   uint
 	Lines      []string
 	msg        Message
-	update	chan int
+	update     chan int
 }
 
 func (s *Screen) ScreenRoutine() {
-	go func() {
+	for {
 		<-s.update
-		/*
-		switch t := upd.(type) {
-		case []string:
-			s.Lines = t
-			s.RedrawAfter(0)
-		case Message:
-			s.msg = t
-			s.RedrawMessage()
-		default:
-		}
-		//panic("i made it!")
-		s.RedrawAfter(0)
-		s.RedrawMessage()
-		*/
 		s.Window.Refresh()
-	}()
+	}
 }
 
 func NewScreen(window *curses.Window) *Screen {
@@ -61,7 +47,7 @@ func (scr *Screen) RedrawRange(s, e int) {
 		scr.Window.Clrtoeol()
 		scr.Window.Mvwaddnstr(i, 0, scr.Lines[i], scr.Cols)
 	}
-	if curr.line != nil {
+	if curr.l != nil {
 		DrawCursor()
 	}
 }
@@ -76,10 +62,6 @@ func (scr *Screen) RedrawMessage() {
 	scr.Window.Mvwaddnstr(scr.Rows-1, 0, scr.msg.String(), scr.Cols)
 }
 
-func (scr *Screen) SetMessage(m Message) {
-	scr.msg = m
-}
-
 func (scr *Screen) RedrawCursor(y, x int) {
 	scr.Window.Move(y, x)
 }
@@ -92,6 +74,6 @@ func UpdateModeLine(m Message) {
 }
 
 func DrawCursor() {
-	x, y := curr.CursorCoord()
+	x, y := curr.x, curr.y
 	screen.Window.Move(y, x)
 }

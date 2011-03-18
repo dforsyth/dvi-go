@@ -49,30 +49,31 @@ func (m *Modeline) String() string {
 
 // ex line
 type Exline struct {
-	prompt  string
-	command string
+	prompt string
+	buff   *gapBuffer
 }
 
 func (e *Exline) String() string {
-	return fmt.Sprintf("%s%s", e.prompt, e.command)
+	return fmt.Sprintf("%s%s", e.prompt, e.buff.String())
 }
 
-var curr *EditBuffer
+var curr *editBuffer
 var screen *Screen
 var ex *Exline
 var ml *Modeline
 
-var input chan int
+var inputch chan int
 
 // options
-var optLineNo = false
+var optLineNo = true
 
-func SigHandler() {
+func sigHandlerRoutine() {
 	m := new(Modeline)
 	for {
 		s := <-signal.Incoming
 		switch s.(signal.UnixSignal) {
 		case syscall.SIGINT:
+			panic("sigterm")
 			Beep()
 		case syscall.SIGTERM:
 			panic("sigterm")
@@ -85,48 +86,48 @@ func SigHandler() {
 	}
 }
 
-func Input() {
+func inputRoutine() {
+	inputch = make(chan int)
 	for {
-		input <-screen.Window.Getch()
+		inputch <- screen.Window.Getch()
 	}
 }
 
-func Init(args []string) {
+func initialize(args []string) {
 	// Setup view
 	screen = NewScreen(curses.Stdwin)
 	ml = new(Modeline)
 
+	// Don't allocate the cmd buffer here
 	ex = new(Exline)
 	ex.prompt = EXPROMPT
 
-	var file *EditBuffer
+	var file *editBuffer
 	if len(args) == 0 {
 		file = NewTempEditBuffer(TMPPREFIX)
 		// XXX this is a workaround for my lazy design.  get rid
 		// of this asap.
-		file.InsertLine(NewLine([]byte("")))
-		file.anchor = file.lines.Front()
-		file.FirstLine()
+		file.insertLine(newEditLine([]byte("")))
+		// file.anchor = file.lines.Front()
+		// file.FirstLine()
 	} else {
 		for _, path := range args {
 			if file, e := NewReadEditBuffer(path); e == nil {
-				file.FirstLine()
+				file.top()
 			} else {
 				file = NewTempEditBuffer(TMPPREFIX)
-				file.FirstLine()
+				file.top()
 				// Ml.mode = "Error opening " + path + ": " + e.String()
 			}
 		}
 	}
-	SetCurrentFile(file)
-
-	input = make(chan int)
+	setCurrentBuffer(file)
 }
 
-func SetCurrentFile(eb *EditBuffer) {
+func setCurrentBuffer(eb *editBuffer) {
 	// call Map whenever a file becomes currfile
 	curr = eb
-	curr.Map()
+	curr.mapToScreen()
 }
 
 func startScreen() {
@@ -141,21 +142,23 @@ func endScreen() {
 	curses.Endwin()
 }
 
-func Run() {
-	// UpdateDisplay()
+func run() {
+	go screen.ScreenRoutine()
 	// enter normal mode
-	screen.ScreenRoutine()
 	NormalMode()
 }
 
+func done() {
+	endScreen()
+	syscall.Exit(0)
+}
+
 func main() {
-	/* init */
-	// Start in normal mode
 	startScreen()
 	defer endScreen()
-	go SigHandler()
-	// init has to happen after startscreen
-	Init(os.Args[1:])
-	go Input()
-	Run()
+	go sigHandlerRoutine()
+	initialize(os.Args[1:])
+	go inputRoutine()
+	run()
+	done()
 }

@@ -7,12 +7,12 @@ import (
 	"os"
 )
 
-func NewTempEditBuffer(prefix string) *EditBuffer {
+func NewTempEditBuffer(prefix string) *editBuffer {
 	// TODO: this.
-	return NewEditBuffer(prefix, screen)
+	return newEditBuffer(prefix)
 }
 
-func NewReadEditBuffer(pathname string) (*EditBuffer, os.Error) {
+func NewReadEditBuffer(pathname string) (*editBuffer, os.Error) {
 	st, e := os.Stat(pathname)
 	if e != nil {
 		return nil, e
@@ -24,7 +24,7 @@ func NewReadEditBuffer(pathname string) (*EditBuffer, os.Error) {
 	}
 	defer f.Close()
 
-	b := NewEditBuffer(st.Name, screen)
+	b := newEditBuffer(st.Name)
 	r := bufio.NewReader(f)
 	for {
 		l, e := r.ReadBytes(byte('\n'))
@@ -33,22 +33,19 @@ func NewReadEditBuffer(pathname string) (*EditBuffer, os.Error) {
 			if e != os.EOF {
 				return nil, e
 			} else {
-				b.InsertLine(NewLine(l))
+				b.insertLine(newEditLine(l))
 				break
 			}
 		}
-		b.InsertLine(NewLine(l))
+		b.insertLine(newEditLine(l))
 	}
 	b.fi = st
-
-	// XXX as in d.go, this is a workaround for my lazy design.  fix asap.
-	b.anchor = b.lines.Front()
 
 	return b, nil
 }
 
 // Do a naive write of the entire buffer to a temp file, then rename into place.
-func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
+func WriteFile(pathname string, b *editBuffer) (*os.FileInfo, os.Error) {
 
 	f, e := ioutil.TempFile(TMPDIR, TMPPREFIX)
 	if e != nil {
@@ -59,7 +56,7 @@ func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 	i := 0
 	wr := 0
 	for l := b.lines.Front(); l != nil; l = l.Next() {
-		n, e := f.Write(l.Value.(*EditLine).raw())
+		n, e := f.Write(l.Value.(*editLine).raw())
 		if e != nil {
 			return nil, e
 		}

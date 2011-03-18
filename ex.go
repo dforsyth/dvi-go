@@ -6,36 +6,45 @@ import (
 )
 
 func ExCmd() {
+
+	/* Create an ex message and set it as the current displayed message. */
 	if ex == nil {
 		ex := new(Exline)
 		ex.prompt = EXPROMPT
 	}
 
-	screen.SetMessage(ex) // switch to ex
-	cmdBuff := NewGapBuffer([]byte(""))
-	ex.command = cmdBuff.String()
-	screen.RedrawMessage()
+	oldMsg := screen.msg
+
+	buff := newGapBuffer([]byte(""))
+	ex.buff = buff
+	screen.msg = ex
+
 	for {
-		k := <-input // screen.Window.Getch()
+		screen.RedrawAfter(0)
+		screen.RedrawMessage()
+		screen.update <- 1
+		k := <-inputch
 
 		switch k {
 		case ESC:
+			/* Help the GC out. */
+			buff = nil
+			/* Put the old message line back in place. */
+			screen.msg = oldMsg
 			return
 		case curses.KEY_BACKSPACE:
-			if len(cmdBuff.String()) == 0 {
+			if len(ex.buff.String()) == 0 {
 				/* vim behavior is to kill ex.  we beep. */
 				Beep()
 			} else {
-				cmdBuff.DeleteSpan(cmdBuff.gs-1, 1)
+				ex.buff.deleteSpan(ex.buff.gs-1, 1)
 			}
 		case 0xd, 0xa:
-			handleCmd(cmdBuff.String())
+			handleCmd(ex.buff.String())
 			return
 		default:
-			cmdBuff.InsertChar(byte(k))
+			ex.buff.insertChar(byte(k))
 		}
-		ex.command = cmdBuff.String()
-		screen.RedrawMessage()
 	}
 }
 
@@ -61,5 +70,5 @@ func handleCmd(cmd string) {
 	}
 
 	ml.mode = "Did not recognize: " + cmd
-	screen.SetMessage(ml)
+	screen.msg = ml
 }
