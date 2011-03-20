@@ -2,14 +2,15 @@ package main
 
 import (
 	"container/list"
+	"curses"
 	// "fmt"
 	// "math"
 	"os"
 )
 
 const (
-	NilLine = "nil line"
-	CacheMax           = 5
+	NilLine  = "nil line"
+	CacheMax = 5
 )
 
 // XXX once a better drawing interface is figured out, there should be an lru
@@ -22,13 +23,13 @@ type EditBuffer struct {
 	fi     *os.FileInfo
 	name   string
 	lines  *list.List
-	l   *list.Element
+	l      *list.Element
 	anchor *list.Element
-	x, y int
+	x, y   int
 
-	Window *Window
-	X, Y int
-	ScreenMap []string
+	Window     *Window
+	X, Y       int
+	ScreenMap  []string
 	CurX, CurY int
 }
 
@@ -38,6 +39,21 @@ func (eb *EditBuffer) GetWindow() *Window {
 
 func (eb *EditBuffer) SetWindow(w *Window) {
 	eb.Window = w
+	eb.X, eb.Y = w.Cols, w.Rows
+}
+
+func (eb *EditBuffer) SendInput(k int) {
+	gs := eb.Window.gs
+	switch gs.Mode {
+	case INSERT:
+		if k == curses.KEY_BACKSPACE || k == 127 {
+			eb.backspace()
+		} else if k == 0xd || k == 0xa {
+			eb.newLine(byte('\n'))
+		} else {
+			eb.insertChar(byte(k))
+		}
+	}
 }
 
 func (eb *EditBuffer) GetMap() []string {
@@ -52,14 +68,20 @@ func (eb *EditBuffer) GetCursor() (int, int) {
 	return eb.CurX, eb.CurY
 }
 
-func newEditBuffer(name string) *EditBuffer {
-	b := new(EditBuffer)
-	b.name = name
-	b.lines = list.New()
-	b.lines.Init()
-	b.l = nil
-	b.anchor = b.l
-	return b
+func newEditBuffer(gs *GlobalState, name string) *EditBuffer {
+	eb := new(EditBuffer)
+	eb.name = name
+	eb.lines = list.New()
+	eb.lines.Init()
+	eb.l = nil
+	eb.anchor = eb.l
+
+	eb.Window = gs.Window
+	eb.ScreenMap = make([]string, eb.Window.Rows-1)
+	eb.CurX, eb.CurY = 0, 0
+	eb.X, eb.Y = eb.Window.Cols, eb.Window.Rows-1
+
+	return eb
 }
 
 func (b *EditBuffer) insertChar(c byte) {
@@ -71,26 +93,26 @@ func (b *EditBuffer) insertChar(c byte) {
 	b.mapToScreen()
 }
 
-func (b *EditBuffer) mapToScreen() {
+func (eb *EditBuffer) mapToScreen() {
 	i := 0
-	for l := b.anchor; l != nil && i < screen.Rows - 1; l = l.Next() {
+	for l := eb.anchor; l != nil && i < eb.Y; l = l.Next() {
 		e := l.Value.(*editLine)
 		// XXX: screen lines code for wrap
-		row := make([]byte, screen.Cols)
+		row := make([]byte, eb.X)
 		// panic(fmt.Sprintf("len of e.raw is %d", len(e.raw())))
 		for i, _ := range row {
 			row[i] = ' '
 		}
 		copy(row, e.raw())
-		screen.Lines[i] = string(row)
-		if l == b.l {
-			b.y = i
-			b.x = e.b.gs
+		eb.ScreenMap[i] = string(row)
+		if l == eb.l {
+			eb.y = i
+			eb.x = e.b.gs
 		}
 		i++
 	}
-	for i < screen.Rows - 1 {
-		screen.Lines[i] = NaL
+	for i < eb.Y {
+		eb.ScreenMap[i] = NaL
 		i++
 	}
 }
@@ -101,7 +123,7 @@ func (b *EditBuffer) backspace() {
 	}
 
 	l := b.l.Value.(*editLine)
-	if (l.b.gs == 0) {
+	if l.b.gs == 0 {
 		if b.l.Prev() != nil {
 			// XXX
 		} else {
@@ -175,4 +197,3 @@ func (b *EditBuffer) moveDown() {
 		Beep()
 	}
 }
-

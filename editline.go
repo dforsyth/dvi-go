@@ -38,4 +38,3 @@ func (e *editLine) moveCursor(p int) bool {
 	e.b.MoveGap(p)
 	return true
 }
-

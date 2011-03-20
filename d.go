@@ -21,7 +21,7 @@ import (
 	"container/list"
 	"curses"
 	"fmt"
-	"os"
+	// "os"
 	"os/signal"
 	"syscall"
 )
@@ -36,51 +36,113 @@ const (
 )
 
 type Window struct {
-	Curses *curses.Window
+	Curses     *curses.Window
 	Cols, Rows int
+	gs         *GlobalState
 }
 
-func NewWindow() *Window {
+func NewWindow(gs *GlobalState) *Window {
 	w := new(Window)
 	w.Curses = curses.Stdwin
 	w.Cols = *curses.Cols
 	w.Rows = *curses.Rows
+	w.gs = gs
 	return w
 }
 
 func (w *Window) InputRoutine(ch chan int) {
 	go func() {
 		for {
-			ch <-w.Curses.Getch()
+			ch <- w.Curses.Getch()
 		}
 	}()
 }
 
-func (w *Window) Paint() {
+func (w *Window) UpdateRoutine(ch chan int) {
+	go func() {
+		for {
+			<-ch
+			w.PaintMapper(0, w.Rows-1, true)
+			w.Curses.Refresh()
+		}
+	}()
+}
+
+func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 	cols, rows := w.Cols, w.Rows-1
-	for i := 0; i < rows; i++ {
-		print(cols)
+
+	gs := w.gs
+	mapper := *gs.CurrentMapper
+
+	if start < 0 || start > rows || end > rows {
+		EndScreen()
+		panic(fmt.Sprintf("Window.Paint: Bad range (%d, %d) [%d, %d]", start, end, cols, rows))
+	}
+
+	smap := mapper.GetMap()
+	for i := start; i < end; i++ {
+		w.Curses.Move(i, 0)
+		w.Curses.Clrtoeol()
+		w.Curses.Mvwaddnstr(i, 0, smap[i], cols)
+	}
+
+	cX, cY := mapper.GetCursor()
+	if paintCursor {
+		if cX < 0 || cY < 0 || cX > cols || cY > rows {
+			EndScreen()
+			panic(fmt.Sprintf("Window.Paint: Bad cursor (%d, %d) [%d, %d]", start, end, cols, rows))
+		}
 	}
 }
 
+const (
+	NORMAL  = 0
+	INSERT  = 1
+	COMMAND = 2
+)
+
 type GlobalState struct {
-	window *Window
-	command *Command
-	currentMapper *list.Element
-	buffers *list.List
-	currentBuffer *list.Element
-	input chan int
+	Window        *Window
+	Command       *Command
+	CurrentMapper *Mapper
+	Buffers       *list.List
+	CurrentBuffer *list.Element
+	InputCh       chan int
+	UpdateCh      chan int
+	Mode          int
+}
+
+func NewGlobalState() *GlobalState {
+	gs := new(GlobalState)
+	gs.Window = NewWindow(gs)
+	gs.Command = NewCommand()
+	gs.CurrentMapper = nil
+	gs.Buffers = list.New()
+	gs.CurrentBuffer = nil
+	gs.InputCh = make(chan int)
+	gs.UpdateCh = make(chan int)
+	return gs
+}
+
+func (gs *GlobalState) AddBuffer(buffer Interacter) {
+	gs.CurrentBuffer = gs.Buffers.PushBack(buffer)
+}
+
+func (gs *GlobalState) SetMapper(mapper Mapper) {
+	gs.CurrentMapper = &mapper
 }
 
 type Mapper interface {
 	GetMap() []string
+	GetCursor() (int, int)
+	SetWindow(*Window)
 	SetDimensions(int, int)
 }
 
 type Interacter interface {
 	GetWindow() *Window
 	SetWindow(*Window)
-	// SendInput(int)
+	SendInput(int)
 }
 
 type ModeLiner interface {
@@ -91,8 +153,19 @@ type Command struct {
 	// implements ModeLiner
 }
 
+func NewCommand() *Command {
+	command := new(Command)
+	return command
+}
+
 func (c *Command) String() string {
 	return "command"
+}
+
+func (c *Command) SendInput(k int) {
+}
+
+func (c *Command) Execute() {
 }
 
 // Modeline
@@ -117,42 +190,33 @@ func (e *Exline) String() string {
 	return fmt.Sprintf("%s%s", e.prompt, e.buff.String())
 }
 
-var curr *EditBuffer
-var screen *Screen
-var ex *Exline
-var ml *Modeline
-
-var inputch chan int
-
 // options
 var optLineNo = true
 
-func sigHandlerRoutine() {
+func SignalsRoutine() {
 	m := new(Modeline)
-	for {
-		s := <-signal.Incoming
-		switch s.(signal.UnixSignal) {
-		case syscall.SIGINT:
-			panic("sigterm")
-			Beep()
-		case syscall.SIGTERM:
-			panic("sigterm")
-			// Beep()
-		case syscall.SIGWINCH:
-			Beep()
-		default:
-			m.mode = s.String()
+	go func() {
+		for {
+			s := <-signal.Incoming
+			switch s.(signal.UnixSignal) {
+			case syscall.SIGINT:
+				EndScreen()
+				panic("sigterm")
+				Beep()
+			case syscall.SIGTERM:
+				EndScreen()
+				panic("sigterm")
+				// Beep()
+			case syscall.SIGWINCH:
+				Beep()
+			default:
+				m.mode = s.String()
+			}
 		}
-	}
+	}()
 }
 
-func inputRoutine() {
-	inputch = make(chan int)
-	for {
-		inputch <- screen.Window.Getch()
-	}
-}
-
+/*
 func initialize(args []string) {
 	// Setup view
 	screen = NewScreen(curses.Stdwin)
@@ -183,14 +247,9 @@ func initialize(args []string) {
 	}
 	setCurrentBuffer(file)
 }
+*/
 
-func setCurrentBuffer(eb *EditBuffer) {
-	// call Map whenever a file becomes currfile
-	curr = eb
-	curr.mapToScreen()
-}
-
-func startScreen() {
+func StartScreen() {
 	curses.Initscr()
 	curses.Cbreak()
 	curses.Noecho()
@@ -198,27 +257,33 @@ func startScreen() {
 	curses.Stdwin.Keypad(true)
 }
 
-func endScreen() {
+func EndScreen() {
 	curses.Endwin()
 }
 
-func run() {
-	go screen.ScreenRoutine()
-	// enter normal mode
-	NormalMode()
-}
-
 func done() {
-	endScreen()
+	EndScreen()
 	syscall.Exit(0)
 }
 
 func main() {
-	startScreen()
-	defer endScreen()
-	go sigHandlerRoutine()
-	initialize(os.Args[1:])
-	go inputRoutine()
-	run()
+	StartScreen()
+	defer EndScreen()
+
+	SignalsRoutine()
+
+	gs := NewGlobalState()
+
+	gs.Window.InputRoutine(gs.InputCh)
+	gs.Window.UpdateRoutine(gs.UpdateCh)
+
+	eb := NewTempEditBuffer(gs, "dtemp")
+	eb.insertLine(newEditLine([]byte("")))
+
+	gs.AddBuffer(eb)
+	gs.SetMapper(eb)
+	eb.mapToScreen()
+
+	NormalMode(gs)
 	done()
 }
