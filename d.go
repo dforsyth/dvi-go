@@ -18,6 +18,7 @@
 package main
 
 import (
+	"container/list"
 	"curses"
 	"fmt"
 	"os"
@@ -34,6 +35,65 @@ const (
 	ESC       = 27
 )
 
+type Window struct {
+	Curses *curses.Window
+	Cols, Rows int
+}
+
+func NewWindow() *Window {
+	w := new(Window)
+	w.Curses = curses.Stdwin
+	w.Cols = *curses.Cols
+	w.Rows = *curses.Rows
+	return w
+}
+
+func (w *Window) InputRoutine(ch chan int) {
+	go func() {
+		for {
+			ch <-w.Curses.Getch()
+		}
+	}()
+}
+
+func (w *Window) Paint() {
+	cols, rows := w.Cols, w.Rows-1
+	for i := 0; i < rows; i++ {
+		print(cols)
+	}
+}
+
+type GlobalState struct {
+	window *Window
+	command *Command
+	currentMapper *list.Element
+	buffers *list.List
+	currentBuffer *list.Element
+	input chan int
+}
+
+type Mapper interface {
+	GetMap() []string
+	SetDimensions(int, int)
+}
+
+type Interacter interface {
+	GetWindow() *Window
+	SetWindow(*Window)
+	// SendInput(int)
+}
+
+type ModeLiner interface {
+	String() string
+}
+
+type Command struct {
+	// implements ModeLiner
+}
+
+func (c *Command) String() string {
+	return "command"
+}
 
 // Modeline
 type Modeline struct {
@@ -57,7 +117,7 @@ func (e *Exline) String() string {
 	return fmt.Sprintf("%s%s", e.prompt, e.buff.String())
 }
 
-var curr *editBuffer
+var curr *EditBuffer
 var screen *Screen
 var ex *Exline
 var ml *Modeline
@@ -102,7 +162,7 @@ func initialize(args []string) {
 	ex = new(Exline)
 	ex.prompt = EXPROMPT
 
-	var file *editBuffer
+	var file *EditBuffer
 	if len(args) == 0 {
 		file = NewTempEditBuffer(TMPPREFIX)
 		// XXX this is a workaround for my lazy design.  get rid
@@ -124,7 +184,7 @@ func initialize(args []string) {
 	setCurrentBuffer(file)
 }
 
-func setCurrentBuffer(eb *editBuffer) {
+func setCurrentBuffer(eb *EditBuffer) {
 	// call Map whenever a file becomes currfile
 	curr = eb
 	curr.mapToScreen()

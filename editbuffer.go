@@ -18,28 +18,51 @@ const (
 
 // XXX editbuffers are editable text buffers that happen to also be a screen.
 
-type editBuffer struct {
+type EditBuffer struct {
 	fi     *os.FileInfo
 	name   string
 	lines  *list.List
 	l   *list.Element
 	anchor *list.Element
-	cache  map[int]string
 	x, y int
+
+	Window *Window
+	X, Y int
+	ScreenMap []string
+	CurX, CurY int
 }
 
-func newEditBuffer(name string) *editBuffer {
-	b := new(editBuffer)
+func (eb *EditBuffer) GetWindow() *Window {
+	return eb.Window
+}
+
+func (eb *EditBuffer) SetWindow(w *Window) {
+	eb.Window = w
+}
+
+func (eb *EditBuffer) GetMap() []string {
+	return eb.ScreenMap
+}
+
+func (eb *EditBuffer) SetDimensions(x, y int) {
+	eb.X, eb.Y = x, y
+}
+
+func (eb *EditBuffer) GetCursor() (int, int) {
+	return eb.CurX, eb.CurY
+}
+
+func newEditBuffer(name string) *EditBuffer {
+	b := new(EditBuffer)
 	b.name = name
 	b.lines = list.New()
 	b.lines.Init()
 	b.l = nil
 	b.anchor = b.l
-	b.cache = make(map[int]string)
 	return b
 }
 
-func (b *editBuffer) insertChar(c byte) {
+func (b *EditBuffer) insertChar(c byte) {
 	if b.l != nil {
 		b.l.Value.(*editLine).insertChar(c)
 	} else {
@@ -48,7 +71,7 @@ func (b *editBuffer) insertChar(c byte) {
 	b.mapToScreen()
 }
 
-func (b *editBuffer) mapToScreen() {
+func (b *EditBuffer) mapToScreen() {
 	i := 0
 	for l := b.anchor; l != nil && i < screen.Rows - 1; l = l.Next() {
 		e := l.Value.(*editLine)
@@ -72,7 +95,7 @@ func (b *editBuffer) mapToScreen() {
 	}
 }
 
-func (b *editBuffer) backspace() {
+func (b *EditBuffer) backspace() {
 	if b.l == nil {
 		panic(NilLine)
 	}
@@ -90,7 +113,7 @@ func (b *editBuffer) backspace() {
 	b.mapToScreen()
 }
 
-func (b *editBuffer) insertLine(e *editLine) *list.Element {
+func (b *EditBuffer) insertLine(e *editLine) *list.Element {
 	if b.l == nil {
 		b.l = b.lines.PushFront(e)
 		b.anchor = b.l
@@ -100,14 +123,14 @@ func (b *editBuffer) insertLine(e *editLine) *list.Element {
 	return b.l
 }
 
-func (b *editBuffer) appendLine() *list.Element {
+func (b *EditBuffer) appendLine() *list.Element {
 	return b.insertLine(newEditLine([]byte("")))
 }
 
-func (b *editBuffer) deleteLine() {
+func (b *EditBuffer) deleteLine() {
 }
 
-func (b *editBuffer) newLine(d byte) {
+func (b *EditBuffer) newLine(d byte) {
 	// XXX This is pretty wrong lol
 	if b.l != nil {
 		b.l.Value.(*editLine).insertChar(d)
@@ -116,26 +139,26 @@ func (b *editBuffer) newLine(d byte) {
 	}
 }
 
-func (b *editBuffer) top() {
+func (b *EditBuffer) top() {
 	b.l = b.lines.Front()
 	b.anchor = b.l
 }
 
-func (b *editBuffer) moveLeft() {
+func (b *EditBuffer) moveLeft() {
 	if !b.l.Value.(*editLine).moveCursor(-1) {
 		Beep()
 	}
 	b.mapToScreen()
 }
 
-func (b *editBuffer) moveRight() {
+func (b *EditBuffer) moveRight() {
 	if !b.l.Value.(*editLine).moveCursor(1) {
 		Beep()
 	}
 	b.mapToScreen()
 }
 
-func (b *editBuffer) moveUp() {
+func (b *EditBuffer) moveUp() {
 	if p := b.l.Prev(); p != nil {
 		b.l = p
 		b.mapToScreen()
@@ -144,7 +167,7 @@ func (b *editBuffer) moveUp() {
 	}
 }
 
-func (b *editBuffer) moveDown() {
+func (b *EditBuffer) moveDown() {
 	if n := b.l.Next(); n != nil {
 		b.l = n
 		b.mapToScreen()

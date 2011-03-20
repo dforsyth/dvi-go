@@ -7,12 +7,12 @@ import (
 	"os"
 )
 
-func NewTempEditBuffer(prefix string) *editBuffer {
+func NewTempEditBuffer(prefix string) *EditBuffer {
 	// TODO: this.
 	return newEditBuffer(prefix)
 }
 
-func NewReadEditBuffer(pathname string) (*editBuffer, os.Error) {
+func NewReadEditBuffer(pathname string) (*EditBuffer, os.Error) {
 	st, e := os.Stat(pathname)
 	if e != nil {
 		return nil, e
@@ -45,7 +45,7 @@ func NewReadEditBuffer(pathname string) (*editBuffer, os.Error) {
 }
 
 // Do a naive write of the entire buffer to a temp file, then rename into place.
-func WriteFile(pathname string, b *editBuffer) (*os.FileInfo, os.Error) {
+func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
 	f, e := ioutil.TempFile(TMPDIR, TMPPREFIX)
 	if e != nil {
