@@ -62,6 +62,7 @@ func (w *Window) UpdateRoutine(ch chan int) {
 	go func() {
 		for {
 			<-ch
+			w.PaintModeliner(false)
 			w.PaintMapper(0, w.Rows-1, true)
 			w.Curses.Refresh()
 		}
@@ -92,6 +93,28 @@ func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 			EndScreen()
 			panic(fmt.Sprintf("Window.Paint: Bad cursor (%d, %d) [%d, %d]", start, end, cols, rows))
 		}
+		w.Curses.Move(cY, cX)
+	}
+}
+
+func (w *Window) PaintModeliner(paintCursor bool) {
+	maxRow := w.Rows - 1
+	gs := w.gs
+
+	// XXX check for modeline until i have everything set up
+	if gs.Modeline == nil {
+		return
+	}
+
+	modeline := *gs.Modeline
+
+	w.Curses.Move(maxRow, 0)
+	w.Curses.Clrtoeol()
+	// This needs hscroll
+	w.Curses.Mvwaddnstr(maxRow, 0, modeline.String(), w.Cols)
+
+	if paintCursor {
+		w.Curses.Move(maxRow, modeline.GetCursor())
 	}
 }
 
@@ -105,6 +128,7 @@ type GlobalState struct {
 	Window        *Window
 	Command       *Command
 	CurrentMapper *Mapper
+	Modeline      *Modeliner
 	Buffers       *list.List
 	CurrentBuffer *list.Element
 	InputCh       chan int
@@ -132,6 +156,10 @@ func (gs *GlobalState) SetMapper(mapper Mapper) {
 	gs.CurrentMapper = &mapper
 }
 
+func (gs *GlobalState) SetModeline(modeliner Modeliner) {
+	gs.Modeline = &modeliner
+}
+
 type Mapper interface {
 	GetMap() []string
 	GetCursor() (int, int)
@@ -145,8 +173,51 @@ type Interacter interface {
 	SendInput(int)
 }
 
-type ModeLiner interface {
+type Modeliner interface {
 	String() string
+	GetCursor() int
+}
+
+type InsertModeline struct {
+	Key          int
+	LineNumber   int
+	ColumnNumber int
+}
+
+func NewInsertModeline() *InsertModeline {
+	m := new(InsertModeline)
+	m.Key = ' '
+	m.LineNumber = -1
+	m.ColumnNumber = -1
+	return m
+}
+
+func (m *InsertModeline) String() string {
+	return fmt.Sprintf("INSERT -- Key: %c -- Line: %d -- Column: %d", m.Key, m.LineNumber, m.ColumnNumber)
+}
+
+func (m *InsertModeline) GetCursor() int {
+	// We never want the cursor for this modeline
+	return -1
+}
+
+type NormalModeline struct {
+	Key int
+}
+
+func NewNormalModeline() *NormalModeline {
+	m := new(NormalModeline)
+	m.Key = ' '
+	return m
+}
+
+func (m *NormalModeline) String() string {
+	return fmt.Sprintf("NORMAL -- Key: %c", m.Key)
+}
+
+func (m *NormalModeline) GetCursor() int {
+	// We never want the cursor for this modeline
+	return -1
 }
 
 type Command struct {

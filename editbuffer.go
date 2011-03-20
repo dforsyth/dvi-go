@@ -106,8 +106,8 @@ func (eb *EditBuffer) mapToScreen() {
 		copy(row, e.raw())
 		eb.ScreenMap[i] = string(row)
 		if l == eb.l {
-			eb.y = i
-			eb.x = e.b.gs
+			eb.CurY = i
+			eb.CurX = e.b.gs
 		}
 		i++
 	}

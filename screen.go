@@ -4,6 +4,7 @@ import (
 	"curses"
 )
 
+/*
 // Message lines
 type Message interface {
 	String() string
@@ -36,6 +37,7 @@ func NewScreen(window *curses.Window) *Screen {
 	v.update = make(chan int)
 	return v
 }
+*/
 
 func Beep() {
 	curses.Beep()

@@ -20,6 +20,8 @@ func InsertMode(gs *GlobalState) {
 		panic("GlobalState has no CurrentBuffer in InsertMode")
 	}
 
+	m := NewInsertModeline()
+	gs.SetModeline(m)
 	for {
 		window := gs.Window
 		window.PaintMapper(0, window.Rows-1, true)
@@ -43,5 +45,6 @@ func InsertMode(gs *GlobalState) {
 					curr.insertChar(byte(k))
 			*/
 		}
+		m.Key = k
 	}
 }
