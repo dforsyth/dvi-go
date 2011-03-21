@@ -9,6 +9,8 @@ import (
 
 func ExCmd(gs *GlobalState) {
 
+	gs.SetModeline(gs.Command)
+
 	for {
 		window := gs.Window
 		window.PaintMapper(0, window.Rows-1, true)

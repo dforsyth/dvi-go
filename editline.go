@@ -1,12 +1,12 @@
 package main
 
-type editLine struct {
+type EditLine struct {
 	b  *gapBuffer
 	nl bool
 }
 
-func newEditLine(s []byte) *editLine {
-	e := new(editLine)
+func newEditLine(s []byte) *EditLine {
+	e := new(EditLine)
 	e.b = newGapBuffer(s)
 	if len(s) > 0 && s[len(s)-1] == '\n' {
 		e.nl = true
@@ -16,22 +16,22 @@ func newEditLine(s []byte) *editLine {
 	return e
 }
 
-func (e *editLine) insertChar(c byte) {
+func (e *EditLine) insertChar(c byte) {
 	e.b.insertChar(c)
 	if c == '\n' {
 		e.nl = true
 	}
 }
 
-func (e *editLine) delete(d int) {
+func (e *EditLine) delete(d int) {
 	e.b.deleteSpan(e.b.gs-1, d)
 }
 
-func (e *editLine) raw() []byte {
+func (e *EditLine) raw() []byte {
 	return []byte(e.b.GaplessBuffer())
 }
 
-func (e *editLine) moveCursor(p int) bool {
+func (e *EditLine) moveCursor(p int) bool {
 	if p < 0 || p > len(e.b.GaplessBuffer()) {
 		return false
 	}

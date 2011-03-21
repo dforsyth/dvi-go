@@ -86,7 +86,7 @@ func newEditBuffer(gs *GlobalState, name string) *EditBuffer {
 
 func (b *EditBuffer) insertChar(c byte) {
 	if b.l != nil {
-		b.l.Value.(*editLine).insertChar(c)
+		b.l.Value.(*EditLine).insertChar(c)
 	} else {
 		panic(NilLine)
 	}
@@ -96,7 +96,7 @@ func (b *EditBuffer) insertChar(c byte) {
 func (eb *EditBuffer) mapToScreen() {
 	i := 0
 	for l := eb.anchor; l != nil && i < eb.Y; l = l.Next() {
-		e := l.Value.(*editLine)
+		e := l.Value.(*EditLine)
 		// XXX: screen lines code for wrap
 		row := make([]byte, eb.X)
 		// panic(fmt.Sprintf("len of e.raw is %d", len(e.raw())))
@@ -122,7 +122,7 @@ func (b *EditBuffer) backspace() {
 		panic(NilLine)
 	}
 
-	l := b.l.Value.(*editLine)
+	l := b.l.Value.(*EditLine)
 	if l.b.gs == 0 {
 		if b.l.Prev() != nil {
 			// XXX
@@ -135,7 +135,7 @@ func (b *EditBuffer) backspace() {
 	b.mapToScreen()
 }
 
-func (b *EditBuffer) insertLine(e *editLine) *list.Element {
+func (b *EditBuffer) insertLine(e *EditLine) *list.Element {
 	if b.l == nil {
 		b.l = b.lines.PushFront(e)
 		b.anchor = b.l
@@ -155,7 +155,7 @@ func (b *EditBuffer) deleteLine() {
 func (b *EditBuffer) newLine(d byte) {
 	// XXX This is pretty wrong lol
 	if b.l != nil {
-		b.l.Value.(*editLine).insertChar(d)
+		b.l.Value.(*EditLine).insertChar(d)
 		b.l = b.appendLine()
 		b.mapToScreen()
 	}
@@ -167,14 +167,14 @@ func (b *EditBuffer) top() {
 }
 
 func (b *EditBuffer) moveLeft() {
-	if !b.l.Value.(*editLine).moveCursor(-1) {
+	if !b.l.Value.(*EditLine).moveCursor(-1) {
 		Beep()
 	}
 	b.mapToScreen()
 }
 
 func (b *EditBuffer) moveRight() {
-	if !b.l.Value.(*editLine).moveCursor(1) {
+	if !b.l.Value.(*EditLine).moveCursor(1) {
 		Beep()
 	}
 	b.mapToScreen()

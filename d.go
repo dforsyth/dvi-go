@@ -221,19 +221,25 @@ func (m *NormalModeline) GetCursor() int {
 }
 
 type Command struct {
-	// implements ModeLiner
+	CommandBuffer string
 }
 
 func NewCommand() *Command {
-	command := new(Command)
-	return command
+	c := new(Command)
+	c.CommandBuffer = ""
+	return c
 }
 
 func (c *Command) String() string {
-	return "command"
+	return fmt.Sprintf(":%s", c.CommandBuffer)
+}
+
+func (c *Command) GetCursor() int {
+	return len(c.String()) - 1
 }
 
 func (c *Command) SendInput(k int) {
+	c.CommandBuffer += string(k)
 }
 
 func (c *Command) Execute() {
