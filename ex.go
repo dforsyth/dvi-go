@@ -10,6 +10,7 @@ import (
 func ExCmd(gs *GlobalState) {
 
 	gs.SetModeline(gs.Command)
+	gs.Command.Clear()
 
 	for {
 		window := gs.Window

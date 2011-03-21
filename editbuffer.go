@@ -31,6 +31,7 @@ type EditBuffer struct {
 	X, Y       int
 	ScreenMap  []string
 	CurX, CurY int
+	Pathname   string
 }
 
 func (eb *EditBuffer) GetWindow() *Window {

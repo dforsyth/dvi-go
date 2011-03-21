@@ -4,13 +4,14 @@ include $(GOROOT)/src/Make.inc
 
 TARG=   d
 GOFILES=    d.go \
-            gapbuffer.go \
-            editline.go \
-            editbuffer.go \
             disk.go \
-			screen.go \
-		    normal.go \
+            gapbuffer.go \
+            global.go \
+            editbuffer.go \
+            editline.go \
+			ex.go \
             insert.go \
-			ex.go
+		    normal.go \
+			window.go
 
 include $(GOROOT)/src/Make.cmd
