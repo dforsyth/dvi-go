@@ -21,7 +21,6 @@ import (
 	"container/list"
 	"curses"
 	"fmt"
-	// "os"
 	"os/signal"
 	"syscall"
 )
@@ -34,13 +33,6 @@ const (
 	TMPPREFIX = "d." // temp file prefix
 	ESC       = 27
 )
-
-const (
-	NORMAL  = 0
-	INSERT  = 1
-	COMMAND = 2
-)
-
 
 type Mapper interface {
 	GetMap() []string
@@ -85,11 +77,15 @@ func (m *InsertModeline) GetCursor() int {
 
 type NormalModeline struct {
 	Key int
+	Message string
+	Row, Col int
 }
 
 func NewNormalModeline() *NormalModeline {
 	m := new(NormalModeline)
 	m.Key = ' '
+	m.Message = ""
+	m.Row, m.Col = 0, 0
 	return m
 }
 
