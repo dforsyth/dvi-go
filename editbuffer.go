@@ -57,6 +57,10 @@ func (eb *EditBuffer) SendInput(k int) {
 	}
 }
 
+func (eb *EditBuffer) RunRoutine(fn func(Interacter)) {
+	go fn(eb)
+}
+
 func (eb *EditBuffer) GetMap() []string {
 	return eb.ScreenMap
 }

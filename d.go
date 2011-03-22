@@ -44,6 +44,7 @@ type Interacter interface {
 	GetWindow() *Window
 	SetWindow(*Window)
 	SendInput(int)
+	RunRoutine(func(Interacter))
 }
 
 type Modeliner interface {
