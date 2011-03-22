@@ -9,7 +9,7 @@ import (
 
 func NewTempEditBuffer(gs *GlobalState, prefix string) *EditBuffer {
 	// TODO: this.
-	return newEditBuffer(gs, prefix)
+	return NewEditBuffer(gs, prefix)
 }
 
 func NewReadEditBuffer(gs *GlobalState, pathname string) (*EditBuffer, os.Error) {
@@ -24,7 +24,7 @@ func NewReadEditBuffer(gs *GlobalState, pathname string) (*EditBuffer, os.Error)
 	}
 	defer f.Close()
 
-	b := newEditBuffer(gs, st.Name)
+	b := NewEditBuffer(gs, st.Name)
 	r := bufio.NewReader(f)
 	for {
 		l, e := r.ReadBytes(byte('\n'))

@@ -18,7 +18,6 @@
 package main
 
 import (
-	"container/list"
 	"curses"
 	"fmt"
 	"os/signal"
@@ -98,73 +97,6 @@ func (m *NormalModeline) GetCursor() int {
 	return -1
 }
 
-type Command struct {
-	CommandBuffer string
-	gs            *GlobalState
-}
-
-func NewCommand(gs *GlobalState) *Command {
-	c := new(Command)
-	c.CommandBuffer = ""
-	c.gs = gs
-	return c
-}
-
-func (c *Command) String() string {
-	return fmt.Sprintf(":%s", c.CommandBuffer)
-}
-
-func (c *Command) GetCursor() int {
-	return len(c.String()) - 1
-}
-
-func (c *Command) SendInput(k int) {
-	c.CommandBuffer += string(k)
-}
-
-func (c *Command) Execute() {
-	save := false
-	quit := false
-	all := false
-	targets := list.New()
-	targets.Init()
-
-	for _, c := range c.CommandBuffer {
-		switch c {
-		case 'w':
-			save = true
-		case 'q':
-			quit = true
-		case 'a':
-			all = true
-		}
-	}
-
-	gs := c.gs
-
-	if !all {
-		targets.PushFront(gs.CurrentBuffer.Value)
-	} else {
-		targets.PushFrontList(gs.Buffers)
-	}
-
-	for t := targets.Front(); t != nil; t = t.Next() {
-		if save {
-			switch buffer := t.Value.(type) {
-			case *EditBuffer: // Writable
-				WriteFile(buffer.Pathname, buffer)
-			}
-		}
-	}
-	if quit {
-		EndScreen()
-		syscall.Exit(0)
-	}
-}
-
-func (c *Command) Clear() {
-	c.CommandBuffer = ""
-}
 
 // options
 var optLineNo = true
@@ -201,11 +133,6 @@ func EndScreen() {
 	curses.Endwin()
 }
 
-func done() {
-	EndScreen()
-	syscall.Exit(0)
-}
-
 func main() {
 	StartScreen()
 	defer EndScreen()
@@ -222,8 +149,8 @@ func main() {
 
 	gs.AddBuffer(eb)
 	gs.SetMapper(eb)
-	eb.mapToScreen()
+	eb.MapToScreen()
 
 	NormalMode(gs)
-	done()
+	Done(0)
 }

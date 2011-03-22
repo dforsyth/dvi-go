@@ -69,7 +69,7 @@ func (eb *EditBuffer) GetCursor() (int, int) {
 	return eb.CurX, eb.CurY
 }
 
-func newEditBuffer(gs *GlobalState, name string) *EditBuffer {
+func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb := new(EditBuffer)
 	eb.name = name
 	eb.lines = list.New()
@@ -91,10 +91,10 @@ func (b *EditBuffer) insertChar(c byte) {
 	} else {
 		panic(NilLine)
 	}
-	b.mapToScreen()
+	b.MapToScreen()
 }
 
-func (eb *EditBuffer) mapToScreen() {
+func (eb *EditBuffer) MapToScreen() {
 	i := 0
 	for l := eb.anchor; l != nil && i < eb.Y; l = l.Next() {
 		e := l.Value.(*EditLine)
@@ -133,7 +133,7 @@ func (b *EditBuffer) backspace() {
 	} else {
 		l.delete(1)
 	}
-	b.mapToScreen()
+	b.MapToScreen()
 }
 
 func (b *EditBuffer) insertLine(e *EditLine) *list.Element {
@@ -158,7 +158,7 @@ func (b *EditBuffer) newLine(d byte) {
 	if b.l != nil {
 		b.l.Value.(*EditLine).insertChar(d)
 		b.l = b.appendLine()
-		b.mapToScreen()
+		b.MapToScreen()
 	}
 }
 
@@ -171,20 +171,20 @@ func (b *EditBuffer) moveLeft() {
 	if !b.l.Value.(*EditLine).moveCursor(-1) {
 		Beep()
 	}
-	b.mapToScreen()
+	b.MapToScreen()
 }
 
 func (b *EditBuffer) moveRight() {
 	if !b.l.Value.(*EditLine).moveCursor(1) {
 		Beep()
 	}
-	b.mapToScreen()
+	b.MapToScreen()
 }
 
 func (b *EditBuffer) moveUp() {
 	if p := b.l.Prev(); p != nil {
 		b.l = p
-		b.mapToScreen()
+		b.MapToScreen()
 	} else {
 		Beep()
 	}
@@ -193,7 +193,7 @@ func (b *EditBuffer) moveUp() {
 func (b *EditBuffer) moveDown() {
 	if n := b.l.Next(); n != nil {
 		b.l = n
-		b.mapToScreen()
+		b.MapToScreen()
 	} else {
 		Beep()
 	}

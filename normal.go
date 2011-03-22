@@ -14,7 +14,7 @@ func NormalMode(gs *GlobalState) {
 		k := <-gs.InputCh // screen.Window.Getch()
 
 		if k == int(EXPROMPT[0]) {
-			ExCmd(gs)
+			CommandMode(gs)
 			gs.Mode = NORMAL
 			gs.SetModeline(m)
 		} else if k == int('i') {
