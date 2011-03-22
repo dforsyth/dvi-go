@@ -34,6 +34,22 @@ type EditBuffer struct {
 	Pathname   string
 }
 
+func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
+	eb := new(EditBuffer)
+	eb.name = name
+	eb.lines = list.New()
+	eb.lines.Init()
+	eb.l = nil
+	eb.anchor = eb.l
+
+	eb.Window = gs.Window
+	eb.ScreenMap = make([]string, eb.Window.Rows-1)
+	eb.CurX, eb.CurY = 0, 0
+	eb.X, eb.Y = eb.Window.Cols, eb.Window.Rows-1
+
+	return eb
+}
+
 func (eb *EditBuffer) GetWindow() *Window {
 	return eb.Window
 }
@@ -73,29 +89,13 @@ func (eb *EditBuffer) GetCursor() (int, int) {
 	return eb.CurX, eb.CurY
 }
 
-func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
-	eb := new(EditBuffer)
-	eb.name = name
-	eb.lines = list.New()
-	eb.lines.Init()
-	eb.l = nil
-	eb.anchor = eb.l
-
-	eb.Window = gs.Window
-	eb.ScreenMap = make([]string, eb.Window.Rows-1)
-	eb.CurX, eb.CurY = 0, 0
-	eb.X, eb.Y = eb.Window.Cols, eb.Window.Rows-1
-
-	return eb
-}
-
-func (b *EditBuffer) insertChar(c byte) {
-	if b.l != nil {
-		b.l.Value.(*EditLine).insertChar(c)
+func (eb *EditBuffer) InsertChar(c byte) {
+	if eb.l != nil {
+		eb.l.Value.(*EditLine).insertChar(c)
 	} else {
 		panic(NilLine)
 	}
-	b.MapToScreen()
+	eb.MapToScreen()
 }
 
 func (eb *EditBuffer) MapToScreen() {
