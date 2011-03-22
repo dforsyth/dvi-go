@@ -75,8 +75,8 @@ func (m *InsertModeline) GetCursor() int {
 }
 
 type NormalModeline struct {
-	Key int
-	Message string
+	Key      int
+	Message  string
 	Row, Col int
 }
 
