@@ -8,7 +8,7 @@ import (
 func CommandMode(gs *GlobalState) {
 
 	gs.SetModeline(gs.Command)
-	gs.Command.Clear()
+	gs.Command.Reset()
 
 	for {
 		window := gs.Window
@@ -91,6 +91,6 @@ func (c *Command) Execute() {
 	}
 }
 
-func (c *Command) Clear() {
+func (c *Command) Reset() {
 	c.CommandBuffer = ""
 }

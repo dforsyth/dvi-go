@@ -14,26 +14,29 @@ const (
 )
 
 type EditBuffer struct {
-	fi         *os.FileInfo
-	Name       string
-	Lines      *list.List
-	Line       *list.Element
+	fi       *os.FileInfo
+	Name     string
+	Pathname string
+	Lines    *list.List
+	Line     *list.Element
+	Column   int
+	// Stuff for painting
 	Anchor     *list.Element
 	Window     *Window
 	X, Y       int
 	ScreenMap  []string
 	CurX, CurY int
-	Pathname   string
 }
 
 func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb := new(EditBuffer)
-	eb.Name = name
+	eb.Pathname = name
 	eb.Lines = list.New()
 	eb.Lines.Init()
 	eb.Line = nil
-	eb.Anchor = eb.Line
+	eb.Column = 0
 
+	eb.Anchor = eb.Line
 	eb.Window = gs.Window
 	eb.ScreenMap = make([]string, eb.Window.Rows-1)
 	eb.CurX, eb.CurY = 0, 0
@@ -55,13 +58,26 @@ func (eb *EditBuffer) SendInput(k int) {
 	gs := eb.Window.gs
 	switch gs.Mode {
 	case INSERT:
-		if k == curses.KEY_BACKSPACE || k == 127 {
+		switch k {
+		case curses.KEY_BACKSPACE, 127:
 			eb.Backspace()
-		} else if k == 0xd || k == 0xa {
+		case 0xd, 0xa:
 			eb.NewLine(byte('\n'))
-		} else {
+		default:
 			eb.InsertChar(byte(k))
 		}
+	case NORMAL:
+		switch k {
+		case 'j':
+			eb.MoveLeft()
+		case 'k':
+			eb.MoveUp()
+		case 'l':
+			eb.MoveDown()
+		case ';':
+			eb.MoveRight()
+		}
+	case COMMAND: // XXX How did you get here?
 	}
 }
 
@@ -160,37 +176,48 @@ func (eb *EditBuffer) NewLine(d byte) {
 	}
 }
 
-func (b *EditBuffer) top() {
-	b.Line = b.Lines.Front()
-	b.Anchor = b.Line
+func (eb *EditBuffer) Top() {
+	eb.Line = eb.Lines.Front()
+	eb.Anchor = eb.Line
 }
 
-func (b *EditBuffer) moveLeft() {
-	if !b.Line.Value.(*EditLine).moveCursor(-1) {
+// TODO If the column is the length of a line, set b.Column to -1 so that moving
+// vertically will put the cursor at the end of the new line.
+func (eb *EditBuffer) MoveHorizontal(dir int) {
+	if l := eb.Line.Value.(*EditLine); !l.MoveCursor(l.Cursor() + dir) {
 		Beep()
+	} else {
+		eb.Column = l.Cursor()
+		eb.MapToScreen()
 	}
-	b.MapToScreen()
 }
 
-func (b *EditBuffer) moveRight() {
-	if !b.Line.Value.(*EditLine).moveCursor(1) {
-		Beep()
-	}
-	b.MapToScreen()
+func (eb *EditBuffer) MoveLeft() {
+	eb.MoveHorizontal(-1)
 }
 
-func (b *EditBuffer) moveUp() {
+func (eb *EditBuffer) MoveRight() {
+	eb.MoveHorizontal(1)
+}
+
+func (b *EditBuffer) MoveUp() {
 	if p := b.Line.Prev(); p != nil {
 		b.Line = p
+		if l := b.Line.Value.(*EditLine); len(l.raw()) > b.Column {
+			l.MoveCursor(b.Column)
+		}
 		b.MapToScreen()
 	} else {
 		Beep()
 	}
 }
 
-func (b *EditBuffer) moveDown() {
+func (b *EditBuffer) MoveDown() {
 	if n := b.Line.Next(); n != nil {
 		b.Line = n
+		if l := b.Line.Value.(*EditLine); len(l.raw()) > b.Column {
+			l.MoveCursor(b.Column)
+		}
 		b.MapToScreen()
 	} else {
 		Beep()

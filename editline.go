@@ -31,10 +31,14 @@ func (e *EditLine) raw() []byte {
 	return []byte(e.b.GaplessBuffer())
 }
 
-func (e *EditLine) moveCursor(p int) bool {
+func (e *EditLine) MoveCursor(p int) bool {
 	if p < 0 || p > len(e.b.GaplessBuffer()) {
 		return false
 	}
 	e.b.MoveGap(p)
 	return true
+}
+
+func (e *EditLine) Cursor() int {
+	return e.b.gs
 }
