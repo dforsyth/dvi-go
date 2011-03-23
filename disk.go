@@ -33,11 +33,11 @@ func NewReadEditBuffer(gs *GlobalState, pathname string) (*EditBuffer, os.Error)
 			if e != os.EOF {
 				return nil, e
 			} else {
-				b.insertLine(newEditLine(l))
+				b.InsertLine(NewEditLine(l))
 				break
 			}
 		}
-		b.insertLine(newEditLine(l))
+		b.InsertLine(NewEditLine(l))
 	}
 	b.fi = st
 
@@ -45,6 +45,7 @@ func NewReadEditBuffer(gs *GlobalState, pathname string) (*EditBuffer, os.Error)
 }
 
 // Do a naive write of the entire buffer to a temp file, then rename into place.
+// XXX not adding newlines?
 func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
 	f, e := ioutil.TempFile(TMPDIR, TMPPREFIX)
@@ -55,7 +56,7 @@ func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
 	i := 0
 	wr := 0
-	for l := b.lines.Front(); l != nil; l = l.Next() {
+	for l := b.Lines.Front(); l != nil; l = l.Next() {
 		n, e := f.Write(l.Value.(*EditLine).raw())
 		if e != nil {
 			return nil, e

@@ -7,14 +7,14 @@ const (
 	max  = 4096
 )
 
-type gapBuffer struct {
+type GapBuffer struct {
 	buf    []byte
 	gs, ge int
 }
 
 // Create a new gap buffer
-func newGapBuffer(t []byte) *gapBuffer {
-	g := new(gapBuffer)
+func NewGapBuffer(t []byte) *GapBuffer {
+	g := new(GapBuffer)
 	g.buf = make([]byte, len(t)+size)
 
 	copy(g.buf[:len(t)], t)
@@ -28,7 +28,7 @@ func newGapBuffer(t []byte) *gapBuffer {
 }
 
 // Insert a character at the first position of the gap
-func (g *gapBuffer) insertChar(c byte) {
+func (g *GapBuffer) InsertChar(c byte) {
 	g.buf[g.gs] = c
 	g.gs++
 	if g.gs == g.ge {
@@ -36,13 +36,13 @@ func (g *gapBuffer) insertChar(c byte) {
 	}
 }
 
-func (g *gapBuffer) InsertString(s string) {
+func (g *GapBuffer) InsertString(s string) {
 	for _, c := range s {
-		g.insertChar(byte(c))
+		g.InsertChar(byte(c))
 	}
 }
 
-func (g *gapBuffer) deleteSpan(p, s int) {
+func (g *GapBuffer) DeleteSpan(p, s int) {
 	g.MoveGap(p + s)
 	for i := 0; i < s; i++ {
 		if g.gs == 0 {
@@ -52,12 +52,12 @@ func (g *gapBuffer) deleteSpan(p, s int) {
 	}
 }
 
-func (g *gapBuffer) DeleteAfterGap() {
+func (g *GapBuffer) DeleteAfterGap() {
 	g.ge = len(g.buf)
 }
 
 // Grow the size of gap by s
-func (g *gapBuffer) GrowGap(s int) {
+func (g *GapBuffer) GrowGap(s int) {
 	// TODO: slices double on realloc up to 1024, then they increase by 25%.
 	// we should check the cap() of our new slice after append and see if we
 	// can use the new size to make a larger gap.
@@ -70,7 +70,7 @@ func (g *gapBuffer) GrowGap(s int) {
 }
 
 // Move the gap to p.  p does not take the gap byteo account.
-func (g *gapBuffer) MoveGap(p int) {
+func (g *GapBuffer) MoveGap(p int) {
 	if g.gs == p {
 		return
 	}
@@ -87,11 +87,11 @@ func (g *gapBuffer) MoveGap(p int) {
 	g.gs = p
 }
 
-func (g *gapBuffer) Buffer() []byte {
+func (g *GapBuffer) Buffer() []byte {
 	return g.buf
 }
 
-func (g *gapBuffer) GaplessBuffer() []byte {
+func (g *GapBuffer) GaplessBuffer() []byte {
 	b := make([]byte, len(g.buf[:g.gs])+len(g.buf[g.ge:]))
 	copy(b, g.buf[:g.gs])
 	copy(b[g.gs:], g.buf[g.ge:])
@@ -99,11 +99,11 @@ func (g *gapBuffer) GaplessBuffer() []byte {
 	// return []byte(string(g.buf[:g.gs]) + string(g.buf[g.ge:]))
 }
 
-func (g *gapBuffer) String() string {
+func (g *GapBuffer) String() string {
 	return string(g.buf[:g.gs]) + string(g.buf[g.ge:])
 }
 
-func (g *gapBuffer) DebugString() string {
+func (g *GapBuffer) DebugString() string {
 	s := ""
 	for i, c := range g.buf {
 		if i >= g.gs && i < g.ge {

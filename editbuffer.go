@@ -13,20 +13,12 @@ const (
 	CacheMax = 5
 )
 
-// XXX once a better drawing interface is figured out, there should be an lru
-// cache of computed lines.  the way things are mapped now (rangeless) doesn't
-// really let me cache the way i want to.
-
-// XXX editbuffers are editable text buffers that happen to also be a screen.
-
 type EditBuffer struct {
-	fi     *os.FileInfo
-	name   string
-	lines  *list.List
-	l      *list.Element
-	anchor *list.Element
-	x, y   int
-
+	fi         *os.FileInfo
+	Name       string
+	Lines      *list.List
+	Line       *list.Element
+	Anchor     *list.Element
 	Window     *Window
 	X, Y       int
 	ScreenMap  []string
@@ -36,11 +28,11 @@ type EditBuffer struct {
 
 func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb := new(EditBuffer)
-	eb.name = name
-	eb.lines = list.New()
-	eb.lines.Init()
-	eb.l = nil
-	eb.anchor = eb.l
+	eb.Name = name
+	eb.Lines = list.New()
+	eb.Lines.Init()
+	eb.Line = nil
+	eb.Anchor = eb.Line
 
 	eb.Window = gs.Window
 	eb.ScreenMap = make([]string, eb.Window.Rows-1)
@@ -64,11 +56,11 @@ func (eb *EditBuffer) SendInput(k int) {
 	switch gs.Mode {
 	case INSERT:
 		if k == curses.KEY_BACKSPACE || k == 127 {
-			eb.backspace()
+			eb.Backspace()
 		} else if k == 0xd || k == 0xa {
-			eb.newLine(byte('\n'))
+			eb.NewLine(byte('\n'))
 		} else {
-			eb.insertChar(byte(k))
+			eb.InsertChar(byte(k))
 		}
 	}
 }
@@ -90,19 +82,19 @@ func (eb *EditBuffer) GetCursor() (int, int) {
 }
 
 func (eb *EditBuffer) InsertChar(c byte) {
-	if eb.l != nil {
-		eb.l.Value.(*EditLine).insertChar(c)
-	} else {
+	if eb.Line == nil {
 		panic(NilLine)
 	}
+
+	eb.Line.Value.(*EditLine).InsertChar(c)
 	eb.MapToScreen()
 }
 
 func (eb *EditBuffer) MapToScreen() {
 	i := 0
-	for l := eb.anchor; l != nil && i < eb.Y; l = l.Next() {
+	for l := eb.Anchor; l != nil && i < eb.Y; l = l.Next() {
 		e := l.Value.(*EditLine)
-		// XXX: screen lines code for wrap
+		// XXX: screen Lines code for wrap
 		row := make([]byte, eb.X)
 		// panic(fmt.Sprintf("len of e.raw is %d", len(e.raw())))
 		for i, _ := range row {
@@ -110,7 +102,7 @@ func (eb *EditBuffer) MapToScreen() {
 		}
 		copy(row, e.raw())
 		eb.ScreenMap[i] = string(row)
-		if l == eb.l {
+		if l == eb.Line {
 			eb.CurY = i
 			eb.CurX = e.b.gs
 		}
@@ -122,72 +114,74 @@ func (eb *EditBuffer) MapToScreen() {
 	}
 }
 
-func (b *EditBuffer) backspace() {
-	if b.l == nil {
+func (eb *EditBuffer) Backspace() {
+	if eb.Line == nil {
 		panic(NilLine)
 	}
 
-	l := b.l.Value.(*EditLine)
+	l := eb.Line.Value.(*EditLine)
 	if l.b.gs == 0 {
-		if b.l.Prev() != nil {
-			// XXX
+		if prev := eb.Line.Prev(); prev != nil {
+			eb.DeleteLine()
+			eb.Line = prev
 		} else {
 			Beep()
 		}
 	} else {
-		l.delete(1)
+		l.Delete(1)
 	}
-	b.MapToScreen()
+	eb.MapToScreen()
 }
 
-func (b *EditBuffer) insertLine(e *EditLine) *list.Element {
-	if b.l == nil {
-		b.l = b.lines.PushFront(e)
-		b.anchor = b.l
+func (eb *EditBuffer) InsertLine(e *EditLine) *list.Element {
+	if eb.Line == nil {
+		eb.Line = eb.Lines.PushFront(e)
+		eb.Anchor = eb.Line
 	} else {
-		b.l = b.lines.InsertAfter(e, b.l)
+		eb.Line = eb.Lines.InsertAfter(e, eb.Line)
 	}
-	return b.l
+	return eb.Line
 }
 
-func (b *EditBuffer) appendLine() *list.Element {
-	return b.insertLine(newEditLine([]byte("")))
+func (eb *EditBuffer) AppendLine() *list.Element {
+	return eb.InsertLine(NewEditLine([]byte("")))
 }
 
-func (b *EditBuffer) deleteLine() {
+func (eb *EditBuffer) DeleteLine() {
+	eb.Lines.Remove(eb.Line)
 }
 
-func (b *EditBuffer) newLine(d byte) {
+func (eb *EditBuffer) NewLine(d byte) {
 	// XXX This is pretty wrong lol
-	if b.l != nil {
-		b.l.Value.(*EditLine).insertChar(d)
-		b.l = b.appendLine()
-		b.MapToScreen()
+	if eb.Line != nil {
+		eb.Line.Value.(*EditLine).InsertChar(d)
+		eb.Line = eb.AppendLine()
+		eb.MapToScreen()
 	}
 }
 
 func (b *EditBuffer) top() {
-	b.l = b.lines.Front()
-	b.anchor = b.l
+	b.Line = b.Lines.Front()
+	b.Anchor = b.Line
 }
 
 func (b *EditBuffer) moveLeft() {
-	if !b.l.Value.(*EditLine).moveCursor(-1) {
+	if !b.Line.Value.(*EditLine).moveCursor(-1) {
 		Beep()
 	}
 	b.MapToScreen()
 }
 
 func (b *EditBuffer) moveRight() {
-	if !b.l.Value.(*EditLine).moveCursor(1) {
+	if !b.Line.Value.(*EditLine).moveCursor(1) {
 		Beep()
 	}
 	b.MapToScreen()
 }
 
 func (b *EditBuffer) moveUp() {
-	if p := b.l.Prev(); p != nil {
-		b.l = p
+	if p := b.Line.Prev(); p != nil {
+		b.Line = p
 		b.MapToScreen()
 	} else {
 		Beep()
@@ -195,8 +189,8 @@ func (b *EditBuffer) moveUp() {
 }
 
 func (b *EditBuffer) moveDown() {
-	if n := b.l.Next(); n != nil {
-		b.l = n
+	if n := b.Line.Next(); n != nil {
+		b.Line = n
 		b.MapToScreen()
 	} else {
 		Beep()

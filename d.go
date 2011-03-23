@@ -146,7 +146,7 @@ func main() {
 	gs.Window.UpdateRoutine(gs.UpdateCh)
 
 	eb := NewTempEditBuffer(gs, TMPPREFIX)
-	eb.insertLine(newEditLine([]byte("")))
+	eb.InsertLine(NewEditLine([]byte("")))
 
 	gs.AddBuffer(eb)
 	gs.SetMapper(eb)
