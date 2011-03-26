@@ -6,6 +6,7 @@ import (
 	// "fmt"
 	// "math"
 	"os"
+	"strings"
 )
 
 const (
@@ -117,10 +118,13 @@ func (eb *EditBuffer) MapToScreen() {
 			row[i] = ' '
 		}
 		copy(row, e.raw())
-		eb.ScreenMap[i] = string(row)
+		rs := string(row)
+		t := strings.Count(rs, "\t")
+		s := strings.Replace(rs, "\t", "        ", -1)
+		eb.ScreenMap[i] = s
 		if l == eb.Line {
 			eb.CurY = i
-			eb.CurX = e.b.gs
+			eb.CurX = e.b.gs + (t * 7)
 		}
 		i++
 	}
