@@ -21,10 +21,11 @@ type EditBuffer struct {
 	Lines    *list.List
 	Line     *list.Element
 	Column   int
+	dirty    bool
 
-	tabs bool
+	tabs     bool
 	tabwidth int
-	tabstop int
+	tabstop  int
 
 	// Stuff for painting
 	Anchor     *list.Element
@@ -41,6 +42,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb.Lines.Init()
 	eb.Line = nil
 	eb.Column = 0
+	eb.dirty = false
 
 	eb.Anchor = eb.Line
 	eb.Window = gs.Window
@@ -69,9 +71,12 @@ func (eb *EditBuffer) SendInput(k int) {
 			eb.Backspace()
 		case 0xd, 0xa:
 			eb.NewLine(byte('\n'))
+		case ESC:
+			eb.MoveLeft()
 		default:
 			eb.InsertChar(byte(k))
 		}
+		eb.dirty = true
 	case NORMAL:
 		switch k {
 		case 'j':
@@ -82,7 +87,18 @@ func (eb *EditBuffer) SendInput(k int) {
 			eb.MoveDown()
 		case ';':
 			eb.MoveRight()
+		case 'p':
+			eb.PasteBelow()
+		case 'P':
+			eb.PasteAbove()
+		case 'i':
+			// Insert
+		case 'a':
+			// Append
+			eb.MoveRight()
 		}
+		// XXX Until I fix mapping, mark the whole buffer as dirty on movement
+		eb.dirty = true
 	case COMMAND: // XXX How did you get here?
 	}
 }
@@ -92,6 +108,10 @@ func (eb *EditBuffer) RunRoutine(fn func(Interacter)) {
 }
 
 func (eb *EditBuffer) GetMap() []string {
+	if eb.dirty {
+		eb.MapToScreen()
+		eb.dirty = false
+	}
 	return eb.ScreenMap
 }
 
@@ -109,7 +129,6 @@ func (eb *EditBuffer) InsertChar(c byte) {
 	}
 
 	eb.Line.Value.(*EditLine).InsertChar(c)
-	eb.MapToScreen()
 }
 
 func (eb *EditBuffer) MapToScreen() {
@@ -124,6 +143,8 @@ func (eb *EditBuffer) MapToScreen() {
 		}
 		copy(row, e.GetRaw())
 		rs := string(row)
+		// XXX this is all sorts of wrong, but need to fix line mapping before fixing
+		// this
 		t := strings.Count(rs, "\t")
 		s := strings.Replace(rs, "\t", "        ", -1)
 		eb.ScreenMap[i] = s
@@ -155,7 +176,6 @@ func (eb *EditBuffer) Backspace() {
 	} else {
 		l.Delete(1)
 	}
-	eb.MapToScreen()
 }
 
 func (eb *EditBuffer) InsertLine(e *EditLine) *list.Element {
@@ -168,7 +188,7 @@ func (eb *EditBuffer) InsertLine(e *EditLine) *list.Element {
 	return eb.Line
 }
 
-func (eb *EditBuffer) AppendLine() *list.Element {
+func (eb *EditBuffer) AppendEmptyLine() *list.Element {
 	return eb.InsertLine(NewEditLine([]byte("")))
 }
 
@@ -177,12 +197,15 @@ func (eb *EditBuffer) DeleteLine() {
 }
 
 func (eb *EditBuffer) NewLine(d byte) {
-	// XXX This is pretty wrong lol
-	if eb.Line != nil {
-		eb.Line.Value.(*EditLine).InsertChar(d)
-		eb.Line = eb.AppendLine()
-		eb.MapToScreen()
+	if eb.Line == nil {
+		panic(NilLine)
 	}
+
+	l := eb.Line.Value.(*EditLine)
+	l.InsertChar(d)
+	newLine := l.AfterCursor()
+	l.ClearToEOL()
+	eb.InsertLine(NewEditLine(newLine))
 }
 
 func (eb *EditBuffer) Top() {
@@ -197,7 +220,6 @@ func (eb *EditBuffer) MoveHorizontal(dir int) {
 		Beep()
 	} else {
 		eb.Column = l.Cursor()
-		eb.MapToScreen()
 	}
 }
 
@@ -215,7 +237,6 @@ func (b *EditBuffer) MoveUp() {
 		if l := b.Line.Value.(*EditLine); len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
-		b.MapToScreen()
 	} else {
 		Beep()
 	}
@@ -227,8 +248,13 @@ func (b *EditBuffer) MoveDown() {
 		if l := b.Line.Value.(*EditLine); len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
-		b.MapToScreen()
 	} else {
 		Beep()
 	}
+}
+
+func (eb *EditBuffer) PasteAbove() {
+}
+
+func (eb *EditBuffer) PasteBelow() {
 }

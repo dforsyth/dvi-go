@@ -28,11 +28,11 @@ func InsertMode(gs *GlobalState) {
 		gs.UpdateCh <- 1
 		k := <-gs.InputCh
 
+		buffer.SendInput(k)
 		switch k {
 		case ESC:
 			return
 		default:
-			buffer.SendInput(k)
 		}
 		m.Key = k
 	}

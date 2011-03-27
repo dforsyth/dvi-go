@@ -1,9 +1,9 @@
 package main
 
 type EditLine struct {
-	b  *GapBuffer
-	nl bool
-	raw []byte
+	b     *GapBuffer
+	nl    bool
+	raw   []byte
 	dirty bool
 }
 
@@ -41,6 +41,10 @@ func (e *EditLine) GetRaw() []byte {
 	return e.raw
 }
 
+func (e *EditLine) ClearToEOL() {
+	e.b.DeleteAfterGap()
+}
+
 func (e *EditLine) MoveCursor(p int) bool {
 	if p < 0 || p > len(e.b.GaplessBuffer()) {
 		return false
@@ -53,3 +57,10 @@ func (e *EditLine) Cursor() int {
 	return e.b.gs
 }
 
+func (e *EditLine) AfterCursor() []byte {
+	return e.b.AfterGap()
+}
+
+func (e *EditLine) BeforeCursor() []byte {
+	return e.b.BeforeGap()
+}

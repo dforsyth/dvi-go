@@ -17,13 +17,16 @@ func NormalMode(gs *GlobalState) {
 			CommandMode(gs)
 			gs.Mode = NORMAL
 			gs.SetModeline(m)
-		} else if k == int('i') {
-			InsertMode(gs)
-			gs.Mode = NORMAL
-			gs.SetModeline(m)
 		} else {
 			buffer := gs.CurrentBuffer.Value.(Interacter)
 			buffer.SendInput(k)
+			switch k {
+			case 'i', 'a':
+				InsertMode(gs)
+				gs.Mode = NORMAL
+				gs.SetModeline(m)
+			default:
+			}
 		}
 		m.Key = k
 	}

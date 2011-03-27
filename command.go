@@ -81,7 +81,7 @@ func (c *Command) Execute() {
 	for t := targets.Front(); t != nil; t = t.Next() {
 		if save {
 			switch buffer := t.Value.(type) {
-			case *EditBuffer: // Writable
+			case *EditBuffer: // I should make these io.Writer s
 				WriteFile(buffer.Pathname, buffer)
 			}
 		}
