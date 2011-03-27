@@ -33,17 +33,6 @@ func InsertMode(gs *GlobalState) {
 			return
 		default:
 			buffer.SendInput(k)
-			/*
-				case 127, curses.KEY_BACKSPACE:
-					// improperly handles the newline at the end of the prev line
-					curr.backspace()
-				case 0xd, 0xa:
-					curr.newLine(byte('\n'))
-				case 0x9:
-					// currfilefer().InsertTab()
-				default:
-					curr.insertChar(byte(k))
-			*/
 		}
 		m.Key = k
 	}

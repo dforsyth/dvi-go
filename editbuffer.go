@@ -21,6 +21,11 @@ type EditBuffer struct {
 	Lines    *list.List
 	Line     *list.Element
 	Column   int
+
+	tabs bool
+	tabwidth int
+	tabstop int
+
 	// Stuff for painting
 	Anchor     *list.Element
 	Window     *Window
@@ -117,7 +122,7 @@ func (eb *EditBuffer) MapToScreen() {
 		for i, _ := range row {
 			row[i] = ' '
 		}
-		copy(row, e.raw())
+		copy(row, e.GetRaw())
 		rs := string(row)
 		t := strings.Count(rs, "\t")
 		s := strings.Replace(rs, "\t", "        ", -1)
@@ -207,7 +212,7 @@ func (eb *EditBuffer) MoveRight() {
 func (b *EditBuffer) MoveUp() {
 	if p := b.Line.Prev(); p != nil {
 		b.Line = p
-		if l := b.Line.Value.(*EditLine); len(l.raw()) > b.Column {
+		if l := b.Line.Value.(*EditLine); len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
 		b.MapToScreen()
@@ -219,7 +224,7 @@ func (b *EditBuffer) MoveUp() {
 func (b *EditBuffer) MoveDown() {
 	if n := b.Line.Next(); n != nil {
 		b.Line = n
-		if l := b.Line.Value.(*EditLine); len(l.raw()) > b.Column {
+		if l := b.Line.Value.(*EditLine); len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
 		b.MapToScreen()
