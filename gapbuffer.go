@@ -91,10 +91,18 @@ func (g *GapBuffer) Buffer() []byte {
 	return g.buf
 }
 
+func (g *GapBuffer) BeforeGap() []byte {
+	return g.buf[:g.gs]
+}
+
+func (g *GapBuffer) AfterGap() []byte {
+	return g.buf[g.ge:]
+}
+
 func (g *GapBuffer) GaplessBuffer() []byte {
 	b := make([]byte, len(g.buf[:g.gs])+len(g.buf[g.ge:]))
-	copy(b, g.buf[:g.gs])
-	copy(b[g.gs:], g.buf[g.ge:])
+	copy(b, g.BeforeGap())
+	copy(b[g.gs:], g.AfterGap())
 	return b
 	// return []byte(string(g.buf[:g.gs]) + string(g.buf[g.ge:]))
 }
