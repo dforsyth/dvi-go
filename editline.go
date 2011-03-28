@@ -5,6 +5,12 @@ type EditLine struct {
 	nl    bool
 	raw   []byte
 	dirty bool
+	mi []mapInfo
+}
+
+type mapInfo struct {
+	ls, le int // position in line start and end
+	ss, se int // position on screen start and end
 }
 
 func NewEditLine(s []byte) *EditLine {

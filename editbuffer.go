@@ -182,6 +182,8 @@ func (eb *EditBuffer) Backspace() {
 		if prev := eb.Line.Prev(); prev != nil {
 			eb.DeleteLine()
 			eb.Line = prev
+			// There *should* be a newline character to delete from prev
+			eb.Line.Value.(*EditLine).Delete(1)
 		} else {
 			Beep()
 		}
