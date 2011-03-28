@@ -160,6 +160,17 @@ func (eb *EditBuffer) MapToScreen() {
 	}
 }
 
+func (eb *EditBuffer) GoToLine(lno int) bool {
+	i := 1
+	for l := eb.Lines.Front(); l != nil; l = l.Next() {
+		if i == lno {
+			eb.Line = l
+			return true
+		}
+	}
+	return false
+}
+
 func (eb *EditBuffer) Backspace() {
 	if eb.Line == nil {
 		panic(NilLine)

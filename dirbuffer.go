@@ -105,6 +105,7 @@ func (db *DirBuffer) Forward() {
 		if eb, e := NewReadEditBuffer(db.gs, path); e == nil {
 			db.gs.AddBuffer(eb)
 			db.gs.SetMapper(eb)
+			eb.GoToLine(1)
 			// Now, remove this buffer
 			db.gs.RemoveBuffer(db)
 		} else {

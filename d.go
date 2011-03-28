@@ -153,6 +153,7 @@ func main() {
 				if eb, e := NewReadEditBuffer(gs, path); e == nil {
 					gs.AddBuffer(eb)
 					gs.SetMapper(eb)
+					eb.GoToLine(1)
 				} else {
 					panic(e.String())
 				}
