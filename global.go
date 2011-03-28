@@ -21,6 +21,7 @@ type GlobalState struct {
 	InputCh       chan int
 	UpdateCh      chan int
 	Mode          int
+	Wd		string
 }
 
 func NewGlobalState() *GlobalState {
@@ -37,6 +38,14 @@ func NewGlobalState() *GlobalState {
 
 func (gs *GlobalState) AddBuffer(buffer Interacter) {
 	gs.CurrentBuffer = gs.Buffers.PushBack(buffer)
+}
+
+func (gs *GlobalState) RemoveBuffer(buffer Interacter) {
+	for b := gs.Buffers.Front(); b != nil; b = b.Next() {
+		if b.Value == buffer {
+			gs.Buffers.Remove(b)
+		}
+	}
 }
 
 func (gs *GlobalState) SetMapper(mapper Mapper) {

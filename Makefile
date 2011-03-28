@@ -5,6 +5,7 @@ include $(GOROOT)/src/Make.inc
 TARG=   d
 GOFILES=    command.go \
             d.go \
+            dirbuffer.go \
             disk.go \
             gapbuffer.go \
             global.go \

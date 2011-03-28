@@ -1,27 +1,12 @@
-/* A super minimal but competant programming editor.
- *
- * - modal
- * - auto indent
- * - tabs (routine per tab)
- * - jkl; instead of hjkl
- * - w, q
- * - temp files
- * - search (forward and backward)
- * - command history along the bottom of the screen in normal mode
- * - wrap or max line length
- * - tabs/spaces
- * - tabstop
- * - syntax highlighting
- * - word, line delete, copy, etc
- */
-
 package main
 
 import (
 	"curses"
 	"fmt"
+	"os"
 	"os/signal"
 	"syscall"
+	"path/filepath"
 )
 
 const (
@@ -67,7 +52,7 @@ func NewInsertModeline() *InsertModeline {
 }
 
 func (m *InsertModeline) String() string {
-	return fmt.Sprintf("INSERT -- Key: %c -- Line: %d -- Column: %d", m.Key, m.LineNumber, m.ColumnNumber)
+	return fmt.Sprintf("INSERT -- Key: %c (%d)-- Line: %d -- Column: %d", m.Key, m.Key, m.LineNumber, m.ColumnNumber)
 }
 
 func (m *InsertModeline) GetCursor() int {
@@ -141,16 +126,46 @@ func main() {
 	SignalsRoutine()
 
 	gs := NewGlobalState()
-
+	wd, e := os.Getwd()
+	if e != nil {
+		panic(e.String())
+	}
+	gs.Wd = wd
 	gs.Window.InputRoutine(gs.InputCh)
 	gs.Window.UpdateRoutine(gs.UpdateCh)
 
-	eb := NewTempEditBuffer(gs, TMPPREFIX)
-	eb.InsertLine(NewEditLine([]byte("")))
-
-	gs.AddBuffer(eb)
-	gs.SetMapper(eb)
-	eb.MapToScreen()
+	if len(os.Args) > 1 {
+		// XXX workaround for issue 1645
+		path := os.Args[1]
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(gs.Wd, os.Args[1])
+		}
+		// panic(path)
+		if fi, e := os.Stat(path); e == nil {
+			if fi.IsDirectory() {
+				if fi.Name == "" {
+					fi.Name = "/"
+				}
+				db := NewDirBuffer(gs, path)
+				gs.AddBuffer(db)
+				gs.SetMapper(db)
+			} else if fi.IsRegular() {
+				if eb, e := NewReadEditBuffer(gs, path); e == nil {
+					gs.AddBuffer(eb)
+					gs.SetMapper(eb)
+				} else {
+					panic(e.String())
+				}
+			}
+		} else {
+			panic(e.String())
+		}
+	} else {
+		eb := NewTempEditBuffer(gs, TMPPREFIX)
+		eb.InsertLine(NewEditLine([]byte("")))
+		gs.AddBuffer(eb)
+		gs.SetMapper(eb)
+	}
 
 	NormalMode(gs)
 	Done(0)

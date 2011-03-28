@@ -25,6 +25,10 @@ func NormalMode(gs *GlobalState) {
 				InsertMode(gs)
 				gs.Mode = NORMAL
 				gs.SetModeline(m)
+			case 'n':
+				gs.CurrentBuffer = gs.CurrentBuffer.Next()
+			case 'p':
+				gs.CurrentBuffer = gs.CurrentBuffer.Prev()
 			default:
 			}
 		}

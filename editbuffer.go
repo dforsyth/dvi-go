@@ -42,7 +42,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb.Lines.Init()
 	eb.Line = nil
 	eb.Column = 0
-	eb.dirty = false
+	eb.dirty = true
 
 	eb.Anchor = eb.Line
 	eb.Window = gs.Window
@@ -82,9 +82,9 @@ func (eb *EditBuffer) SendInput(k int) {
 		case 'j':
 			eb.MoveLeft()
 		case 'k':
-			eb.MoveUp()
-		case 'l':
 			eb.MoveDown()
+		case 'l':
+			eb.MoveUp()
 		case ';':
 			eb.MoveRight()
 		case 'p':
