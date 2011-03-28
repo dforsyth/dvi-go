@@ -178,7 +178,7 @@ func (eb *EditBuffer) Backspace() {
 	}
 
 	l := eb.Line.Value.(*EditLine)
-	if l.b.gs == 0 {
+	if l.Cursor() == 0 {
 		if prev := eb.Line.Prev(); prev != nil {
 			eb.DeleteLine()
 			eb.Line = prev
