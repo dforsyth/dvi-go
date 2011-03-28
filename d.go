@@ -19,7 +19,7 @@ const (
 )
 
 type Mapper interface {
-	GetMap() []string
+	GetMap() *[]string
 	GetCursor() (int, int)
 	SetWindow(*Window)
 	SetDimensions(int, int)

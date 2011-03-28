@@ -22,10 +22,19 @@ func NewWindow(gs *GlobalState) *Window {
 	w.Cols = *curses.Cols
 	w.Rows = *curses.Rows
 	w.gs = gs
+	smap := make([]string, w.Rows-1)
+	w.ScreenMap = &smap
+
 	return w
 }
 
 func (w *Window) HandleWinch() {
+}
+
+func (w *Window) ClearMap() {
+	for i, _ := range *w.ScreenMap {
+		(*w.ScreenMap)[i] = ""
+	}
 }
 
 func (w *Window) InputRoutine(ch chan int) {
@@ -59,7 +68,7 @@ func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 		panic(fmt.Sprintf("Window.Paint: Bad range (%d, %d) [%d, %d]", start, end, cols, rows))
 	}
 
-	smap := mapper.GetMap()
+	smap := *mapper.GetMap()
 	for i := start; i < end; i++ {
 		w.Curses.Move(i, 0)
 		w.Curses.Clrtoeol()

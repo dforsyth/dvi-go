@@ -31,7 +31,6 @@ type EditBuffer struct {
 	Anchor     *list.Element
 	Window     *Window
 	X, Y       int
-	ScreenMap  []string
 	CurX, CurY int
 }
 
@@ -46,7 +45,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 
 	eb.Anchor = eb.Line
 	eb.Window = gs.Window
-	eb.ScreenMap = make([]string, eb.Window.Rows-1)
+	// eb.ScreenMap = make([]string, eb.Window.Rows-1)
 	eb.CurX, eb.CurY = 0, 0
 	eb.X, eb.Y = eb.Window.Cols, eb.Window.Rows-1
 
@@ -107,12 +106,12 @@ func (eb *EditBuffer) RunRoutine(fn func(Interacter)) {
 	go fn(eb)
 }
 
-func (eb *EditBuffer) GetMap() []string {
+func (eb *EditBuffer) GetMap() *[]string {
 	if eb.dirty {
 		eb.MapToScreen()
 		eb.dirty = false
 	}
-	return eb.ScreenMap
+	return eb.Window.ScreenMap
 }
 
 func (eb *EditBuffer) SetDimensions(x, y int) {
@@ -133,6 +132,7 @@ func (eb *EditBuffer) InsertChar(c byte) {
 
 func (eb *EditBuffer) MapToScreen() {
 	i := 0
+	smap := *eb.Window.ScreenMap
 	for l := eb.Anchor; l != nil && i < eb.Y; l = l.Next() {
 		e := l.Value.(*EditLine)
 		// XXX: screen Lines code for wrap
@@ -148,7 +148,7 @@ func (eb *EditBuffer) MapToScreen() {
 		t := strings.Count(rs, "\t")
 		s := strings.Replace(rs, "\t", "        ", -1)
 		s = strings.Replace(s, "\n", "", -1)
-		eb.ScreenMap[i] = s
+		smap[i] = s
 		if l == eb.Line {
 			eb.CurY = i
 			eb.CurX = e.b.gs + (t * 7)
@@ -156,7 +156,7 @@ func (eb *EditBuffer) MapToScreen() {
 		i++
 	}
 	for i < eb.Y {
-		eb.ScreenMap[i] = NaL
+		smap[i] = NaL
 		i++
 	}
 }

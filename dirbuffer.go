@@ -13,7 +13,6 @@ type DirBuffer struct {
 	Anchor    int
 	X, Y      int
 	CurY      int
-	ScreenMap []string
 	Window    *Window
 	gs        *GlobalState
 }
@@ -38,7 +37,6 @@ func NewDirBuffer(gs *GlobalState, name string) *DirBuffer {
 		panic(err.String())
 	}
 	db.Window = gs.Window
-	db.ScreenMap = make([]string, db.Window.Rows-1)
 	db.CurY = 0
 	db.Item = 0
 	db.Anchor = 0
@@ -48,9 +46,9 @@ func NewDirBuffer(gs *GlobalState, name string) *DirBuffer {
 	return db
 }
 
-func (db *DirBuffer) GetMap() []string {
+func (db *DirBuffer) GetMap() *[]string {
 	db.MapToScreen()
-	return db.ScreenMap
+	return db.Window.ScreenMap
 }
 
 func (db *DirBuffer) GetCursor() (int, int) {
@@ -131,16 +129,17 @@ func (db *DirBuffer) MoveDown() {
 }
 
 func (db *DirBuffer) MapToScreen() {
+	smap := *db.Window.ScreenMap
 	for i, fi := range db.Listing[db.Anchor:] {
 		if i > db.Y-1 {
 			break
 		}
-		db.ScreenMap[i] = fi.Name
+		smap[i] = fi.Name
 		if i == 0 && db.Name != "/" {
-			db.ScreenMap[i] = ".."
+			smap[i] = ".."
 		}
 		if fi.IsDirectory() {
-			db.ScreenMap[i] += "/"
+			smap[i] += "/"
 		}
 		if fi == db.Listing[db.Item] {
 			db.CurY = i

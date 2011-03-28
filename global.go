@@ -49,7 +49,11 @@ func (gs *GlobalState) RemoveBuffer(buffer Interacter) {
 }
 
 func (gs *GlobalState) SetMapper(mapper Mapper) {
-	gs.CurrentMapper = &mapper
+	newMapper := &mapper
+	if newMapper != gs.CurrentMapper {
+		gs.Window.ClearMap()
+	}
+	gs.CurrentMapper = newMapper
 }
 
 func (gs *GlobalState) SetModeline(modeliner Modeliner) {
