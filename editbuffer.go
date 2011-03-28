@@ -147,6 +147,7 @@ func (eb *EditBuffer) MapToScreen() {
 		// this
 		t := strings.Count(rs, "\t")
 		s := strings.Replace(rs, "\t", "        ", -1)
+		s = strings.Replace(s, "\n", "", -1)
 		eb.ScreenMap[i] = s
 		if l == eb.Line {
 			eb.CurY = i

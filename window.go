@@ -13,6 +13,7 @@ type Window struct {
 	Curses     *curses.Window
 	Cols, Rows int
 	gs         *GlobalState
+	ScreenMap	*[]string // TODO All mappers should share a map
 }
 
 func NewWindow(gs *GlobalState) *Window {
@@ -22,6 +23,9 @@ func NewWindow(gs *GlobalState) *Window {
 	w.Rows = *curses.Rows
 	w.gs = gs
 	return w
+}
+
+func (w *Window) HandleWinch() {
 }
 
 func (w *Window) InputRoutine(ch chan int) {
@@ -44,6 +48,7 @@ func (w *Window) UpdateRoutine(ch chan int) {
 }
 
 func (w *Window) PaintMapper(start, end int, paintCursor bool) {
+	// A mapper can only have rows 0 to Rows-2
 	cols, rows := w.Cols, w.Rows-1
 
 	gs := w.gs
@@ -61,8 +66,8 @@ func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 		w.Curses.Mvwaddnstr(i, 0, smap[i], cols)
 	}
 
-	cX, cY := mapper.GetCursor()
 	if paintCursor {
+		cX, cY := mapper.GetCursor()
 		if cX < 0 || cY < 0 || cX > cols || cY > rows {
 			EndScreen()
 			panic(fmt.Sprintf("Window.Paint: Bad cursor (%d, %d) [%d, %d]", start, end, cols, rows))
