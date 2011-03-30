@@ -12,7 +12,7 @@ GOFILES=    command.go \
             editbuffer.go \
             editline.go \
             insert.go \
-		    normal.go \
-			window.go
+            normal.go \
+            window.go
 
 include $(GOROOT)/src/Make.cmd

@@ -5,6 +5,7 @@ type EditLine struct {
 	nl    bool
 	raw   []byte
 	dirty bool
+	indent int // index of first character
 	mi    []mapInfo
 }
 
@@ -21,6 +22,7 @@ func NewEditLine(s []byte) *EditLine {
 	} else {
 		e.nl = false
 	}
+	e.indent = 0
 	e.raw = e.b.GaplessBuffer()
 	e.dirty = false
 	return e
