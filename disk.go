@@ -56,8 +56,8 @@ func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
 	i := 0
 	wr := 0
-	for l := b.Lines.Front(); l != nil; l = l.Next() {
-		n, e := f.Write(l.Value.(*EditLine).GetRaw())
+	for _, l := range b.Lines {
+		n, e := f.Write(l.GetRaw())
 		if e != nil {
 			return nil, e
 		}

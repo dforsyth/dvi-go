@@ -5,7 +5,7 @@ type EditLine struct {
 	nl    bool
 	raw   []byte
 	dirty bool
-	mi []mapInfo
+	mi    []mapInfo
 }
 
 type mapInfo struct {

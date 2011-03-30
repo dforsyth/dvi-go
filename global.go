@@ -21,7 +21,7 @@ type GlobalState struct {
 	InputCh       chan int
 	UpdateCh      chan int
 	Mode          int
-	Wd		string
+	Wd            string
 }
 
 func NewGlobalState() *GlobalState {

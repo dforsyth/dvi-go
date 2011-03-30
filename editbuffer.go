@@ -1,7 +1,7 @@
 package main
 
 import (
-	"container/list"
+	// "container/list"
 	"curses"
 	// "fmt"
 	// "math"
@@ -18,8 +18,8 @@ type EditBuffer struct {
 	fi       *os.FileInfo
 	Name     string
 	Pathname string
-	Lines    *list.List
-	Line     *list.Element
+	Lines    []*EditLine
+	Line     int
 	Column   int
 	dirty    bool
 
@@ -28,7 +28,7 @@ type EditBuffer struct {
 	tabstop  int
 
 	// Stuff for painting
-	Anchor     *list.Element
+	Anchor     int
 	Window     *Window
 	X, Y       int
 	CurX, CurY int
@@ -37,9 +37,8 @@ type EditBuffer struct {
 func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb := new(EditBuffer)
 	eb.Pathname = name
-	eb.Lines = list.New()
-	eb.Lines.Init()
-	eb.Line = nil
+	eb.Lines = make([]*EditLine, 0, 100)
+	eb.Line = 0
 	eb.Column = 0
 	eb.dirty = true
 
@@ -123,23 +122,21 @@ func (eb *EditBuffer) GetCursor() (int, int) {
 }
 
 func (eb *EditBuffer) InsertChar(c byte) {
-	if eb.Line == nil {
-		panic(NilLine)
-	}
-
-	eb.Line.Value.(*EditLine).InsertChar(c)
+	eb.Lines[eb.Line].InsertChar(c)
 }
 
 func (eb *EditBuffer) MapToScreen() {
-	i := 0
+	var i int
 	smap := *eb.Window.ScreenMap
-	for l := eb.Anchor; l != nil && i < eb.Y; l = l.Next() {
-		e := l.Value.(*EditLine)
+	for _, e := range eb.Lines[eb.Anchor:] {
+		if i >= eb.Y {
+			break
+		}
 		// XXX: screen Lines code for wrap
 		row := make([]byte, eb.X)
 		// panic(fmt.Sprintf("len of e.raw is %d", len(e.raw())))
-		for i, _ := range row {
-			row[i] = ' '
+		for j, _ := range row {
+			row[j] = ' '
 		}
 		copy(row, e.GetRaw())
 		rs := string(row)
@@ -149,7 +146,7 @@ func (eb *EditBuffer) MapToScreen() {
 		s := strings.Replace(rs, "\t", "        ", -1)
 		s = strings.Replace(s, "\n", "", -1)
 		smap[i] = s
-		if l == eb.Line {
+		if i == eb.Line {
 			eb.CurY = i
 			eb.CurX = e.b.gs + (t * 7)
 		}
@@ -161,29 +158,27 @@ func (eb *EditBuffer) MapToScreen() {
 	}
 }
 
-func (eb *EditBuffer) GoToLine(lno int) bool {
-	i := 1
-	for l := eb.Lines.Front(); l != nil; l = l.Next() {
-		if i == lno {
-			eb.Line = l
-			return true
-		}
+func (eb *EditBuffer) GoToLine(lno int) {
+	if lno < 1 {
+		return
 	}
-	return false
+
+	if lno > len(eb.Lines) {
+		eb.Line = len(eb.Lines)
+	}
+	eb.Line = lno - 1
 }
 
 func (eb *EditBuffer) Backspace() {
-	if eb.Line == nil {
-		panic(NilLine)
-	}
-
-	l := eb.Line.Value.(*EditLine)
+	l := eb.Lines[eb.Line]
 	if l.Cursor() == 0 {
-		if prev := eb.Line.Prev(); prev != nil {
+		if eb.Line > 0 {
+			sav := eb.Lines[eb.Line]
 			eb.DeleteLine()
-			eb.Line = prev
+			eb.Lines[eb.Line].Delete(1)
 			// There *should* be a newline character to delete from prev
-			eb.Line.Value.(*EditLine).Delete(1)
+			if sav != nil {
+			}
 		} else {
 			Beep()
 		}
@@ -192,30 +187,27 @@ func (eb *EditBuffer) Backspace() {
 	}
 }
 
-func (eb *EditBuffer) InsertLine(e *EditLine) *list.Element {
-	if eb.Line == nil {
-		eb.Line = eb.Lines.PushFront(e)
-		eb.Anchor = eb.Line
-	} else {
-		eb.Line = eb.Lines.InsertAfter(e, eb.Line)
+func (eb *EditBuffer) InsertLine(e *EditLine) *EditLine {
+	if len(eb.Lines) > 0 {
+		eb.Line += 1
 	}
-	return eb.Line
+	eb.Lines = append(eb.Lines[:eb.Line], append([]*EditLine{e}, eb.Lines[eb.Line:]...)...)
+	return eb.Lines[eb.Line]
 }
 
-func (eb *EditBuffer) AppendEmptyLine() *list.Element {
+func (eb *EditBuffer) AppendEmptyLine() *EditLine {
 	return eb.InsertLine(NewEditLine([]byte("")))
 }
 
 func (eb *EditBuffer) DeleteLine() {
-	eb.Lines.Remove(eb.Line)
+	eb.Lines = append(eb.Lines[:eb.Line], eb.Lines[eb.Line+1:]...)
+	if eb.Line > 0 {
+		eb.Line -= 1
+	}
 }
 
 func (eb *EditBuffer) NewLine(d byte) {
-	if eb.Line == nil {
-		panic(NilLine)
-	}
-
-	l := eb.Line.Value.(*EditLine)
+	l := eb.Lines[eb.Line]
 	l.InsertChar(d)
 	newLine := l.AfterCursor()
 	l.ClearToEOL()
@@ -223,14 +215,14 @@ func (eb *EditBuffer) NewLine(d byte) {
 }
 
 func (eb *EditBuffer) Top() {
-	eb.Line = eb.Lines.Front()
+	eb.Line = 0
 	eb.Anchor = eb.Line
 }
 
 // TODO If the column is the length of a line, set b.Column to -1 so that moving
 // vertically will put the cursor at the end of the new line.
 func (eb *EditBuffer) MoveHorizontal(dir int) {
-	if l := eb.Line.Value.(*EditLine); !l.MoveCursor(l.Cursor() + dir) {
+	if l := eb.Lines[eb.Line]; !l.MoveCursor(l.Cursor() + dir) {
 		Beep()
 	} else {
 		eb.Column = l.Cursor()
@@ -246,9 +238,9 @@ func (eb *EditBuffer) MoveRight() {
 }
 
 func (b *EditBuffer) MoveUp() {
-	if p := b.Line.Prev(); p != nil {
-		b.Line = p
-		if l := b.Line.Value.(*EditLine); len(l.GetRaw()) > b.Column {
+	if b.Line > 0 {
+		b.Line -= 1
+		if l := b.Lines[b.Line]; len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
 	} else {
@@ -257,9 +249,9 @@ func (b *EditBuffer) MoveUp() {
 }
 
 func (b *EditBuffer) MoveDown() {
-	if n := b.Line.Next(); n != nil {
-		b.Line = n
-		if l := b.Line.Value.(*EditLine); len(l.GetRaw()) > b.Column {
+	if b.Line < len(b.Lines)-1 {
+		b.Line += 1
+		if l := b.Lines[b.Line]; len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
 	} else {

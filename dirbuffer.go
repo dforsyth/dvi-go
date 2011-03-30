@@ -7,14 +7,14 @@ import (
 )
 
 type DirBuffer struct {
-	Name	string
-	Listing   []*os.FileInfo
-	Item      int
-	Anchor    int
-	X, Y      int
-	CurY      int
-	Window    *Window
-	gs        *GlobalState
+	Name    string
+	Listing []*os.FileInfo
+	Item    int
+	Anchor  int
+	X, Y    int
+	CurY    int
+	Window  *Window
+	gs      *GlobalState
 }
 
 func NewDirBuffer(gs *GlobalState, name string) *DirBuffer {
