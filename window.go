@@ -13,7 +13,7 @@ type Window struct {
 	Curses     *curses.Window
 	Cols, Rows int
 	gs         *GlobalState
-	ScreenMap  *[]string // TODO All mappers should share a map
+	ScreenMap  *[]string
 }
 
 func NewWindow(gs *GlobalState) *Window {
