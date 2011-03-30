@@ -23,7 +23,6 @@ func InsertMode(gs *GlobalState) {
 	m := NewInsertModeline()
 	gs.SetModeline(m)
 	for {
-		m.LineNumber = buffer.(*EditBuffer).Line
 		window := gs.Window
 		window.PaintMapper(0, window.Rows-1, true)
 		gs.UpdateCh <- 1
