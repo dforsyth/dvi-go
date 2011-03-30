@@ -1,12 +1,12 @@
 package main
 
 type EditLine struct {
-	b     *GapBuffer
-	nl    bool
-	raw   []byte
-	dirty bool
+	b      *GapBuffer
+	nl     bool
+	raw    []byte
+	dirty  bool
 	indent int // index of first character
-	mi    []mapInfo
+	mi     []mapInfo
 }
 
 type mapInfo struct {
