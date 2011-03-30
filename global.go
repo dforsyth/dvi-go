@@ -48,6 +48,20 @@ func (gs *GlobalState) RemoveBuffer(buffer Interacter) {
 	}
 }
 
+func (gs *GlobalState) NextBuffer() {
+	if gs.CurrentBuffer.Next() != nil {
+		gs.CurrentBuffer = gs.CurrentBuffer.Next()
+		gs.SetMapper(gs.CurrentBuffer.Value.(Mapper))
+	}
+}
+
+func (gs *GlobalState) PrevBuffer() {
+	if gs.CurrentBuffer.Prev() != nil {
+		gs.CurrentBuffer = gs.CurrentBuffer.Prev()
+		gs.SetMapper(gs.CurrentBuffer.Value.(Mapper))
+	}
+}
+
 func (gs *GlobalState) SetMapper(mapper Mapper) {
 	newMapper := &mapper
 	if newMapper != gs.CurrentMapper {

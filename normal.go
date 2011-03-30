@@ -26,9 +26,9 @@ func NormalMode(gs *GlobalState) {
 				gs.Mode = NORMAL
 				gs.SetModeline(m)
 			case 'n':
-				gs.CurrentBuffer = gs.CurrentBuffer.Next()
+				gs.NextBuffer()
 			case 'p':
-				gs.CurrentBuffer = gs.CurrentBuffer.Prev()
+				gs.PrevBuffer()
 			default:
 			}
 		}

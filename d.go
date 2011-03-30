@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"path/filepath"
 )
 
 const (
@@ -135,31 +134,27 @@ func main() {
 	gs.Window.UpdateRoutine(gs.UpdateCh)
 
 	if len(os.Args) > 1 {
-		// XXX workaround for issue 1645
-		path := os.Args[1]
-		if !filepath.IsAbs(path) {
-			path = filepath.Join(gs.Wd, os.Args[1])
-		}
-		// panic(path)
-		if fi, e := os.Stat(path); e == nil {
-			if fi.IsDirectory() {
-				if fi.Name == "" {
-					fi.Name = "/"
+		for _, path := range os.Args[1:] {
+			if fi, e := os.Stat(path); e == nil {
+				if fi.IsDirectory() {
+					if fi.Name == "" {
+						fi.Name = "/"
+					}
+					db := NewDirBuffer(gs, path)
+					gs.AddBuffer(db)
+					gs.SetMapper(db)
+				} else if fi.IsRegular() {
+					if eb, e := NewReadEditBuffer(gs, path); e == nil {
+						gs.AddBuffer(eb)
+						gs.SetMapper(eb)
+						eb.GoToLine(1)
+					} else {
+						panic(e.String())
+					}
 				}
-				db := NewDirBuffer(gs, path)
-				gs.AddBuffer(db)
-				gs.SetMapper(db)
-			} else if fi.IsRegular() {
-				if eb, e := NewReadEditBuffer(gs, path); e == nil {
-					gs.AddBuffer(eb)
-					gs.SetMapper(eb)
-					eb.GoToLine(1)
-				} else {
-					panic(e.String())
-				}
+			} else {
+				panic(e.String())
 			}
-		} else {
-			panic(e.String())
 		}
 	} else {
 		eb := NewTempEditBuffer(gs, TMPPREFIX)
