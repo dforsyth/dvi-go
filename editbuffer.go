@@ -165,8 +165,9 @@ func (eb *EditBuffer) GoToLine(lno int) {
 
 	if lno > len(eb.Lines) {
 		eb.Line = len(eb.Lines)
+	} else {
+		eb.Line = lno - 1
 	}
-	eb.Line = lno - 1
 }
 
 func (eb *EditBuffer) Backspace() {
