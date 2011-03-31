@@ -2,7 +2,7 @@ include $(GOROOT)/src/Make.inc
 
 .DEFAULT_GOAL=  all
 
-TARG=   d
+TARG=   dvi
 GOFILES=    command.go \
             d.go \
             dirbuffer.go \

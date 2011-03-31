@@ -21,11 +21,13 @@ type EditBuffer struct {
 	Lines    []*EditLine
 	Line     int
 	Column   int
-	dirty    bool
+	dirty    bool // This should become an int, so that updates are just after a given line
 
 	tabs     bool
 	tabwidth int
 	tabstop  int
+
+	cmdbuff *GapBuffer
 
 	// Stuff for painting
 	Anchor     int
@@ -41,6 +43,8 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb.Line = 0
 	eb.Column = 0
 	eb.dirty = true
+
+	eb.cmdbuff = NewGapBuffer([]byte(""))
 
 	eb.Anchor = eb.Line
 	eb.Window = gs.Window
@@ -76,26 +80,39 @@ func (eb *EditBuffer) SendInput(k int) {
 		}
 		eb.dirty = true
 	case NORMAL:
-		switch k {
-		case 'j':
-			eb.MoveLeft()
-		case 'k':
-			eb.MoveDown()
-		case 'l':
-			eb.MoveUp()
-		case ';':
-			eb.MoveRight()
-		case 'p':
-			eb.PasteBelow()
-		case 'P':
-			eb.PasteAbove()
-		case 'i':
-			// Insert
-		case 'a':
-			// Append
-			eb.MoveRight()
-		case 'o':
-			eb.AppendEmptyLine()
+		if eb.cmdbuff.String() == "" {
+			b :=true
+			switch k {
+			case 'j':
+				b = eb.MoveLeft()
+			case 'k':
+				b = eb.MoveDown()
+			case 'l':
+				b = eb.MoveUp()
+			case ';':
+				b = eb.MoveRight()
+			case 'p':
+				eb.PasteBelow()
+			case 'P':
+				eb.PasteAbove()
+			case 'i':
+				// Insert
+			case 'a':
+				// Append
+				eb.MoveRight()
+			case 'o':
+				// Add a line and go to insert mode
+				eb.AppendEmptyLine()
+				eb.MoveDown()
+			case 'd':
+				eb.DeleteLine(eb.Line)
+			}
+			if !b {
+				Beep()
+			}
+		} else {
+			eb.cmdbuff.InsertChar(byte(k))
+			eb.EvalCmdBuff()
 		}
 		// XXX Until I fix mapping, mark the whole buffer as dirty on movement
 		eb.dirty = true
@@ -173,13 +190,10 @@ func (eb *EditBuffer) GoToLine(lno int) {
 }
 
 func (eb *EditBuffer) Backspace() {
-	l := eb.Lines[eb.Line]
-	if l.Cursor() == 0 {
+	if l := eb.Lines[eb.Line]; l.Cursor() == 0 {
 		if eb.Line > 0 {
-			sav := eb.Lines[eb.Line]
-			eb.DeleteLine()
+			sav := eb.DeleteLine(eb.Line)
 			eb.Lines[eb.Line].Delete(1)
-			// There *should* be a newline character to delete from prev
 			if sav != nil {
 			}
 		} else {
@@ -204,19 +218,37 @@ func (eb *EditBuffer) AppendEmptyLine() {
 	eb.InsertLine(NewEditLine([]byte("")), eb.Line+1)
 }
 
-func (eb *EditBuffer) DeleteLine() {
-	eb.Lines = append(eb.Lines[:eb.Line], eb.Lines[eb.Line+1:]...)
-	if eb.Line > 0 {
+// Delete a line at lno, 0-n, from an EditBuffer
+func (eb *EditBuffer) DeleteLine(lno int) *EditLine {
+	// If we are removing the 0th line from a file with a single line,
+	// after the line is removed, a new one needs to be inserted
+	if len(eb.Lines) == 0 {
+		// This is an error case, we're going to panic here because it
+		// really should not happen
+		panic("Trying to delete line 0 in a buffer with no lines")
+	}
+
+	// The line that's going away
+	ln := eb.Lines[lno]
+
+	eb.Lines = append(eb.Lines[:lno], eb.Lines[lno+1:]...)
+	if len(eb.Lines) == 0 {
+		eb.InsertLine(NewEditLine([]byte("")), 0)
+		eb.Line = 0
+		// vim would set "--no lines in buffer--" in this case
+	} else if eb.Line > 0 {
+		// Move up one line
 		eb.Line -= 1
 	}
+	return ln
 }
 
 func (eb *EditBuffer) NewLine(d byte) {
 	l := eb.Lines[eb.Line]
 	l.InsertChar(d)
-	newLine := l.AfterCursor()
+	newLine := NewEditLine(l.AfterCursor())
 	l.ClearToEOL()
-	eb.InsertLine(NewEditLine(newLine), eb.Line+1)
+	eb.InsertLine(newLine, eb.Line+1)
 	eb.MoveDown()
 }
 
@@ -227,46 +259,49 @@ func (eb *EditBuffer) Top() {
 
 // TODO If the column is the length of a line, set b.Column to -1 so that moving
 // vertically will put the cursor at the end of the new line.
-func (eb *EditBuffer) MoveHorizontal(dir int) {
-	if l := eb.Lines[eb.Line]; !l.MoveCursor(l.Cursor() + dir) {
-		Beep()
-	} else {
+func (eb *EditBuffer) MoveHorizontal(dir int) bool {
+	if l := eb.Lines[eb.Line]; l.MoveCursor(l.Cursor() + dir) {
 		eb.Column = l.Cursor()
+		return true
 	}
+	return false
 }
 
-func (eb *EditBuffer) MoveLeft() {
-	eb.MoveHorizontal(-1)
+func (eb *EditBuffer) MoveLeft() bool {
+	return eb.MoveHorizontal(-1)
 }
 
-func (eb *EditBuffer) MoveRight() {
-	eb.MoveHorizontal(1)
+func (eb *EditBuffer) MoveRight() bool {
+	return eb.MoveHorizontal(1)
 }
 
-func (b *EditBuffer) MoveUp() {
+func (b *EditBuffer) MoveUp() bool {
 	if b.Line > 0 {
 		b.Line -= 1
 		if l := b.Lines[b.Line]; len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
-	} else {
-		Beep()
+		return true
 	}
+	return false
 }
 
-func (b *EditBuffer) MoveDown() {
+func (b *EditBuffer) MoveDown() bool {
 	if b.Line < len(b.Lines)-1 {
 		b.Line += 1
 		if l := b.Lines[b.Line]; len(l.GetRaw()) > b.Column {
 			l.MoveCursor(b.Column)
 		}
-	} else {
-		Beep()
+		return true
 	}
+	return false
 }
 
 func (eb *EditBuffer) PasteAbove() {
 }
 
 func (eb *EditBuffer) PasteBelow() {
+}
+
+func (eb *EditBuffer) EvalCmdBuff() {
 }
