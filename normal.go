@@ -21,7 +21,7 @@ func NormalMode(gs *GlobalState) {
 			buffer := gs.CurrentBuffer.Value.(Interacter)
 			buffer.SendInput(k)
 			switch k {
-			case 'i', 'a':
+			case 'i', 'a', 'o':
 				InsertMode(gs)
 				gs.Mode = NORMAL
 				gs.SetModeline(m)

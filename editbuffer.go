@@ -94,6 +94,8 @@ func (eb *EditBuffer) SendInput(k int) {
 		case 'a':
 			// Append
 			eb.MoveRight()
+		case 'o':
+			eb.AppendEmptyLine()
 		}
 		// XXX Until I fix mapping, mark the whole buffer as dirty on movement
 		eb.dirty = true
