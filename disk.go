@@ -26,6 +26,7 @@ func NewReadEditBuffer(gs *GlobalState, pathname string) (*EditBuffer, os.Error)
 
 	b := NewEditBuffer(gs, st.Name)
 	r := bufio.NewReader(f)
+	i := 0
 	for {
 		l, e := r.ReadBytes(byte('\n'))
 		if e != nil {
@@ -33,11 +34,12 @@ func NewReadEditBuffer(gs *GlobalState, pathname string) (*EditBuffer, os.Error)
 			if e != os.EOF {
 				return nil, e
 			} else {
-				b.InsertLine(NewEditLine(l))
+				b.InsertLine(NewEditLine(l), i)
 				break
 			}
 		}
-		b.InsertLine(NewEditLine(l))
+		b.InsertLine(NewEditLine(l), i)
+		i++
 	}
 	b.fi = st
 

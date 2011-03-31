@@ -3,7 +3,7 @@ package main
 import (
 	// "container/list"
 	"curses"
-	// "fmt"
+	"fmt"
 	// "math"
 	"os"
 	"strings"
@@ -37,7 +37,7 @@ type EditBuffer struct {
 func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb := new(EditBuffer)
 	eb.Pathname = name
-	eb.Lines = make([]*EditLine, 0, 100)
+	eb.Lines = make([]*EditLine, 0)
 	eb.Line = 0
 	eb.Column = 0
 	eb.dirty = true
@@ -190,16 +190,18 @@ func (eb *EditBuffer) Backspace() {
 	}
 }
 
-func (eb *EditBuffer) InsertLine(e *EditLine) *EditLine {
-	if len(eb.Lines) > 0 {
-		eb.Line += 1
+// Insert a line at lno, 0-n, into an EditBuffer.
+func (eb *EditBuffer) InsertLine(e *EditLine, lno int) {
+	if lno < 0 || lno > len(eb.Lines) {
+		panic(fmt.Sprintf("Unable to insert line at %d in buffer of %d lines", lno,
+			len(eb.Lines)))
 	}
-	eb.Lines = append(eb.Lines[:eb.Line], append([]*EditLine{e}, eb.Lines[eb.Line:]...)...)
-	return eb.Lines[eb.Line]
+
+	eb.Lines = append(eb.Lines[:lno], append([]*EditLine{e}, eb.Lines[lno:]...)...)
 }
 
-func (eb *EditBuffer) AppendEmptyLine() *EditLine {
-	return eb.InsertLine(NewEditLine([]byte("")))
+func (eb *EditBuffer) AppendEmptyLine() {
+	eb.InsertLine(NewEditLine([]byte("")), eb.Line+1)
 }
 
 func (eb *EditBuffer) DeleteLine() {
@@ -214,7 +216,8 @@ func (eb *EditBuffer) NewLine(d byte) {
 	l.InsertChar(d)
 	newLine := l.AfterCursor()
 	l.ClearToEOL()
-	eb.InsertLine(NewEditLine(newLine))
+	eb.InsertLine(NewEditLine(newLine), eb.Line+1)
+	eb.MoveDown()
 }
 
 func (eb *EditBuffer) Top() {

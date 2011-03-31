@@ -35,5 +35,6 @@ func InsertMode(gs *GlobalState) {
 		default:
 		}
 		m.Key = k
+		m.ColumnNumber = cap(buffer.(*EditBuffer).Lines)
 	}
 }

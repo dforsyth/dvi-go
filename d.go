@@ -158,7 +158,7 @@ func main() {
 		}
 	} else {
 		eb := NewTempEditBuffer(gs, TMPPREFIX)
-		eb.InsertLine(NewEditLine([]byte("")))
+		eb.InsertLine(NewEditLine([]byte("")), 0) // Insert the initial line per vi
 		gs.AddBuffer(eb)
 		gs.SetMapper(eb)
 	}

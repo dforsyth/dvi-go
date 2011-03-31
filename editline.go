@@ -1,15 +1,15 @@
 package main
 
 type EditLine struct {
-	b      *GapBuffer
-	nl     bool
-	raw    []byte
-	dirty  bool
-	indent int // index of first character
-	mi     []mapInfo
+	b       *GapBuffer
+	nl      bool
+	raw     []byte
+	dirty   bool
+	indent  int // index of first character
+	MapInfo []MapInfo
 }
 
-type mapInfo struct {
+type MapInfo struct {
 	ls, le int // position in line start and end
 	ss, se int // position on screen start and end
 }
