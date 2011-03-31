@@ -80,39 +80,44 @@ func (eb *EditBuffer) SendInput(k int) {
 		}
 		eb.dirty = true
 	case NORMAL:
-		if eb.cmdbuff.String() == "" {
-			b :=true
-			switch k {
-			case 'j':
-				b = eb.MoveLeft()
-			case 'k':
-				b = eb.MoveDown()
-			case 'l':
-				b = eb.MoveUp()
-			case ';':
-				b = eb.MoveRight()
-			case 'p':
-				eb.PasteBelow()
-			case 'P':
-				eb.PasteAbove()
-			case 'i':
-				// Insert
-			case 'a':
-				// Append
-				eb.MoveRight()
-			case 'o':
-				// Add a line and go to insert mode
-				eb.AppendEmptyLine()
-				eb.MoveDown()
-			case 'd':
-				eb.DeleteLine(eb.Line)
-			}
-			if !b {
-				Beep()
-			}
-		} else {
+		/* XXX
+		if eb.cmdbuff.String() != "" {
 			eb.cmdbuff.InsertChar(byte(k))
 			eb.EvalCmdBuff()
+			return
+		}
+		*/
+
+		b :=true
+		switch k {
+		case 'j':
+			b = eb.MoveLeft()
+		case 'k':
+			b = eb.MoveDown()
+		case 'l':
+			b = eb.MoveUp()
+		case ';':
+			b = eb.MoveRight()
+		case 'p':
+			eb.PasteBelow()
+		case 'P':
+			eb.PasteAbove()
+		case 'i':
+			// Insert
+		case 'a':
+			// Append
+			eb.MoveRight()
+		case 'o':
+			// Add a line and go to insert mode
+			eb.AppendEmptyLine()
+			eb.MoveDown()
+		case 'd':
+			eb.DeleteLine(eb.Line)
+		case 'G':
+			eb.LastLine()
+		}
+		if !b {
+			Beep()
 		}
 		// XXX Until I fix mapping, mark the whole buffer as dirty on movement
 		eb.dirty = true
@@ -252,9 +257,14 @@ func (eb *EditBuffer) NewLine(d byte) {
 	eb.MoveDown()
 }
 
-func (eb *EditBuffer) Top() {
+func (eb *EditBuffer) TopLine() {
 	eb.Line = 0
 	eb.Anchor = eb.Line
+}
+
+func (eb *EditBuffer) LastLine() {
+	eb.Line = len(eb.Lines) - 1
+	// XXX Move anchor
 }
 
 // TODO If the column is the length of a line, set b.Column to -1 so that moving
@@ -280,6 +290,7 @@ func (eb *EditBuffer) MoveVertical(dir int) bool {
 	if lidx < 0 || lidx > len(eb.Lines) - 1 {
 		return false
 	}
+
 	eb.Line = lidx
 	if l := eb.Lines[eb.Line]; len(l.GetRaw()) > eb.Column {
 		l.MoveCursor(eb.Column)
