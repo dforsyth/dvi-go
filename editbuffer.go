@@ -88,7 +88,7 @@ func (eb *EditBuffer) SendInput(k int) {
 		}
 		*/
 
-		b :=true
+		b := true
 		switch k {
 		case 'j':
 			b = eb.MoveLeft()
@@ -287,7 +287,7 @@ func (eb *EditBuffer) MoveRight() bool {
 
 func (eb *EditBuffer) MoveVertical(dir int) bool {
 	lidx := eb.Line + dir
-	if lidx < 0 || lidx > len(eb.Lines) - 1 {
+	if lidx < 0 || lidx > len(eb.Lines)-1 {
 		return false
 	}
 

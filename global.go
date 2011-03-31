@@ -22,7 +22,7 @@ type GlobalState struct {
 	UpdateCh      chan int
 	Mode          int
 	Wd            string
-	config map[string]interface{}
+	config        map[string]interface{}
 }
 
 func NewGlobalState() *GlobalState {
