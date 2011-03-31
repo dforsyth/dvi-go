@@ -275,26 +275,24 @@ func (eb *EditBuffer) MoveRight() bool {
 	return eb.MoveHorizontal(1)
 }
 
-func (b *EditBuffer) MoveUp() bool {
-	if b.Line > 0 {
-		b.Line -= 1
-		if l := b.Lines[b.Line]; len(l.GetRaw()) > b.Column {
-			l.MoveCursor(b.Column)
-		}
-		return true
+func (eb *EditBuffer) MoveVertical(dir int) bool {
+	lidx := eb.Line + dir
+	if lidx < 0 || lidx > len(eb.Lines) - 1 {
+		return false
 	}
-	return false
+	eb.Line = lidx
+	if l := eb.Lines[eb.Line]; len(l.GetRaw()) > eb.Column {
+		l.MoveCursor(eb.Column)
+	}
+	return true
 }
 
-func (b *EditBuffer) MoveDown() bool {
-	if b.Line < len(b.Lines)-1 {
-		b.Line += 1
-		if l := b.Lines[b.Line]; len(l.GetRaw()) > b.Column {
-			l.MoveCursor(b.Column)
-		}
-		return true
-	}
-	return false
+func (eb *EditBuffer) MoveUp() bool {
+	return eb.MoveVertical(-1)
+}
+
+func (eb *EditBuffer) MoveDown() bool {
+	return eb.MoveVertical(1)
 }
 
 func (eb *EditBuffer) PasteAbove() {

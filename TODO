@@ -1,2 +1,4 @@
 - Proper editing
 - All buffers on a window should share a map
+- in the editbuffer, line numbers should be line indexes, since they are 0
+  indexed.
