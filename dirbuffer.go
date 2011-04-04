@@ -101,14 +101,19 @@ func (db *DirBuffer) Forward() {
 		db.gs.SetMapper(ndb)
 	} else if fi.IsRegular() {
 		eb := NewEditBuffer(db.gs, path)
-		if _, e := eb.readFile(path, 0); e == nil {
+		f, e := os.Open(path, os.O_RDONLY, 0666)
+		if e != nil {
+			panic(e.String())
+		}
+
+		if _, e := eb.readFile(f, 0); e == nil {
 			db.gs.AddBuffer(eb)
 			db.gs.SetMapper(eb)
 			eb.GoToLine(1)
 			// Now, remove this buffer
 			db.gs.RemoveBuffer(db)
 		} else {
-			Beep()
+			panic(e)
 		}
 	}
 }

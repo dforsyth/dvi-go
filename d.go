@@ -145,13 +145,19 @@ func main() {
 					gs.SetMapper(db)
 				} else if fi.IsRegular() {
 					eb := NewEditBuffer(gs, path)
-					if _, e := eb.readFile(path, 0); e == nil {
+					f, e := os.Open(path, os.O_RDONLY, 0666)
+					if e != nil {
+						panic(e.String())
+					}
+
+					if _, e := eb.readFile(f, 0); e == nil {
 						gs.AddBuffer(eb)
 						gs.SetMapper(eb)
 						eb.GoToLine(1)
 					} else {
 						panic(e.String())
 					}
+					f.Close()
 				}
 			} else {
 				panic(e.String())
@@ -159,7 +165,7 @@ func main() {
 		}
 	} else {
 		eb := NewTempEditBuffer(gs, TMPPREFIX)
-		eb.InsertLine(NewEditLine([]byte("")), 0) // Insert the initial line per vi
+		eb.insert(NewEditLine([]byte("")), 0) // Insert the initial line per vi
 		gs.AddBuffer(eb)
 		gs.SetMapper(eb)
 	}

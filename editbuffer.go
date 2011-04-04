@@ -113,7 +113,7 @@ func (eb *EditBuffer) SendInput(k int) {
 			eb.AppendEmptyLine()
 			eb.moveDown()
 		case 'd':
-			eb.DeleteLine(eb.lno)
+			eb.cut(eb.lno, 1)
 		case 'G':
 			eb.LastLine()
 		}
@@ -204,7 +204,7 @@ func (eb *EditBuffer) GoToLine(lno int) {
 func (eb *EditBuffer) Backspace() {
 	if l := eb.Lines[eb.lno]; l.Cursor() == 0 {
 		if eb.lno > 0 {
-			sav := eb.DeleteLine(eb.lno)
+			sav := eb.delete(eb.lno)
 			eb.Lines[eb.lno].Delete(1)
 			if sav != nil {
 			}
@@ -217,7 +217,7 @@ func (eb *EditBuffer) Backspace() {
 }
 
 // Insert a line at lno, 0-n, into an EditBuffer.
-func (eb *EditBuffer) InsertLine(e *EditLine, lno int) {
+func (eb *EditBuffer) insert(e *EditLine, lno int) {
 	if lno < 0 || lno > len(eb.Lines) {
 		panic(fmt.Sprintf("Unable to insert line at %d in buffer of %d lines", lno,
 			len(eb.Lines)))
@@ -227,11 +227,11 @@ func (eb *EditBuffer) InsertLine(e *EditLine, lno int) {
 }
 
 func (eb *EditBuffer) AppendEmptyLine() {
-	eb.InsertLine(NewEditLine([]byte("")), eb.lno+1)
+	eb.insert(NewEditLine([]byte("")), eb.lno+1)
 }
 
 // Delete a line at lno, 0-n, from an EditBuffer
-func (eb *EditBuffer) DeleteLine(lno int) *EditLine {
+func (eb *EditBuffer) delete(lno int) *EditLine {
 	// If we are removing the 0th line from a file with a single line,
 	// after the line is removed, a new one needs to be inserted
 	if len(eb.Lines) == 0 {
@@ -245,7 +245,7 @@ func (eb *EditBuffer) DeleteLine(lno int) *EditLine {
 
 	eb.Lines = append(eb.Lines[:lno], eb.Lines[lno+1:]...)
 	if len(eb.Lines) == 0 {
-		eb.InsertLine(NewEditLine([]byte("")), 0)
+		eb.insert(NewEditLine([]byte("")), 0)
 		eb.lno = 0
 		// vim would set "--no lines in buffer--" in this case
 	} else if eb.lno > 0 {
@@ -255,12 +255,23 @@ func (eb *EditBuffer) DeleteLine(lno int) *EditLine {
 	return ln
 }
 
+func (eb *EditBuffer) cut(lno, cnt int) *EditLine {
+
+	if len(eb.Lines) == 0 {
+		panic("Cannot cut line from empty buffer")
+	}
+
+	ln := eb.Lines[eb.lno]
+
+	return ln
+}
+
 func (eb *EditBuffer) NewLine(d byte) {
 	l := eb.Lines[eb.lno]
 	l.InsertChar(d)
 	newLine := NewEditLine(l.AfterCursor())
 	l.ClearToEOL()
-	eb.InsertLine(newLine, eb.lno+1)
+	eb.insert(newLine, eb.lno+1)
 	eb.moveDown()
 }
 
@@ -324,24 +335,18 @@ func (eb *EditBuffer) EvalCmdBuff() {
 
 // Reads a file at pathname into EditBuffer eb
 // Returns the number of lines read or error
-func (eb *EditBuffer) readFile(pathname string, mark int) (int, os.Error) {
-	f, err := os.Open(pathname, os.O_RDONLY, 0666)
-	if err != nil {
-		return -1, err
-	}
-	defer f.Close()
-
+func (eb *EditBuffer) readFile(f *os.File, mark int) (int, os.Error) {
 	rdr := bufio.NewReader(f)
 	// XXX fix this loop
 	lno := mark
 	for {
 		if ln, err := rdr.ReadBytes('\n'); err == nil {
-			eb.InsertLine(NewEditLine(ln), lno)
+			eb.insert(NewEditLine(ln), lno)
 		} else {
 			if err != os.EOF {
 				return -1, err
 			} else {
-				eb.InsertLine(NewEditLine(ln), lno)
+				eb.insert(NewEditLine(ln), lno)
 				return lno - mark, nil
 			}
 		}
@@ -350,3 +355,4 @@ func (eb *EditBuffer) readFile(pathname string, mark int) (int, os.Error) {
 
 	return lno - mark, nil
 }
+
