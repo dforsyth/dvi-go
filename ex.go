@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-func CommandMode(gs *GlobalState) {
+func exMode(gs *GlobalState) {
 
-	gs.SetModeline(gs.Command)
-	gs.Command.Reset()
+	gs.SetModeline(gs.ex)
+	gs.ex.Reset()
 
 	for {
 		window := gs.Window
@@ -20,46 +20,46 @@ func CommandMode(gs *GlobalState) {
 		case ESC:
 			return
 		case 0xd, 0xa:
-			gs.Command.Execute()
+			gs.ex.execute()
 			return
 		default:
-			gs.Command.SendInput(k)
+			gs.ex.SendInput(k)
 		}
 	}
 }
 
-type Command struct {
-	CommandBuffer string
-	gs            *GlobalState
+type exBuffer struct {
+	buffer string
+	gs *GlobalState
 }
 
-func NewCommand(gs *GlobalState) *Command {
-	c := new(Command)
-	c.CommandBuffer = ""
+func newExBuffer(gs *GlobalState) *exBuffer {
+	c := new(exBuffer)
+	c.buffer = ""
 	c.gs = gs
 	return c
 }
 
-func (c *Command) String() string {
-	return fmt.Sprintf(":%s", c.CommandBuffer)
+func (c *exBuffer) String() string {
+	return fmt.Sprintf(":%s", c.buffer)
 }
 
-func (c *Command) GetCursor() int {
+func (c *exBuffer) GetCursor() int {
 	return len(c.String()) - 1
 }
 
-func (c *Command) SendInput(k int) {
-	c.CommandBuffer += string(k)
+func (c *exBuffer) SendInput(k int) {
+	c.buffer += string(k)
 }
 
-func (c *Command) Execute() {
+func (c *exBuffer) execute() {
 	save := false
 	quit := false
 	all := false
 	targets := list.New()
 	targets.Init()
 
-	for _, c := range c.CommandBuffer {
+	for _, c := range c.buffer {
 		switch c {
 		case 'w':
 			save = true
@@ -91,6 +91,6 @@ func (c *Command) Execute() {
 	}
 }
 
-func (c *Command) Reset() {
-	c.CommandBuffer = ""
+func (c *exBuffer) Reset() {
+	c.buffer = ""
 }

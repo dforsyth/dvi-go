@@ -100,7 +100,8 @@ func (db *DirBuffer) Forward() {
 		db.gs.AddBuffer(ndb)
 		db.gs.SetMapper(ndb)
 	} else if fi.IsRegular() {
-		if eb, e := NewReadEditBuffer(db.gs, path); e == nil {
+		eb := NewEditBuffer(db.gs, path)
+		if _, e := eb.readFile(path, 0); e == nil {
 			db.gs.AddBuffer(eb)
 			db.gs.SetMapper(eb)
 			eb.GoToLine(1)

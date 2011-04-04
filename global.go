@@ -13,7 +13,7 @@ const (
 
 type GlobalState struct {
 	Window        *Window
-	Command       *Command
+	ex       *exBuffer
 	CurrentMapper *Mapper
 	Modeline      *Modeliner
 	Buffers       *list.List
@@ -28,7 +28,7 @@ type GlobalState struct {
 func NewGlobalState() *GlobalState {
 	gs := new(GlobalState)
 	gs.Window = NewWindow(gs)
-	gs.Command = NewCommand(gs)
+	gs.ex = newExBuffer(gs)
 	gs.CurrentMapper = nil
 	gs.Buffers = list.New()
 	gs.CurrentBuffer = nil

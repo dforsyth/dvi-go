@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	//"fmt"
 	"io/ioutil"
 	"os"
@@ -10,40 +9,6 @@ import (
 func NewTempEditBuffer(gs *GlobalState, prefix string) *EditBuffer {
 	// TODO: this.
 	return NewEditBuffer(gs, prefix)
-}
-
-func NewReadEditBuffer(gs *GlobalState, pathname string) (*EditBuffer, os.Error) {
-	st, e := os.Stat(pathname)
-	if e != nil {
-		return nil, e
-	}
-
-	f, e := os.Open(pathname, os.O_RDONLY, 0444)
-	if e != nil {
-		return nil, e
-	}
-	defer f.Close()
-
-	b := NewEditBuffer(gs, st.Name)
-	r := bufio.NewReader(f)
-	i := 0
-	for {
-		l, e := r.ReadBytes(byte('\n'))
-		if e != nil {
-			// XXX gross.
-			if e != os.EOF {
-				return nil, e
-			} else {
-				b.InsertLine(NewEditLine(l), i)
-				break
-			}
-		}
-		b.InsertLine(NewEditLine(l), i)
-		i++
-	}
-	b.fi = st
-
-	return b, nil
 }
 
 // Do a naive write of the entire buffer to a temp file, then rename into place.

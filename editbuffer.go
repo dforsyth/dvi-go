@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	// "container/list"
 	"curses"
 	"fmt"
@@ -182,6 +183,12 @@ func (eb *EditBuffer) MapToScreen() {
 	}
 }
 
+func (eb *EditBuffer) MapLine(el *EditLine) {
+	w := eb.X
+	o := 0 // XXX offset.  0 until I add line number support
+	if w < 0 || o != 0 { return }
+}
+
 func (eb *EditBuffer) GoToLine(lno int) {
 	if lno < 1 {
 		return
@@ -313,4 +320,33 @@ func (eb *EditBuffer) PasteBelow() {
 }
 
 func (eb *EditBuffer) EvalCmdBuff() {
+}
+
+// Reads a file at pathname into EditBuffer eb
+// Returns the number of lines read or error
+func (eb *EditBuffer) readFile(pathname string, mark int) (int, os.Error) {
+	f, err := os.Open(pathname, os.O_RDONLY, 0666)
+	if err != nil {
+		return -1, err
+	}
+	defer f.Close()
+
+	rdr := bufio.NewReader(f)
+	// XXX fix this loop
+	lno := mark
+	for {
+		if ln, err := rdr.ReadBytes('\n'); err == nil {
+			eb.InsertLine(NewEditLine(ln), lno)
+		} else {
+			if err != os.EOF {
+				return -1, err
+			} else {
+				eb.InsertLine(NewEditLine(ln), lno)
+				return lno - mark, nil
+			}
+		}
+		lno++
+	}
+
+	return lno - mark, nil
 }

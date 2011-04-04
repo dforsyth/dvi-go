@@ -144,7 +144,8 @@ func main() {
 					gs.AddBuffer(db)
 					gs.SetMapper(db)
 				} else if fi.IsRegular() {
-					if eb, e := NewReadEditBuffer(gs, path); e == nil {
+					eb := NewEditBuffer(gs, path)
+					if _, e := eb.readFile(path, 0); e == nil {
 						gs.AddBuffer(eb)
 						gs.SetMapper(eb)
 						eb.GoToLine(1)
