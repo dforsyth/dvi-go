@@ -24,9 +24,13 @@ type EditBuffer struct {
 	Column   int
 	dirty    bool // This should become an int, so that updates are just after a given line
 
+	// buffer settings
 	tabs     bool
 	tabwidth int
 	tabstop  int
+
+	// yank buffer
+	yb	[]*EditLine
 
 	cmdbuff *GapBuffer
 
@@ -100,9 +104,9 @@ func (eb *EditBuffer) SendInput(k int) {
 		case ';':
 			b = eb.moveRight()
 		case 'p':
-			eb.PasteBelow()
+			eb.paste(eb.lno+1)
 		case 'P':
-			eb.PasteAbove()
+			eb.paste(eb.lno)
 		case 'i':
 			// Insert
 		case 'a':
@@ -113,7 +117,9 @@ func (eb *EditBuffer) SendInput(k int) {
 			eb.AppendEmptyLine()
 			eb.moveDown()
 		case 'd':
-			eb.cut(eb.lno, 1)
+			eb.delete(eb.lno)
+		case 'y':
+			eb.yank(eb.lno, 1)
 		case 'G':
 			eb.LastLine()
 		}
@@ -255,6 +261,24 @@ func (eb *EditBuffer) delete(lno int) *EditLine {
 	return ln
 }
 
+func (eb *EditBuffer) yank(lno, cnt int) int {
+	if len(eb.Lines) == 0 {
+		panic("cannot yank from an empty buffer")
+	}
+
+	max := lno + cnt
+	if max > len(eb.Lines) {
+		max = len(eb.Lines)
+	}
+
+	eb.yb = make([]*EditLine, max - lno)
+	for i, ln := range eb.Lines[lno:max] {
+		eb.yb[i] = NewEditLine(ln.GetRaw())
+	}
+
+	return max - lno
+}
+
 func (eb *EditBuffer) cut(lno, cnt int) *EditLine {
 
 	if len(eb.Lines) == 0 {
@@ -324,10 +348,12 @@ func (eb *EditBuffer) moveDown() bool {
 	return eb.moveVertical(1)
 }
 
-func (eb *EditBuffer) PasteAbove() {
-}
-
-func (eb *EditBuffer) PasteBelow() {
+func (eb *EditBuffer) paste(lno int) {
+	for _, ln := range eb.yb {
+		eb.insert(NewEditLine(ln.GetRaw()), lno)
+		lno++
+	}
+	eb.lno = lno
 }
 
 func (eb *EditBuffer) EvalCmdBuff() {
