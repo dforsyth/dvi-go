@@ -75,7 +75,7 @@ func (eb *EditBuffer) SendInput(k int) {
 		case 0xd, 0xa:
 			eb.NewLine(byte('\n'))
 		case ESC:
-			eb.MoveLeft()
+			eb.moveLeft()
 		default:
 			eb.InsertChar(byte(k))
 		}
@@ -92,13 +92,13 @@ func (eb *EditBuffer) SendInput(k int) {
 		b := true
 		switch k {
 		case 'j':
-			b = eb.MoveLeft()
+			b = eb.moveLeft()
 		case 'k':
-			b = eb.MoveDown()
+			b = eb.moveDown()
 		case 'l':
-			b = eb.MoveUp()
+			b = eb.moveUp()
 		case ';':
-			b = eb.MoveRight()
+			b = eb.moveRight()
 		case 'p':
 			eb.PasteBelow()
 		case 'P':
@@ -107,11 +107,11 @@ func (eb *EditBuffer) SendInput(k int) {
 			// Insert
 		case 'a':
 			// Append
-			eb.MoveRight()
+			eb.moveRight()
 		case 'o':
 			// Add a line and go to insert mode
 			eb.AppendEmptyLine()
-			eb.MoveDown()
+			eb.moveDown()
 		case 'd':
 			eb.DeleteLine(eb.lno)
 		case 'G':
@@ -249,7 +249,7 @@ func (eb *EditBuffer) DeleteLine(lno int) *EditLine {
 		eb.lno = 0
 		// vim would set "--no lines in buffer--" in this case
 	} else if eb.lno > 0 {
-		// Move up one line
+		// move up one line
 		eb.lno -= 1
 	}
 	return ln
@@ -261,7 +261,7 @@ func (eb *EditBuffer) NewLine(d byte) {
 	newLine := NewEditLine(l.AfterCursor())
 	l.ClearToEOL()
 	eb.InsertLine(newLine, eb.lno+1)
-	eb.MoveDown()
+	eb.moveDown()
 }
 
 func (eb *EditBuffer) TopLine() {
@@ -271,28 +271,28 @@ func (eb *EditBuffer) TopLine() {
 
 func (eb *EditBuffer) LastLine() {
 	eb.lno = len(eb.Lines) - 1
-	// XXX Move anchor
+	// XXX move anchor
 }
 
 // TODO If the column is the length of a line, set b.Column to -1 so that moving
 // vertically will put the cursor at the end of the new line.
-func (eb *EditBuffer) MoveHorizontal(dir int) bool {
-	if l := eb.Lines[eb.lno]; l.MoveCursor(l.Cursor() + dir) {
+func (eb *EditBuffer) moveHorizontal(dir int) bool {
+	if l := eb.Lines[eb.lno]; l.moveCursor(l.Cursor() + dir) {
 		eb.Column = l.Cursor()
 		return true
 	}
 	return false
 }
 
-func (eb *EditBuffer) MoveLeft() bool {
-	return eb.MoveHorizontal(-1)
+func (eb *EditBuffer) moveLeft() bool {
+	return eb.moveHorizontal(-1)
 }
 
-func (eb *EditBuffer) MoveRight() bool {
-	return eb.MoveHorizontal(1)
+func (eb *EditBuffer) moveRight() bool {
+	return eb.moveHorizontal(1)
 }
 
-func (eb *EditBuffer) MoveVertical(dir int) bool {
+func (eb *EditBuffer) moveVertical(dir int) bool {
 	lno := eb.lno + dir
 	if lno < 0 || lno > len(eb.Lines)-1 {
 		return false
@@ -300,17 +300,17 @@ func (eb *EditBuffer) MoveVertical(dir int) bool {
 
 	eb.lno = lno
 	if l := eb.Lines[eb.lno]; len(l.GetRaw()) > eb.Column {
-		l.MoveCursor(eb.Column)
+		l.moveCursor(eb.Column)
 	}
 	return true
 }
 
-func (eb *EditBuffer) MoveUp() bool {
-	return eb.MoveVertical(-1)
+func (eb *EditBuffer) moveUp() bool {
+	return eb.moveVertical(-1)
 }
 
-func (eb *EditBuffer) MoveDown() bool {
-	return eb.MoveVertical(1)
+func (eb *EditBuffer) moveDown() bool {
+	return eb.moveVertical(1)
 }
 
 func (eb *EditBuffer) PasteAbove() {

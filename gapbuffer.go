@@ -23,7 +23,7 @@ func NewGapBuffer(t []byte) *GapBuffer {
 	g.gs = len(t)
 	g.ge = len(t) + size
 
-	g.MoveGap(0)
+	g.moveGap(0)
 	return g
 }
 
@@ -43,7 +43,7 @@ func (g *GapBuffer) InsertString(s string) {
 }
 
 func (g *GapBuffer) DeleteSpan(p, s int) {
-	g.MoveGap(p + s)
+	g.moveGap(p + s)
 	for i := 0; i < s; i++ {
 		if g.gs == 0 {
 			return
@@ -69,8 +69,8 @@ func (g *GapBuffer) GrowGap(s int) {
 	g.ge += s
 }
 
-// Move the gap to p.  p does not take the gap byteo account.
-func (g *GapBuffer) MoveGap(p int) {
+// move the gap to p.  p does not take the gap byteo account.
+func (g *GapBuffer) moveGap(p int) {
 	if g.gs == p {
 		return
 	}

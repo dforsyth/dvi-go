@@ -54,7 +54,7 @@ func (e *EditLine) ClearToEOL() {
 }
 
 // XXX This still lets the client pass the visual eol when the editbuffer is in normal mode...
-func (e *EditLine) MoveCursor(p int) bool {
+func (e *EditLine) moveCursor(p int) bool {
 	max := len(e.b.GaplessBuffer())
 	if e.nl {
 		max-=1
@@ -62,7 +62,7 @@ func (e *EditLine) MoveCursor(p int) bool {
 	if p < 0 || p > max {
 		return false
 	}
-	e.b.MoveGap(p)
+	e.b.moveGap(p)
 	return true
 }
 
