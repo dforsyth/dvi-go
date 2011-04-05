@@ -30,7 +30,7 @@ func exMode(gs *GlobalState) {
 
 type exBuffer struct {
 	buffer string
-	gs *GlobalState
+	gs     *GlobalState
 }
 
 func newExBuffer(gs *GlobalState) *exBuffer {

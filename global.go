@@ -13,7 +13,7 @@ const (
 
 type GlobalState struct {
 	Window        *Window
-	ex       *exBuffer
+	ex            *exBuffer
 	CurrentMapper *Mapper
 	Modeline      *Modeliner
 	Buffers       *list.List

@@ -101,7 +101,7 @@ func (db *DirBuffer) Forward() {
 		db.gs.SetMapper(ndb)
 	} else if fi.IsRegular() {
 		eb := NewEditBuffer(db.gs, path)
-		f, e := os.Open(path, os.O_RDONLY, 0666)
+		f, e := os.Open(path)
 		if e != nil {
 			panic(e.String())
 		}

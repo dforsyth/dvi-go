@@ -20,7 +20,7 @@ type EditBuffer struct {
 	Name     string
 	Pathname string
 	Lines    []*EditLine
-	lno     int
+	lno      int
 	Column   int
 	dirty    bool // This should become an int, so that updates are just after a given line
 
@@ -30,7 +30,7 @@ type EditBuffer struct {
 	tabstop  int
 
 	// yank buffer
-	yb	[]*EditLine
+	yb []*EditLine
 
 	cmdbuff *GapBuffer
 
@@ -104,7 +104,7 @@ func (eb *EditBuffer) SendInput(k int) {
 		case ';':
 			b = eb.moveRight()
 		case 'p':
-			eb.paste(eb.lno+1)
+			eb.paste(eb.lno + 1)
 		case 'P':
 			eb.paste(eb.lno)
 		case 'i':
@@ -192,7 +192,9 @@ func (eb *EditBuffer) MapToScreen() {
 func (eb *EditBuffer) MapLine(el *EditLine) {
 	w := eb.X
 	o := 0 // XXX offset.  0 until I add line number support
-	if w < 0 || o != 0 { return }
+	if w < 0 || o != 0 {
+		return
+	}
 }
 
 func (eb *EditBuffer) GoToLine(lno int) {
@@ -271,7 +273,7 @@ func (eb *EditBuffer) yank(lno, cnt int) int {
 		max = len(eb.Lines)
 	}
 
-	eb.yb = make([]*EditLine, max - lno)
+	eb.yb = make([]*EditLine, max-lno)
 	for i, ln := range eb.Lines[lno:max] {
 		eb.yb[i] = NewEditLine(ln.GetRaw())
 	}
@@ -381,4 +383,3 @@ func (eb *EditBuffer) readFile(f *os.File, mark int) (int, os.Error) {
 
 	return lno - mark, nil
 }
-

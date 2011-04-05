@@ -57,7 +57,7 @@ func (e *EditLine) ClearToEOL() {
 func (e *EditLine) moveCursor(p int) bool {
 	max := len(e.b.GaplessBuffer())
 	if e.nl {
-		max-=1
+		max -= 1
 	}
 	if p < 0 || p > max {
 		return false
