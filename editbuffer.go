@@ -355,7 +355,7 @@ func (eb *EditBuffer) paste(lno int) {
 		eb.insert(NewEditLine(ln.GetRaw()), lno)
 		lno++
 	}
-	eb.lno = lno
+	eb.lno = lno - 1
 }
 
 func (eb *EditBuffer) EvalCmdBuff() {
