@@ -9,6 +9,11 @@ func Beep() {
 	curses.Beep()
 }
 
+type mapLine interface {
+	// XXX for now, this is a string.  Later on it might be some other structure that holds other metadata for a line.
+	toScreen() string
+}
+
 type Window struct {
 	Curses     *curses.Window
 	Cols, Rows int

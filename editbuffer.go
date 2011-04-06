@@ -19,9 +19,9 @@ type EditBuffer struct {
 	fi       *os.FileInfo
 	Name     string
 	Pathname string
-	Lines    []*EditLine
+	lines    []*EditLine
 	lno      int
-	Column   int
+	col      int
 	dirty    bool // This should become an int, so that updates are just after a given line
 
 	// buffer settings
@@ -44,9 +44,9 @@ type EditBuffer struct {
 func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb := new(EditBuffer)
 	eb.Pathname = name
-	eb.Lines = make([]*EditLine, 0)
+	eb.lines = make([]*EditLine, 0)
 	eb.lno = 0
-	eb.Column = 0
+	eb.col = 0
 	eb.dirty = true
 
 	eb.cmdbuff = NewGapBuffer([]byte(""))
@@ -75,19 +75,19 @@ func (eb *EditBuffer) SendInput(k int) {
 	case INSERT:
 		switch k {
 		case curses.KEY_BACKSPACE, 127:
-			eb.Backspace()
+			eb.backspace()
 		case 0xd, 0xa:
 			eb.NewLine(byte('\n'))
 		case ESC:
 			eb.moveLeft()
 		default:
-			eb.InsertChar(byte(k))
+			eb.lines[eb.lno].insertChar(byte(k))
 		}
 		eb.dirty = true
 	case NORMAL:
 		/* XXX
 		if eb.cmdbuff.String() != "" {
-			eb.cmdbuff.InsertChar(byte(k))
+			eb.cmdbuff.insertChar(byte(k))
 			eb.EvalCmdBuff()
 			return
 		}
@@ -152,18 +152,18 @@ func (eb *EditBuffer) GetCursor() (int, int) {
 	return eb.CurX, eb.CurY
 }
 
-func (eb *EditBuffer) InsertChar(c byte) {
-	eb.Lines[eb.lno].InsertChar(c)
+func (eb *EditBuffer) insertChar(c byte) {
+	eb.lines[eb.lno].insertChar(c)
 }
 
 func (eb *EditBuffer) MapToScreen() {
 	var i int
 	smap := *eb.Window.ScreenMap
-	for _, e := range eb.Lines[eb.Anchor:] {
+	for _, e := range eb.lines[eb.Anchor:] {
 		if i >= eb.Y {
 			break
 		}
-		// XXX: screen Lines code for wrap
+		// XXX: screen lines code for wrap
 		row := make([]byte, eb.X)
 		// panic(fmt.Sprintf("len of e.raw is %d", len(e.raw())))
 		for j, _ := range row {
@@ -202,18 +202,18 @@ func (eb *EditBuffer) GoToLine(lno int) {
 		return
 	}
 
-	if lno > len(eb.Lines) {
-		eb.lno = len(eb.Lines)
+	if lno > len(eb.lines) {
+		eb.lno = len(eb.lines)
 	} else {
 		eb.lno = lno - 1
 	}
 }
 
-func (eb *EditBuffer) Backspace() {
-	if l := eb.Lines[eb.lno]; l.Cursor() == 0 {
+func (eb *EditBuffer) backspace() {
+	if l := eb.lines[eb.lno]; l.Cursor() == 0 {
 		if eb.lno > 0 {
 			sav := eb.delete(eb.lno)
-			eb.Lines[eb.lno].Delete(1)
+			eb.lines[eb.lno].Delete(1)
 			if sav != nil {
 			}
 		} else {
@@ -226,12 +226,12 @@ func (eb *EditBuffer) Backspace() {
 
 // Insert a line at lno, 0-n, into an EditBuffer.
 func (eb *EditBuffer) insert(e *EditLine, lno int) {
-	if lno < 0 || lno > len(eb.Lines) {
+	if lno < 0 || lno > len(eb.lines) {
 		panic(fmt.Sprintf("Unable to insert line at %d in buffer of %d lines", lno,
-			len(eb.Lines)))
+			len(eb.lines)))
 	}
 
-	eb.Lines = append(eb.Lines[:lno], append([]*EditLine{e}, eb.Lines[lno:]...)...)
+	eb.lines = append(eb.lines[:lno], append([]*EditLine{e}, eb.lines[lno:]...)...)
 }
 
 func (eb *EditBuffer) AppendEmptyLine() {
@@ -242,17 +242,17 @@ func (eb *EditBuffer) AppendEmptyLine() {
 func (eb *EditBuffer) delete(lno int) *EditLine {
 	// If we are removing the 0th line from a file with a single line,
 	// after the line is removed, a new one needs to be inserted
-	if len(eb.Lines) == 0 {
+	if len(eb.lines) == 0 {
 		// This is an error case, we're going to panic here because it
 		// really should not happen
 		panic("Trying to delete line 0 in a buffer with no lines")
 	}
 
 	// The line that's going away
-	ln := eb.Lines[lno]
+	ln := eb.lines[lno]
 
-	eb.Lines = append(eb.Lines[:lno], eb.Lines[lno+1:]...)
-	if len(eb.Lines) == 0 {
+	eb.lines = append(eb.lines[:lno], eb.lines[lno+1:]...)
+	if len(eb.lines) == 0 {
 		eb.insert(NewEditLine([]byte("")), 0)
 		eb.lno = 0
 		// vim would set "--no lines in buffer--" in this case
@@ -264,17 +264,17 @@ func (eb *EditBuffer) delete(lno int) *EditLine {
 }
 
 func (eb *EditBuffer) yank(lno, cnt int) int {
-	if len(eb.Lines) == 0 {
+	if len(eb.lines) == 0 {
 		panic("cannot yank from an empty buffer")
 	}
 
 	max := lno + cnt
-	if max > len(eb.Lines) {
-		max = len(eb.Lines)
+	if max > len(eb.lines) {
+		max = len(eb.lines)
 	}
 
 	eb.yb = make([]*EditLine, max-lno)
-	for i, ln := range eb.Lines[lno:max] {
+	for i, ln := range eb.lines[lno:max] {
 		eb.yb[i] = NewEditLine(ln.GetRaw())
 	}
 
@@ -282,19 +282,18 @@ func (eb *EditBuffer) yank(lno, cnt int) int {
 }
 
 func (eb *EditBuffer) cut(lno, cnt int) *EditLine {
-
-	if len(eb.Lines) == 0 {
+	if len(eb.lines) == 0 {
 		panic("Cannot cut line from empty buffer")
 	}
 
-	ln := eb.Lines[eb.lno]
+	ln := eb.lines[eb.lno]
 
 	return ln
 }
 
 func (eb *EditBuffer) NewLine(d byte) {
-	l := eb.Lines[eb.lno]
-	l.InsertChar(d)
+	l := eb.lines[eb.lno]
+	l.insertChar(d)
 	newLine := NewEditLine(l.AfterCursor())
 	l.ClearToEOL()
 	eb.insert(newLine, eb.lno+1)
@@ -307,15 +306,14 @@ func (eb *EditBuffer) TopLine() {
 }
 
 func (eb *EditBuffer) LastLine() {
-	eb.lno = len(eb.Lines) - 1
+	eb.lno = len(eb.lines) - 1
 	// XXX move anchor
 }
 
 // TODO If the column is the length of a line, set b.Column to -1 so that moving
 // vertically will put the cursor at the end of the new line.
 func (eb *EditBuffer) moveHorizontal(dir int) bool {
-	if l := eb.Lines[eb.lno]; l.moveCursor(l.Cursor() + dir) {
-		eb.Column = l.Cursor()
+	if l := eb.lines[eb.lno]; l.moveCursor(l.Cursor() + dir) {
 		return true
 	}
 	return false
@@ -331,13 +329,14 @@ func (eb *EditBuffer) moveRight() bool {
 
 func (eb *EditBuffer) moveVertical(dir int) bool {
 	lno := eb.lno + dir
-	if lno < 0 || lno > len(eb.Lines)-1 {
+	if lno < 0 || lno > len(eb.lines)-1 {
 		return false
 	}
 
+	eb.col = eb.lines[eb.lno].Cursor()
 	eb.lno = lno
-	if l := eb.Lines[eb.lno]; len(l.GetRaw()) > eb.Column {
-		l.moveCursor(eb.Column)
+	if l := eb.lines[eb.lno]; len(l.GetRaw()) > eb.col {
+		l.moveCursor(eb.col)
 	}
 	return true
 }

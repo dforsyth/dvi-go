@@ -23,7 +23,7 @@ func WriteFile(pathname string, b *EditBuffer) (*os.FileInfo, os.Error) {
 
 	i := 0
 	wr := 0
-	for _, l := range b.Lines {
+	for _, l := range b.lines {
 		n, e := f.Write(l.GetRaw())
 		if e != nil {
 			return nil, e

@@ -28,8 +28,8 @@ func NewEditLine(s []byte) *EditLine {
 	return e
 }
 
-func (e *EditLine) InsertChar(c byte) {
-	e.b.InsertChar(c)
+func (e *EditLine) insertChar(c byte) {
+	e.b.insertChar(c)
 	if c == '\n' {
 		e.nl = true
 	}

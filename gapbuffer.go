@@ -28,7 +28,7 @@ func NewGapBuffer(t []byte) *GapBuffer {
 }
 
 // Insert a character at the first position of the gap
-func (g *GapBuffer) InsertChar(c byte) {
+func (g *GapBuffer) insertChar(c byte) {
 	g.buf[g.gs] = c
 	g.gs++
 	if g.gs == g.ge {
@@ -38,7 +38,7 @@ func (g *GapBuffer) InsertChar(c byte) {
 
 func (g *GapBuffer) InsertString(s string) {
 	for _, c := range s {
-		g.InsertChar(byte(c))
+		g.insertChar(byte(c))
 	}
 }
 
