@@ -23,6 +23,7 @@ type GlobalState struct {
 	Mode          int
 	Wd            string
 	config        map[string]interface{}
+	msgQueue *list.List
 }
 
 func NewGlobalState() *GlobalState {
@@ -34,6 +35,7 @@ func NewGlobalState() *GlobalState {
 	gs.CurrentBuffer = nil
 	gs.InputCh = make(chan int)
 	gs.UpdateCh = make(chan int)
+	gs.msgQueue = list.New()
 	return gs
 }
 
@@ -78,4 +80,8 @@ func (gs *GlobalState) SetModeline(modeliner Modeliner) {
 func Done(r int) {
 	EndScreen()
 	syscall.Exit(r)
+}
+
+func (gs *GlobalState) queueMessage(msg string) {
+	gs.msgQueue.PushBack(msg)
 }

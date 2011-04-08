@@ -18,7 +18,7 @@ type Window struct {
 	Curses     *curses.Window
 	Cols, Rows int
 	gs         *GlobalState
-	ScreenMap  *[]string
+	ScreenMap  []string
 }
 
 func NewWindow(gs *GlobalState) *Window {
@@ -27,9 +27,7 @@ func NewWindow(gs *GlobalState) *Window {
 	w.Cols = *curses.Cols
 	w.Rows = *curses.Rows
 	w.gs = gs
-	smap := make([]string, w.Rows-1)
-	w.ScreenMap = &smap
-
+	w.ScreenMap = make([]string, w.Rows-1)
 	return w
 }
 
@@ -37,8 +35,8 @@ func (w *Window) HandleWinch() {
 }
 
 func (w *Window) ClearMap() {
-	for i, _ := range *w.ScreenMap {
-		(*w.ScreenMap)[i] = ""
+	for i, _ := range w.ScreenMap {
+		w.ScreenMap[i] = ""
 	}
 }
 
@@ -68,16 +66,21 @@ func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 	gs := w.gs
 	mapper := *gs.CurrentMapper
 
+	if mapper.getWindow() != w {
+		EndScreen()
+		panic("Window mismatch in PaintMapper")
+	}
+
 	if start < 0 || start > rows || end > rows {
 		EndScreen()
 		panic(fmt.Sprintf("Window.Paint: Bad range (%d, %d) [%d, %d]", start, end, cols, rows))
 	}
 
-	smap := *mapper.GetMap()
+	mapper.mapScreen()
 	for i := start; i < end; i++ {
 		w.Curses.Move(i, 0)
 		w.Curses.Clrtoeol()
-		w.Curses.Mvwaddnstr(i, 0, smap[i], cols)
+		w.Curses.Mvwaddnstr(i, 0, w.ScreenMap[i], cols)
 	}
 
 	if paintCursor {

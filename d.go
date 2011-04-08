@@ -19,15 +19,13 @@ const (
 
 // This could/should probably be called Buffer(er) or something...
 type Mapper interface {
-	GetMap() *[]string
+	mapScreen()
+	getWindow() *Window
 	GetCursor() (int, int)
-	SetWindow(*Window)
 	SetDimensions(int, int)
 }
 
 type Interacter interface {
-	GetWindow() *Window
-	SetWindow(*Window)
 	SendInput(int)
 	RunRoutine(func(Interacter))
 }

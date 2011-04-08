@@ -16,6 +16,8 @@ const (
 )
 
 type EditBuffer struct {
+	gs *GlobalState
+
 	fi       *os.FileInfo
 	Name     string
 	Pathname string
@@ -38,13 +40,15 @@ type EditBuffer struct {
 	head int
 	tail int
 
-	Window     *Window
 	X, Y       int
 	CurX, CurY int
 }
 
 func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb := new(EditBuffer)
+
+	eb.gs = gs
+
 	eb.Pathname = name
 	eb.lines = make([]*EditLine, 0)
 	eb.lno = 0
@@ -54,25 +58,14 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb.cmdbuff = NewGapBuffer([]byte(""))
 
 	eb.head = eb.lno
-	eb.Window = gs.Window
-	// eb.ScreenMap = make([]string, eb.Window.Rows-1)
 	eb.CurX, eb.CurY = 0, 0
-	eb.X, eb.Y = eb.Window.Cols, eb.Window.Rows-1
+	eb.X, eb.Y = eb.gs.Window.Cols, eb.gs.Window.Rows-1
 
 	return eb
 }
 
-func (eb *EditBuffer) GetWindow() *Window {
-	return eb.Window
-}
-
-func (eb *EditBuffer) SetWindow(w *Window) {
-	eb.Window = w
-	eb.X, eb.Y = w.Cols, w.Rows
-}
-
 func (eb *EditBuffer) SendInput(k int) {
-	gs := eb.Window.gs
+	gs := eb.gs
 	switch gs.Mode {
 	case INSERT:
 		switch k {
@@ -138,12 +131,15 @@ func (eb *EditBuffer) RunRoutine(fn func(Interacter)) {
 	go fn(eb)
 }
 
-func (eb *EditBuffer) GetMap() *[]string {
+func (eb *EditBuffer) getWindow() *Window {
+	return eb.gs.Window
+}
+
+func (eb *EditBuffer) mapScreen() {
 	if eb.dirty {
 		eb.MapToScreen()
 		eb.dirty = false
 	}
-	return eb.Window.ScreenMap
 }
 
 func (eb *EditBuffer) SetDimensions(x, y int) {
@@ -160,7 +156,7 @@ func (eb *EditBuffer) insertChar(c byte) {
 
 func (eb *EditBuffer) MapToScreen() {
 	var i int
-	smap := *eb.Window.ScreenMap
+	smap := eb.gs.Window.ScreenMap
 	for _, e := range eb.lines[eb.head:] {
 		if i >= eb.Y {
 			break

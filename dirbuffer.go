@@ -13,7 +13,6 @@ type DirBuffer struct {
 	Anchor  int
 	X, Y    int
 	CurY    int
-	Window  *Window
 	gs      *GlobalState
 }
 
@@ -36,23 +35,25 @@ func NewDirBuffer(gs *GlobalState, name string) *DirBuffer {
 		// For now, panic.  Really should be sending a message to the modeline and returning nil
 		panic(err.String())
 	}
-	db.Window = gs.Window
+	db.gs = gs
 	db.CurY = 0
 	db.Item = 0
 	db.Anchor = 0
-	db.X, db.Y = db.Window.Cols, db.Window.Rows-1
-	db.gs = gs
+	db.X, db.Y = db.gs.Window.Cols, db.gs.Window.Rows-1
 
 	return db
 }
 
-func (db *DirBuffer) GetMap() *[]string {
+func (db *DirBuffer) mapScreen() {
 	db.MapToScreen()
-	return db.Window.ScreenMap
 }
 
 func (db *DirBuffer) GetCursor() (int, int) {
 	return 0, db.CurY
+}
+
+func (db *DirBuffer) getWindow() *Window {
+	return db.gs.Window
 }
 
 func (db *DirBuffer) SetWindow(w *Window) {
@@ -63,11 +64,11 @@ func (db *DirBuffer) SetDimensions(x, y int) {
 }
 
 func (db *DirBuffer) GetWindow() *Window {
-	return db.Window
+	return db.gs.Window
 }
 
 func (db *DirBuffer) SendInput(k int) {
-	gs := db.Window.gs
+	gs := db.gs
 	switch gs.Mode {
 	case INSERT, NORMAL:
 		switch k {
@@ -135,7 +136,7 @@ func (db *DirBuffer) MoveDown() {
 }
 
 func (db *DirBuffer) MapToScreen() {
-	smap := *db.Window.ScreenMap
+	smap := db.gs.Window.ScreenMap
 	for i, fi := range db.Listing[db.Anchor:] {
 		if i > db.Y-1 {
 			break
