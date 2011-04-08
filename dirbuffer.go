@@ -109,7 +109,7 @@ func (db *DirBuffer) Forward() {
 		if _, e := eb.readFile(f, 0); e == nil {
 			db.gs.AddBuffer(eb)
 			db.gs.SetMapper(eb)
-			eb.GoToLine(1)
+			eb.gotoLine(1)
 			// Now, remove this buffer
 			db.gs.RemoveBuffer(db)
 		} else {

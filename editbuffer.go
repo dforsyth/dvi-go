@@ -35,7 +35,9 @@ type EditBuffer struct {
 	cmdbuff *GapBuffer
 
 	// Stuff for painting
-	Anchor     int
+	head int
+	tail int
+
 	Window     *Window
 	X, Y       int
 	CurX, CurY int
@@ -51,7 +53,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 
 	eb.cmdbuff = NewGapBuffer([]byte(""))
 
-	eb.Anchor = eb.lno
+	eb.head = eb.lno
 	eb.Window = gs.Window
 	// eb.ScreenMap = make([]string, eb.Window.Rows-1)
 	eb.CurX, eb.CurY = 0, 0
@@ -159,7 +161,7 @@ func (eb *EditBuffer) insertChar(c byte) {
 func (eb *EditBuffer) MapToScreen() {
 	var i int
 	smap := *eb.Window.ScreenMap
-	for _, e := range eb.lines[eb.Anchor:] {
+	for _, e := range eb.lines[eb.head:] {
 		if i >= eb.Y {
 			break
 		}
@@ -169,7 +171,7 @@ func (eb *EditBuffer) MapToScreen() {
 		for j, _ := range row {
 			row[j] = ' '
 		}
-		copy(row, e.GetRaw())
+		copy(row, e.getRaw())
 		rs := string(row)
 		// XXX this is all sorts of wrong, but need to fix line mapping before fixing
 		// this
@@ -189,16 +191,8 @@ func (eb *EditBuffer) MapToScreen() {
 	}
 }
 
-func (eb *EditBuffer) MapLine(el *EditLine) {
-	w := eb.X
-	o := 0 // XXX offset.  0 until I add line number support
-	if w < 0 || o != 0 {
-		return
-	}
-}
-
-func (eb *EditBuffer) GoToLine(lno int) {
-	if lno < 1 {
+func (eb *EditBuffer) gotoLine(lno int) {
+	if lno < 0 {
 		return
 	}
 
@@ -275,7 +269,7 @@ func (eb *EditBuffer) yank(lno, cnt int) int {
 
 	eb.yb = make([]*EditLine, max-lno)
 	for i, ln := range eb.lines[lno:max] {
-		eb.yb[i] = NewEditLine(ln.GetRaw())
+		eb.yb[i] = NewEditLine(ln.getRaw())
 	}
 
 	return max - lno
@@ -302,7 +296,7 @@ func (eb *EditBuffer) NewLine(d byte) {
 
 func (eb *EditBuffer) TopLine() {
 	eb.lno = 0
-	eb.Anchor = eb.lno
+	eb.head = eb.lno
 }
 
 func (eb *EditBuffer) LastLine() {
@@ -327,6 +321,7 @@ func (eb *EditBuffer) moveRight() bool {
 	return eb.moveHorizontal(1)
 }
 
+// Move vertically within the buffer.
 func (eb *EditBuffer) moveVertical(dir int) bool {
 	lno := eb.lno + dir
 	if lno < 0 || lno > len(eb.lines)-1 {
@@ -335,7 +330,7 @@ func (eb *EditBuffer) moveVertical(dir int) bool {
 
 	eb.col = eb.lines[eb.lno].Cursor()
 	eb.lno = lno
-	if l := eb.lines[eb.lno]; len(l.GetRaw()) > eb.col {
+	if l := eb.lines[eb.lno]; len(l.getRaw()) > eb.col {
 		l.moveCursor(eb.col)
 	}
 	return true
@@ -351,7 +346,7 @@ func (eb *EditBuffer) moveDown() bool {
 
 func (eb *EditBuffer) paste(lno int) {
 	for _, ln := range eb.yb {
-		eb.insert(NewEditLine(ln.GetRaw()), lno)
+		eb.insert(NewEditLine(ln.getRaw()), lno)
 		lno++
 	}
 	eb.lno = lno - 1
@@ -381,4 +376,21 @@ func (eb *EditBuffer) readFile(f *os.File, mark int) (int, os.Error) {
 	}
 
 	return lno - mark, nil
+}
+
+func (eb *EditBuffer) writeFile(f *os.File) (int, os.Error) {
+	wb := 0
+	for _, ln := range eb.lines {
+		wl := ln.getRaw()
+		if wl[len(wl)-1] != '\n' {
+			wl = append(wl, '\n')
+		}
+
+		if b, e := f.Write(wl); e != nil {
+			return 0, e
+		} else {
+			wb += b
+		}
+	}
+	return wb, nil
 }

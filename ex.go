@@ -82,7 +82,7 @@ func (c *exBuffer) execute() {
 		if save {
 			switch buffer := t.Value.(type) {
 			case *EditBuffer: // I should make these io.Writer s
-				WriteFile(buffer.Pathname, buffer)
+				t.Value.(*EditBuffer).writeFile(nil)
 			}
 		}
 	}

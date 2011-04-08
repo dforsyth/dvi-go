@@ -17,6 +17,7 @@ const (
 	ESC       = 27
 )
 
+// This could/should probably be called Buffer(er) or something...
 type Mapper interface {
 	GetMap() *[]string
 	GetCursor() (int, int)
@@ -153,7 +154,7 @@ func main() {
 					if _, e := eb.readFile(f, 0); e == nil {
 						gs.AddBuffer(eb)
 						gs.SetMapper(eb)
-						eb.GoToLine(1)
+						eb.gotoLine(1)
 					} else {
 						panic(e.String())
 					}

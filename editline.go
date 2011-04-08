@@ -1,17 +1,11 @@
 package main
 
 type EditLine struct {
-	b       *GapBuffer
-	nl      bool
-	raw     []byte
-	dirty   bool
-	indent  int // index of first character
-	MapInfo []MapInfo
-}
-
-type MapInfo struct {
-	ls, le int // position in line start and end
-	ss, se int // position on screen start and end
+	b      *GapBuffer
+	nl     bool
+	raw    []byte
+	dirty  bool
+	indent int // index of first character
 }
 
 func NewEditLine(s []byte) *EditLine {
@@ -41,7 +35,7 @@ func (e *EditLine) Delete(d int) {
 	e.dirty = true
 }
 
-func (e *EditLine) GetRaw() []byte {
+func (e *EditLine) getRaw() []byte {
 	if e.dirty {
 		e.raw = e.b.GaplessBuffer()
 		e.dirty = false
