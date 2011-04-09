@@ -13,7 +13,7 @@ const (
 	NaL       string = "~" // char that shows that a line does not exist
 	EXPROMPT  string = ":"
 	TMPDIR    = "."
-	TMPPREFIX = "d." // temp file prefix
+	TMPPREFIX = "dvi." // temp file prefix
 	ESC       = 27
 )
 
