@@ -19,6 +19,7 @@ type Window struct {
 	Cols, Rows int
 	gs         *GlobalState
 	ScreenMap  []string
+	buf	Buffer
 }
 
 func NewWindow(gs *GlobalState) *Window {
@@ -59,24 +60,20 @@ func (w *Window) UpdateRoutine(ch chan int) {
 	}()
 }
 
+func (w *Window) setBuffer(buf Buffer) {
+	w.buf = buf
+}
+
 func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 	// A mapper can only have rows 0 to Rows-2
 	cols, rows := w.Cols, w.Rows-1
-
-	gs := w.gs
-	mapper := *gs.CurrentMapper
-
-	if mapper.getWindow() != w {
-		EndScreen()
-		panic("Window mismatch in PaintMapper")
-	}
 
 	if start < 0 || start > rows || end > rows {
 		EndScreen()
 		panic(fmt.Sprintf("Window.Paint: Bad range (%d, %d) [%d, %d]", start, end, cols, rows))
 	}
 
-	mapper.mapScreen()
+	w.buf.mapScreen()
 	for i := start; i < end; i++ {
 		w.Curses.Move(i, 0)
 		w.Curses.Clrtoeol()
@@ -84,7 +81,7 @@ func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 	}
 
 	if paintCursor {
-		cX, cY := mapper.GetCursor()
+		cX, cY := w.buf.getCursor()
 		if cX < 0 || cY < 0 || cX > cols || cY > rows {
 			EndScreen()
 			panic(fmt.Sprintf("Window.Paint: Bad cursor (%d, %d) [%d, %d]", start, end, cols, rows))

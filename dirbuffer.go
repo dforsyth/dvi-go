@@ -48,7 +48,7 @@ func (db *DirBuffer) mapScreen() {
 	db.MapToScreen()
 }
 
-func (db *DirBuffer) GetCursor() (int, int) {
+func (db *DirBuffer) getCursor() (int, int) {
 	return 0, db.CurY
 }
 
@@ -83,7 +83,7 @@ func (db *DirBuffer) SendInput(k int) {
 	}
 }
 
-func (db *DirBuffer) RunRoutine(fn func(Interacter)) {
+func (db *DirBuffer) RunRoutine(fn func(Buffer)) {
 	go fn(db)
 }
 
@@ -99,7 +99,6 @@ func (db *DirBuffer) Forward() {
 	if fi.IsDirectory() {
 		ndb := NewDirBuffer(db.gs, path)
 		db.gs.AddBuffer(ndb)
-		db.gs.SetMapper(ndb)
 	} else if fi.IsRegular() {
 		eb := NewEditBuffer(db.gs, path)
 		f, e := os.Open(path)
@@ -109,7 +108,6 @@ func (db *DirBuffer) Forward() {
 
 		if _, e := eb.readFile(f, 0); e == nil {
 			db.gs.AddBuffer(eb)
-			db.gs.SetMapper(eb)
 			eb.gotoLine(1)
 			// Now, remove this buffer
 			db.gs.RemoveBuffer(db)

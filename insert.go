@@ -14,10 +14,10 @@ func InsertMode(gs *GlobalState) {
 
 	gs.Mode = INSERT
 
-	buffer := gs.CurrentBuffer.Value.(Interacter)
+	buffer := gs.curbuf.Value.(Buffer)
 
 	if buffer == nil {
-		panic("GlobalState has no CurrentBuffer in InsertMode")
+		panic("GlobalState has no curbuf in InsertMode")
 	}
 
 	m := NewInsertModeline()

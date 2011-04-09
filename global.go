@@ -14,10 +14,9 @@ const (
 type GlobalState struct {
 	Window        *Window
 	ex            *exBuffer
-	CurrentMapper *Mapper
 	Modeline      *Modeliner
 	Buffers       *list.List
-	CurrentBuffer *list.Element
+	curbuf *list.Element
 	InputCh       chan int
 	UpdateCh      chan int
 	Mode          int
@@ -30,47 +29,42 @@ func NewGlobalState() *GlobalState {
 	gs := new(GlobalState)
 	gs.Window = NewWindow(gs)
 	gs.ex = newExBuffer(gs)
-	gs.CurrentMapper = nil
 	gs.Buffers = list.New()
-	gs.CurrentBuffer = nil
+	gs.curbuf = nil
 	gs.InputCh = make(chan int)
 	gs.UpdateCh = make(chan int)
 	gs.msgQueue = list.New()
 	return gs
 }
 
-func (gs *GlobalState) AddBuffer(buffer Interacter) {
-	gs.CurrentBuffer = gs.Buffers.PushBack(buffer)
+func (gs *GlobalState) AddBuffer(buf Buffer) {
+	gs.curbuf = gs.Buffers.PushBack(buf)
+	gs.Window.buf = gs.curbuf.Value.(Buffer)
 }
 
-func (gs *GlobalState) RemoveBuffer(buffer Interacter) {
+func (gs *GlobalState) RemoveBuffer(buf Buffer) {
 	for b := gs.Buffers.Front(); b != nil; b = b.Next() {
-		if b.Value == buffer {
+		if b.Value == buf {
 			gs.Buffers.Remove(b)
+			if b == gs.curbuf {
+				panic("removing curbuf is not supported yet")
+			}
 		}
 	}
 }
 
 func (gs *GlobalState) NextBuffer() {
-	if gs.CurrentBuffer.Next() != nil {
-		gs.CurrentBuffer = gs.CurrentBuffer.Next()
-		gs.SetMapper(gs.CurrentBuffer.Value.(Mapper))
+	if gs.curbuf.Next() != nil {
+		gs.curbuf = gs.curbuf.Next()
+		gs.Window.buf = gs.curbuf.Value.(Buffer)
 	}
 }
 
 func (gs *GlobalState) PrevBuffer() {
-	if gs.CurrentBuffer.Prev() != nil {
-		gs.CurrentBuffer = gs.CurrentBuffer.Prev()
-		gs.SetMapper(gs.CurrentBuffer.Value.(Mapper))
+	if gs.curbuf.Prev() != nil {
+		gs.curbuf = gs.curbuf.Prev()
+		gs.Window.buf = gs.curbuf.Value.(Buffer)
 	}
-}
-
-func (gs *GlobalState) SetMapper(mapper Mapper) {
-	newMapper := &mapper
-	if newMapper != gs.CurrentMapper {
-		gs.Window.ClearMap()
-	}
-	gs.CurrentMapper = newMapper
 }
 
 func (gs *GlobalState) SetModeline(modeliner Modeliner) {

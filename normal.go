@@ -18,7 +18,7 @@ func NormalMode(gs *GlobalState) {
 			gs.Mode = NORMAL
 			gs.SetModeline(m)
 		} else {
-			buffer := gs.CurrentBuffer.Value.(Interacter)
+			buffer := gs.curbuf.Value.(Buffer)
 			buffer.SendInput(k)
 			switch k {
 			case 'i', 'a', 'o':

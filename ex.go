@@ -73,7 +73,7 @@ func (c *exBuffer) execute() {
 	gs := c.gs
 
 	if !all {
-		targets.PushFront(gs.CurrentBuffer.Value)
+		targets.PushFront(gs.curbuf.Value)
 	} else {
 		targets.PushFrontList(gs.Buffers)
 	}

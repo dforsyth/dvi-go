@@ -127,7 +127,7 @@ func (eb *EditBuffer) SendInput(k int) {
 	}
 }
 
-func (eb *EditBuffer) RunRoutine(fn func(Interacter)) {
+func (eb *EditBuffer) RunRoutine(fn func(Buffer)) {
 	go fn(eb)
 }
 
@@ -146,7 +146,7 @@ func (eb *EditBuffer) SetDimensions(x, y int) {
 	eb.X, eb.Y = x, y
 }
 
-func (eb *EditBuffer) GetCursor() (int, int) {
+func (eb *EditBuffer) getCursor() (int, int) {
 	return eb.CurX, eb.CurY
 }
 

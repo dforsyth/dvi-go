@@ -18,16 +18,13 @@ const (
 )
 
 // This could/should probably be called Buffer(er) or something...
-type Mapper interface {
+type Buffer interface {
 	mapScreen()
 	getWindow() *Window
-	GetCursor() (int, int)
+	getCursor() (int, int)
 	SetDimensions(int, int)
-}
-
-type Interacter interface {
 	SendInput(int)
-	RunRoutine(func(Interacter))
+	RunRoutine(func(Buffer))
 }
 
 type Modeliner interface {
@@ -141,7 +138,6 @@ func main() {
 					}
 					db := NewDirBuffer(gs, path)
 					gs.AddBuffer(db)
-					gs.SetMapper(db)
 				} else if fi.IsRegular() {
 					eb := NewEditBuffer(gs, path)
 					f, e := os.Open(path)
@@ -151,7 +147,6 @@ func main() {
 
 					if _, e := eb.readFile(f, 0); e == nil {
 						gs.AddBuffer(eb)
-						gs.SetMapper(eb)
 						eb.gotoLine(1)
 					} else {
 						panic(e.String())
@@ -166,7 +161,6 @@ func main() {
 		eb := NewTempEditBuffer(gs, TMPPREFIX)
 		eb.insert(NewEditLine([]byte("")), 0) // Insert the initial line per vi
 		gs.AddBuffer(eb)
-		gs.SetMapper(eb)
 	}
 
 	NormalMode(gs)
