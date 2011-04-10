@@ -93,9 +93,9 @@ func (eb *EditBuffer) SendInput(k int) {
 		case 'j':
 			b = eb.moveLeft()
 		case 'k':
-			b = eb.moveDown()
+			b = eb.moveDown(1)
 		case 'l':
-			b = eb.moveUp()
+			b = eb.moveUp(1)
 		case ';':
 			b = eb.moveRight()
 		case 'p':
@@ -110,7 +110,7 @@ func (eb *EditBuffer) SendInput(k int) {
 		case 'o':
 			// Add a line and go to insert mode
 			eb.AppendEmptyLine()
-			eb.moveDown()
+			eb.moveDown(1)
 		case 'd':
 			eb.delete(eb.lno)
 		case 'y':
@@ -156,7 +156,7 @@ func (eb *EditBuffer) insertChar(c byte) {
 
 func (eb *EditBuffer) MapToScreen() {
 	var i int
-	smap := eb.gs.Window.ScreenMap
+	smap := eb.gs.Window.screenMap
 	for _, e := range eb.lines[eb.head:] {
 		if i >= eb.Y {
 			break
@@ -287,7 +287,7 @@ func (eb *EditBuffer) NewLine(d byte) {
 	newLine := NewEditLine(l.AfterCursor())
 	l.ClearToEOL()
 	eb.insert(newLine, eb.lno+1)
-	eb.moveDown()
+	eb.moveDown(1)
 }
 
 func (eb *EditBuffer) TopLine() {
@@ -332,12 +332,12 @@ func (eb *EditBuffer) moveVertical(dir int) bool {
 	return true
 }
 
-func (eb *EditBuffer) moveUp() bool {
-	return eb.moveVertical(-1)
+func (eb *EditBuffer) moveUp(cnt int) bool {
+	return eb.moveVertical(-cnt)
 }
 
-func (eb *EditBuffer) moveDown() bool {
-	return eb.moveVertical(1)
+func (eb *EditBuffer) moveDown(cnt int) bool {
+	return eb.moveVertical(cnt)
 }
 
 func (eb *EditBuffer) paste(lno int) {

@@ -18,7 +18,7 @@ type Window struct {
 	Curses     *curses.Window
 	Cols, Rows int
 	gs         *GlobalState
-	ScreenMap  []string
+	screenMap  []string
 	buf	Buffer
 }
 
@@ -28,7 +28,7 @@ func NewWindow(gs *GlobalState) *Window {
 	w.Cols = *curses.Cols
 	w.Rows = *curses.Rows
 	w.gs = gs
-	w.ScreenMap = make([]string, w.Rows-1)
+	w.screenMap = make([]string, w.Rows-1)
 	return w
 }
 
@@ -36,8 +36,8 @@ func (w *Window) HandleWinch() {
 }
 
 func (w *Window) ClearMap() {
-	for i, _ := range w.ScreenMap {
-		w.ScreenMap[i] = ""
+	for i, _ := range w.screenMap {
+		w.screenMap[i] = ""
 	}
 }
 
@@ -77,14 +77,14 @@ func (w *Window) PaintMapper(start, end int, paintCursor bool) {
 	for i := start; i < end; i++ {
 		w.Curses.Move(i, 0)
 		w.Curses.Clrtoeol()
-		w.Curses.Mvwaddnstr(i, 0, w.ScreenMap[i], cols)
+		w.Curses.Mvwaddnstr(i, 0, w.screenMap[i], cols)
 	}
 
 	if paintCursor {
 		cX, cY := w.buf.getCursor()
 		if cX < 0 || cY < 0 || cX > cols || cY > rows {
 			EndScreen()
-			panic(fmt.Sprintf("Window.Paint: Bad cursor (%d, %d) [%d, %d]", start, end, cols, rows))
+			panic(fmt.Sprintf("Window.Paint: Bad cursor (%d, %d) [%d, %d]", cX, cY, cols, rows))
 		}
 		w.Curses.Move(cY, cX)
 	}

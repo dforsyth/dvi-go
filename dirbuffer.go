@@ -134,7 +134,7 @@ func (db *DirBuffer) MoveDown() {
 }
 
 func (db *DirBuffer) MapToScreen() {
-	smap := db.gs.Window.ScreenMap
+	smap := db.gs.Window.screenMap
 	for i, fi := range db.Listing[db.Anchor:] {
 		if i > db.Y-1 {
 			break
