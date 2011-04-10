@@ -1,11 +1,5 @@
 package main
 
-/*
-import (
-	"curses"
-)
-*/
-
 func AppendInsertMode() {
 }
 

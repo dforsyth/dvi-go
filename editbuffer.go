@@ -2,10 +2,9 @@ package main
 
 import (
 	"bufio"
-	// "container/list"
 	"curses"
 	"fmt"
-	// "math"
+	"math"
 	"os"
 	"strings"
 )
@@ -154,6 +153,20 @@ func (eb *EditBuffer) insertChar(c byte) {
 	eb.lines[eb.lno].insertChar(c)
 }
 
+func (eb *EditBuffer) screenLines(el *EditLine) int {
+	raw := el.getRaw()
+	l := len(raw)
+	if l > 0 && raw[l-1] == '\n' {
+		l--
+	}
+
+	// XXX It would be better if I was getting the screen width from the smap
+	if sl := int(math.Ceil(float64(l)/float64(eb.gs.Window.Cols))); sl > 0 {
+		return sl
+	}
+	return 1
+}
+
 func (eb *EditBuffer) MapToScreen() {
 	var i int
 	smap := eb.gs.Window.screenMap
@@ -162,13 +175,7 @@ func (eb *EditBuffer) MapToScreen() {
 			break
 		}
 		// XXX: screen lines code for wrap
-		row := make([]byte, eb.X)
-		// panic(fmt.Sprintf("len of e.raw is %d", len(e.raw())))
-		for j, _ := range row {
-			row[j] = ' '
-		}
-		copy(row, e.getRaw())
-		rs := string(row)
+		rs := string(e.getRaw())
 		// XXX this is all sorts of wrong, but need to fix line mapping before fixing
 		// this
 		t := strings.Count(rs, "\t")
@@ -204,6 +211,7 @@ func (eb *EditBuffer) backspace() {
 		if eb.lno > 0 {
 			sav := eb.delete(eb.lno)
 			eb.lines[eb.lno].Delete(1)
+			// XXX This doesn't append the rest of the line that backspaced on in eb.lno...
 			if sav != nil {
 			}
 		} else {

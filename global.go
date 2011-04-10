@@ -23,6 +23,7 @@ type GlobalState struct {
 	Wd       string
 	config   map[string]interface{}
 	msgQueue *list.List
+	yb []string // yank buffer
 }
 
 func NewGlobalState() *GlobalState {

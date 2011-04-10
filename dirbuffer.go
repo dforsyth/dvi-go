@@ -9,11 +9,12 @@ import (
 type DirBuffer struct {
 	Name    string
 	Listing []*os.FileInfo
-	Item    int
-	Anchor  int
+	item    int
+	head  int
 	X, Y    int
 	CurY    int
 	gs      *GlobalState
+	dirty bool
 }
 
 func NewDirBuffer(gs *GlobalState, name string) *DirBuffer {
@@ -37,8 +38,8 @@ func NewDirBuffer(gs *GlobalState, name string) *DirBuffer {
 	}
 	db.gs = gs
 	db.CurY = 0
-	db.Item = 0
-	db.Anchor = 0
+	db.item = 0
+	db.head = 0
 	db.X, db.Y = db.gs.Window.Cols, db.gs.Window.Rows-1
 
 	return db
@@ -88,9 +89,9 @@ func (db *DirBuffer) RunRoutine(fn func(Buffer)) {
 }
 
 func (db *DirBuffer) Forward() {
-	fi := db.Listing[db.Item]
+	fi := db.Listing[db.item]
 	path := ""
-	if db.Item == 0 && db.Name != "/" {
+	if db.item == 0 && db.Name != "/" {
 		path = filepath.Join(db.Name, "..")
 	} else {
 		path = filepath.Join(db.Name, fi.Name)
@@ -118,16 +119,24 @@ func (db *DirBuffer) Forward() {
 }
 
 func (db *DirBuffer) MoveUp() {
-	if db.Item > 0 {
-		db.Item -= 1
+	if db.item > 0 {
+		db.item -= 1
+		if db.item < db.head {
+			db.head = db.item
+			db.dirty = true
+		}
 	} else {
 		Beep()
 	}
 }
 
 func (db *DirBuffer) MoveDown() {
-	if db.Item < len(db.Listing)-1 {
-		db.Item += 1
+	if db.item < len(db.Listing)-1 {
+		db.item += 1
+		if db.item > db.head + db.Y-1 {
+			db.head = db.item - db.Y + 1
+			db.dirty = true
+		}
 	} else {
 		Beep()
 	}
@@ -135,7 +144,10 @@ func (db *DirBuffer) MoveDown() {
 
 func (db *DirBuffer) MapToScreen() {
 	smap := db.gs.Window.screenMap
-	for i, fi := range db.Listing[db.Anchor:] {
+	for i, _ := range smap {
+		smap[i] = ""
+	}
+	for i, fi := range db.Listing[db.head:] {
 		if i > db.Y-1 {
 			break
 		}
@@ -146,7 +158,10 @@ func (db *DirBuffer) MapToScreen() {
 		if fi.IsDirectory() {
 			smap[i] += "/"
 		}
-		if fi == db.Listing[db.Item] {
+		if fi.IsSymlink() {
+			smap[i] = "@" + smap[i]
+		}
+		if fi == db.Listing[db.item] {
 			db.CurY = i
 		}
 	}
