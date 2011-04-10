@@ -12,16 +12,16 @@ const (
 )
 
 type GlobalState struct {
-	Window        *Window
-	ex            *exBuffer
-	Modeline      *Modeliner
-	Buffers       *list.List
-	curbuf *list.Element
-	InputCh       chan int
-	UpdateCh      chan int
-	Mode          int
-	Wd            string
-	config        map[string]interface{}
+	Window   *Window
+	ex       *exBuffer
+	Modeline *Modeliner
+	Buffers  *list.List
+	curbuf   *list.Element
+	InputCh  chan int
+	UpdateCh chan int
+	Mode     int
+	Wd       string
+	config   map[string]interface{}
 	msgQueue *list.List
 }
 

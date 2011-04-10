@@ -19,7 +19,7 @@ type Window struct {
 	Cols, Rows int
 	gs         *GlobalState
 	screenMap  []string
-	buf	Buffer
+	buf        Buffer
 }
 
 func NewWindow(gs *GlobalState) *Window {
