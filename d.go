@@ -8,12 +8,12 @@ import (
 
 const (
 	// strings
-	NaL       string = "~" // char that shows that a line does not exist
-	EXPROMPT  string = ":"
-	TMPDIR    = "."
-	TMPPREFIX = "dvi." // temp file prefix
+	NaL        string = "~" // char that shows that a line does not exist
+	EXPROMPT   string = ":"
+	TMPDIR     = "."
+	TMPPREFIX  = "dvi." // temp file prefix
 	LOCKSUFFIX = "dvi"
-	ESC       = 27
+	ESC        = 27
 )
 
 // This could/should probably be called Buffer(er) or something...

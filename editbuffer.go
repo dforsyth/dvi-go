@@ -23,7 +23,7 @@ type EditBuffer struct {
 	lno      int
 	col      int
 	dirty    bool // This should become an int, so that updates are just after a given line
-	temp	bool
+	temp     bool
 
 	// buffer settings
 	tabs     bool
