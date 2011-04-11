@@ -30,12 +30,14 @@ type Buffer interface {
 type Modeliner interface {
 	String() string
 	GetCursor() int
+	msgOverride(*Message)
 }
 
 type InsertModeline struct {
 	Key          int
 	LineNumber   int
 	ColumnNumber int
+	msg          *Message
 }
 
 func NewInsertModeline() *InsertModeline {
@@ -43,11 +45,20 @@ func NewInsertModeline() *InsertModeline {
 	m.Key = ' '
 	m.LineNumber = -1
 	m.ColumnNumber = -1
+	m.msg = nil
 	return m
 }
 
 func (m *InsertModeline) String() string {
-	return fmt.Sprintf("INSERT -- Key: %c (%d)-- Line: %d -- Column: %d", m.Key, m.Key, m.LineNumber, m.ColumnNumber)
+	show := "INSERT"
+	if m.msg != nil {
+		show = m.msg.text
+	}
+
+	ml := fmt.Sprintf("%s -- Key: %c (%d)-- Line: %d -- Column: %d", show, m.Key, m.Key, m.LineNumber, m.ColumnNumber)
+
+	m.msg = nil
+	return ml
 }
 
 func (m *InsertModeline) GetCursor() int {
@@ -55,22 +66,35 @@ func (m *InsertModeline) GetCursor() int {
 	return -1
 }
 
+func (m *InsertModeline) msgOverride(msg *Message) {
+	m.msg = msg
+}
+
 type NormalModeline struct {
 	Key      int
-	Message  string
+	info     string
 	Row, Col int
+	msg      *Message
 }
 
 func NewNormalModeline() *NormalModeline {
 	m := new(NormalModeline)
 	m.Key = ' '
-	m.Message = ""
+	m.info = ""
 	m.Row, m.Col = 0, 0
+	m.msg = nil
 	return m
 }
 
 func (m *NormalModeline) String() string {
-	return fmt.Sprintf("NORMAL -- Key: %c", m.Key)
+	show := "NORMAL"
+	if m.msg != nil {
+		show = m.msg.text
+	}
+
+	ml := fmt.Sprintf("%s -- Key: %c", show, m.Key)
+	m.msg = nil
+	return ml
 }
 
 func (m *NormalModeline) GetCursor() int {
@@ -78,6 +102,9 @@ func (m *NormalModeline) GetCursor() int {
 	return -1
 }
 
+func (m *NormalModeline) msgOverride(msg *Message) {
+	m.msg = msg
+}
 
 // options
 var optLineNo = true

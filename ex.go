@@ -49,6 +49,9 @@ func (c *exBuffer) GetCursor() int {
 	return len(c.String()) - 1
 }
 
+func (c *exBuffer) msgOverride(m *Message) {
+}
+
 func (c *exBuffer) SendInput(k int) {
 	c.buffer += string(k)
 }

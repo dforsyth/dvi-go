@@ -11,6 +11,11 @@ const (
 	COMMAND = 2
 )
 
+type Message struct {
+	text string
+	beep bool
+}
+
 type GlobalState struct {
 	Window   *Window
 	ex       *exBuffer
@@ -48,6 +53,7 @@ func (gs *GlobalState) RemoveBuffer(buf Buffer) {
 		if b.Value == buf {
 			gs.Buffers.Remove(b)
 			if b == gs.curbuf {
+				EndScreen()
 				panic("removing curbuf is not supported yet")
 			}
 		}
@@ -68,6 +74,10 @@ func (gs *GlobalState) PrevBuffer() {
 	}
 }
 
+func (gs *GlobalState) curBuf() Buffer {
+	return gs.curbuf.Value.(Buffer)
+}
+
 func (gs *GlobalState) SetModeline(modeliner Modeliner) {
 	gs.Modeline = &modeliner
 }
@@ -77,6 +87,13 @@ func Done(r int) {
 	syscall.Exit(r)
 }
 
-func (gs *GlobalState) queueMessage(msg string) {
+func (gs *GlobalState) queueMessage(msg *Message) {
 	gs.msgQueue.PushBack(msg)
+}
+
+func (gs *GlobalState) getMessage() *Message {
+	if f := gs.msgQueue.Front(); f != nil {
+		return gs.msgQueue.Remove(f).(*Message)
+	}
+	return nil
 }

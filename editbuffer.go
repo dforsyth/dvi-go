@@ -423,5 +423,11 @@ func (eb *EditBuffer) writeFile(f *os.File) (int, os.Error) {
 			wb += b
 		}
 	}
+
+	eb.gs.queueMessage(&Message{
+		fmt.Sprintf("\"%s\"\t%dL\t%db", eb.pathname, len(eb.lines), wb),
+		false,
+	})
+
 	return wb, nil
 }

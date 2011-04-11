@@ -99,14 +99,22 @@ func (w *Window) PaintModeliner(paintCursor bool) {
 		return
 	}
 
-	modeline := *gs.Modeline
+	ml := *gs.Modeline
+	msg := gs.getMessage()
+	if msg != nil {
+		ml.msgOverride(msg)
+	}
 
 	w.Curses.Move(maxRow, 0)
 	w.Curses.Clrtoeol()
 	// This needs hscroll
-	w.Curses.Mvwaddnstr(maxRow, 0, modeline.String(), w.Cols)
+	w.Curses.Mvwaddnstr(maxRow, 0, ml.String(), w.Cols)
 
 	if paintCursor {
-		w.Curses.Move(maxRow, modeline.GetCursor())
+		w.Curses.Move(maxRow, ml.GetCursor())
+	}
+
+	if msg != nil && msg.beep {
+		Beep()
 	}
 }
