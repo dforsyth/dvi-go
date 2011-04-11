@@ -346,6 +346,20 @@ func (eb *EditBuffer) moveVertical(dir int) bool {
 		return false
 	}
 
+	if lno < eb.head {
+		eb.head = lno
+	} else {
+		dist := 0
+		for _, e := range eb.lines[eb.head:lno] {
+			dist += eb.screenLines(e)
+			if dist > eb.Y-1 {
+				s := eb.screenLines(eb.lines[eb.head])
+				dist -= s
+				eb.head++
+			}
+		}
+	}
+
 	eb.col = eb.lines[eb.lno].Cursor()
 	eb.lno = lno
 	if l := eb.lines[eb.lno]; len(l.getRaw()) > eb.col {
