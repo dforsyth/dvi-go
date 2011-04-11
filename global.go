@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"os/signal"
 	"syscall"
 )
 
@@ -96,4 +97,29 @@ func (gs *GlobalState) getMessage() *Message {
 		return gs.msgQueue.Remove(f).(*Message)
 	}
 	return nil
+}
+
+func (gs *GlobalState) SignalsRoutine() {
+	go func() {
+		for {
+			s := <-signal.Incoming
+			switch s.(signal.UnixSignal) {
+			case syscall.SIGINT:
+				gs.queueMessage(&Message{
+					"quit with :q",
+					true,
+				})
+				gs.UpdateCh <- 1
+				// EndScreen()
+				// panic("sigint")
+				// Beep()
+			case syscall.SIGTERM:
+				EndScreen()
+				panic("sigterm")
+				// Beep()
+			case syscall.SIGWINCH:
+				Beep()
+			}
+		}
+	}()
 }

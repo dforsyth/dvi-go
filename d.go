@@ -4,8 +4,6 @@ import (
 	"curses"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 const (
@@ -106,29 +104,6 @@ func (m *NormalModeline) msgOverride(msg *Message) {
 	m.msg = msg
 }
 
-// options
-var optLineNo = true
-
-func SignalsRoutine() {
-	go func() {
-		for {
-			s := <-signal.Incoming
-			switch s.(signal.UnixSignal) {
-			case syscall.SIGINT:
-				EndScreen()
-				panic("sigint")
-				// Beep()
-			case syscall.SIGTERM:
-				EndScreen()
-				panic("sigterm")
-				// Beep()
-			case syscall.SIGWINCH:
-				Beep()
-			}
-		}
-	}()
-}
-
 func StartScreen() {
 	curses.Initscr()
 	curses.Cbreak()
@@ -145,9 +120,8 @@ func main() {
 	StartScreen()
 	defer EndScreen()
 
-	SignalsRoutine()
-
 	gs := NewGlobalState()
+	gs.SignalsRoutine()
 	wd, e := os.Getwd()
 	if e != nil {
 		panic(e.String())
