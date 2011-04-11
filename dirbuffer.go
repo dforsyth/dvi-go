@@ -10,11 +10,11 @@ type DirBuffer struct {
 	Name    string
 	Listing []*os.FileInfo
 	item    int
-	head  int
+	head    int
 	X, Y    int
 	CurY    int
 	gs      *GlobalState
-	dirty bool
+	dirty   bool
 }
 
 func NewDirBuffer(gs *GlobalState, name string) *DirBuffer {
@@ -133,7 +133,7 @@ func (db *DirBuffer) MoveUp() {
 func (db *DirBuffer) MoveDown() {
 	if db.item < len(db.Listing)-1 {
 		db.item += 1
-		if db.item > db.head + db.Y-1 {
+		if db.item > db.head+db.Y-1 {
 			db.head = db.item - db.Y + 1
 			db.dirty = true
 		}

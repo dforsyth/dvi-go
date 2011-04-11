@@ -161,7 +161,7 @@ func (eb *EditBuffer) screenLines(el *EditLine) int {
 	}
 
 	// XXX It would be better if I was getting the screen width from the smap
-	if sl := int(math.Ceil(float64(l)/float64(eb.gs.Window.Cols))); sl > 0 {
+	if sl := int(math.Ceil(float64(l) / float64(eb.gs.Window.Cols))); sl > 0 {
 		return sl
 	}
 	return 1
@@ -188,7 +188,7 @@ func (eb *EditBuffer) MapToScreen() {
 				end = len(raw)
 				s = string(raw[beg:end])
 			}
-			if lno + eb.head == eb.lno && (e.Cursor() >= beg && e.Cursor() <= end) {
+			if lno+eb.head == eb.lno && (e.Cursor() >= beg && e.Cursor() <= end) {
 				eb.CurY = i
 				eb.CurX = e.Cursor() - beg
 				// lol.  it needs to automaticaly realize its at the end of a line
