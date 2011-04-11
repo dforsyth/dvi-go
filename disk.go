@@ -6,5 +6,7 @@ import (
 
 func NewTempEditBuffer(gs *GlobalState, prefix string) *EditBuffer {
 	// TODO: this.
-	return NewEditBuffer(gs, prefix)
+	e := NewEditBuffer(gs, prefix)
+	e.temp = true
+	return e
 }

@@ -23,6 +23,7 @@ type EditBuffer struct {
 	lno      int
 	col      int
 	dirty    bool // This should become an int, so that updates are just after a given line
+	temp	bool
 
 	// buffer settings
 	tabs     bool
@@ -413,7 +414,7 @@ func (eb *EditBuffer) writeFile(f *os.File) (int, os.Error) {
 	wb := 0
 	for _, ln := range eb.lines {
 		wl := ln.getRaw()
-		if wl[len(wl)-1] != '\n' {
+		if len(wl) > 0 && wl[len(wl)-1] != '\n' {
 			wl = append(wl, '\n')
 		}
 

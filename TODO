@@ -1,5 +1,5 @@
 - Proper editing
-- All buffers on a window should share a map
+- All buffers on a window should share a map (or, should they?)
 - in the editbuffer, line numbers should be line indexes, since they are 0
   indexed.
 ? seperate front and backend and connect them over network, so ui can run in one place, and file manipulation can happen in another (sam-y?)

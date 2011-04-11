@@ -12,6 +12,7 @@ const (
 	EXPROMPT  string = ":"
 	TMPDIR    = "."
 	TMPPREFIX = "dvi." // temp file prefix
+	LOCKSUFFIX = "dvi"
 	ESC       = 27
 )
 

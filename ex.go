@@ -87,6 +87,13 @@ func (c *exBuffer) execute() {
 			switch bt := t.Value.(type) {
 			case *EditBuffer: // I should make these io.Writer s
 				eb := t.Value.(*EditBuffer)
+				if eb.temp == true {
+					c.gs.queueMessage(&Message{
+						"Buffer has no non-temp pathname",
+						true,
+					})
+					continue
+				}
 				// XXX rewrite the entire file, like a boss.
 				if f, e := os.Create(eb.pathname); e == nil {
 					eb.writeFile(f)
