@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"strings"
+	// "strings"
 )
 
 const (
@@ -170,23 +170,37 @@ func (eb *EditBuffer) screenLines(el *EditLine) int {
 func (eb *EditBuffer) MapToScreen() {
 	var i int
 	smap := eb.gs.Window.screenMap
-	for _, e := range eb.lines[eb.head:] {
+	for lno, e := range eb.lines[eb.head:] {
 		if i >= eb.Y {
 			break
 		}
-		// XXX: screen lines code for wrap
-		rs := string(e.getRaw())
-		// XXX this is all sorts of wrong, but need to fix line mapping before fixing
-		// this
-		t := strings.Count(rs, "\t")
-		s := strings.Replace(rs, "\t", "        ", -1)
-		s = strings.Replace(s, "\n", "", -1)
-		smap[i] = s
-		if i == eb.lno {
-			eb.CurY = i
-			eb.CurX = e.b.gs + (t * 7)
+
+		cnt := eb.screenLines(e)
+		raw := e.getRaw()
+		wrap := 0
+		for lim := i + cnt; i < lim; i++ {
+			beg := wrap * eb.X
+			end := beg + eb.X
+			s := ""
+			if end < len(raw) {
+				s = string(raw[beg:end])
+			} else {
+				end = len(raw)
+				s = string(raw[beg:end])
+			}
+			if lno + eb.head == eb.lno && (e.Cursor() >= beg && e.Cursor() <= end) {
+				eb.CurY = i
+				eb.CurX = e.Cursor() - beg
+				// lol.  it needs to automaticaly realize its at the end of a line
+				// and puch the cursor to the next screen line.
+				if eb.X == eb.CurX {
+					eb.CurY++
+					eb.CurX = 0
+				}
+			}
+			smap[i] = s
+			wrap++
 		}
-		i++
 	}
 	for i < eb.Y {
 		smap[i] = NaL
