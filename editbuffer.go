@@ -53,6 +53,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb.lno = 0
 	eb.col = 0
 	eb.dirty = true
+	eb.temp = false
 
 	eb.cmdbuff = NewGapBuffer([]byte(""))
 
