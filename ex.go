@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 	"fmt"
+	"os"
 )
 
 func exMode(gs *GlobalState) {
@@ -80,9 +81,16 @@ func (c *exBuffer) execute() {
 
 	for t := targets.Front(); t != nil; t = t.Next() {
 		if save {
-			switch buffer := t.Value.(type) {
+			switch bt := t.Value.(type) {
 			case *EditBuffer: // I should make these io.Writer s
-				t.Value.(*EditBuffer).writeFile(nil)
+				eb := t.Value.(*EditBuffer)
+				// XXX rewrite the entire file, like a boss.
+				if f, e := os.Create(eb.pathname); e == nil {
+					eb.writeFile(f)
+				} else {
+					EndScreen()
+					panic(e.String())
+				}
 			}
 		}
 	}

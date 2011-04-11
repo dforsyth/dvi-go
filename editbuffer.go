@@ -18,8 +18,7 @@ type EditBuffer struct {
 	gs *GlobalState
 
 	fi       *os.FileInfo
-	Name     string
-	Pathname string
+	pathname string
 	lines    []*EditLine
 	lno      int
 	col      int
@@ -48,7 +47,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 
 	eb.gs = gs
 
-	eb.Pathname = name
+	eb.pathname = name
 	eb.lines = make([]*EditLine, 0)
 	eb.lno = 0
 	eb.col = 0
