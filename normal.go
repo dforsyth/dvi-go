@@ -29,13 +29,13 @@ func NormalMode(gs *GlobalState) {
 				r := gs.NextBuffer()
 				gs.queueMessage(&Message{
 					"buffer: " + gs.curBuf().getIdent(),
-					!r,
+					r == nil,
 				})
 			case 'p':
 				r := gs.PrevBuffer()
 				gs.queueMessage(&Message{
 					"buffer: " + gs.curBuf().getIdent(),
-					!r,
+					r == nil,
 				})
 			default:
 			}
