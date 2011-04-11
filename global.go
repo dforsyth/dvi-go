@@ -61,18 +61,22 @@ func (gs *GlobalState) RemoveBuffer(buf Buffer) {
 	}
 }
 
-func (gs *GlobalState) NextBuffer() {
+func (gs *GlobalState) NextBuffer() bool {
 	if gs.curbuf.Next() != nil {
 		gs.curbuf = gs.curbuf.Next()
 		gs.Window.buf = gs.curbuf.Value.(Buffer)
+		return true
 	}
+	return false
 }
 
-func (gs *GlobalState) PrevBuffer() {
+func (gs *GlobalState) PrevBuffer() bool {
 	if gs.curbuf.Prev() != nil {
 		gs.curbuf = gs.curbuf.Prev()
 		gs.Window.buf = gs.curbuf.Value.(Buffer)
+		return true
 	}
+	return false
 }
 
 func (gs *GlobalState) curBuf() Buffer {

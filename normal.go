@@ -26,9 +26,17 @@ func NormalMode(gs *GlobalState) {
 				gs.Mode = NORMAL
 				gs.SetModeline(m)
 			case 'n':
-				gs.NextBuffer()
+				r := gs.NextBuffer()
+				gs.queueMessage(&Message{
+					"buffer: " + gs.curBuf().getIdent(),
+					!r,
+				})
 			case 'p':
-				gs.PrevBuffer()
+				r := gs.PrevBuffer()
+				gs.queueMessage(&Message{
+					"buffer: " + gs.curBuf().getIdent(),
+					!r,
+				})
 			default:
 			}
 		}

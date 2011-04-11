@@ -24,6 +24,7 @@ type Buffer interface {
 	SetDimensions(int, int)
 	SendInput(int)
 	RunRoutine(func(Buffer))
+	getIdent() string
 }
 
 type Modeliner interface {

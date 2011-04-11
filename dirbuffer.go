@@ -68,6 +68,10 @@ func (db *DirBuffer) GetWindow() *Window {
 	return db.gs.Window
 }
 
+func (db *DirBuffer) getIdent() string {
+	return db.Name
+}
+
 func (db *DirBuffer) SendInput(k int) {
 	gs := db.gs
 	switch gs.Mode {

@@ -149,6 +149,10 @@ func (eb *EditBuffer) getCursor() (int, int) {
 	return eb.CurX, eb.CurY
 }
 
+func (eb *EditBuffer) getIdent() string {
+	return eb.pathname
+}
+
 func (eb *EditBuffer) insertChar(c byte) {
 	eb.lines[eb.lno].insertChar(c)
 }
