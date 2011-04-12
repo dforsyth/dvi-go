@@ -23,6 +23,11 @@ func OpenBuffer(gs *GlobalState, pathname string) (Buffer, os.Error) {
 	}
 
 	f, e := os.Open(pathname)
+	if e != nil {
+		return nil, e
+	}
+	defer f.Close()
+
 	if st, e := f.Stat(); e == nil {
 		if st.IsRegular() {
 			eb := NewEditBuffer(gs, pathname)
