@@ -12,6 +12,14 @@ const (
 	COMMAND = 2
 )
 
+type DviError struct {
+	msg string
+}
+
+func (e *DviError) String() string {
+	return e.msg
+}
+
 type Message struct {
 	text string
 	beep bool

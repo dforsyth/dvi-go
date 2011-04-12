@@ -133,30 +133,11 @@ func main() {
 	gs.Window.UpdateRoutine(gs.UpdateCh)
 
 	if len(os.Args) > 1 {
-		for _, path := range os.Args[1:] {
-			if fi, e := os.Stat(path); e == nil {
-				if fi.IsDirectory() {
-					if fi.Name == "" {
-						fi.Name = "/"
-					}
-					db := NewDirBuffer(gs, path)
-					gs.AddBuffer(db)
-				} else if fi.IsRegular() {
-					eb := NewEditBuffer(gs, path)
-					f, e := os.Open(path)
-					if e != nil {
-						panic(e.String())
-					}
-
-					if _, e := eb.readFile(f, 0); e == nil {
-						gs.AddBuffer(eb)
-						eb.gotoLine(1)
-					} else {
-						panic(e.String())
-					}
-					f.Close()
-				}
+		for _, pathname := range os.Args[1:] {
+			if b, e := OpenBuffer(gs, pathname); e == nil {
+				gs.AddBuffer(b)
 			} else {
+				EndScreen()
 				panic(e.String())
 			}
 		}
