@@ -1,6 +1,7 @@
 package main
 
-// Move the cursor in an editbuffer to the right by one and then enter insert mode.
+// Move the cursor in an editbuffer to the right by one and then enter insert mode (and force a
+// remap)
 func appendInsertMode(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		ln := eb.lines[eb.lno]
@@ -12,17 +13,34 @@ func appendInsertMode(gs *GlobalState) {
 			c++
 			ln.moveCursor(c)
 		}
+		eb.dirty = true
 		insertMode(gs)
 	}
 }
 
-func insertMode(gs *GlobalState) {
-	InsertMode(gs)
+// Insert a line below the current line in an editbuffer, move down to the new line, then enter
+// insert mode (and force a remap)
+func openInsertMode(gs *GlobalState) {
+	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
+		eb.AppendEmptyLine()
+		eb.moveDown(1) // move down to the new line...
+		eb.dirty = true
+		insertMode(gs)
+	}
 }
 
-// insert mode
-func InsertMode(gs *GlobalState) {
+// Insert a line above the current line in an editbuffer, move up to the new line, then enter insert
+// mode (and force a remap)
+func aboveOpenInsertMode(gs *GlobalState) {
+	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
+		eb.insertEmptyLine(eb.lno)
+		eb.dirty = true
+		insertMode(gs)
+	}
+}
 
+// Insert mode
+func insertMode(gs *GlobalState) {
 	gs.Mode = INSERT
 
 	buffer := gs.curbuf.Value.(Buffer)
@@ -40,10 +58,8 @@ func InsertMode(gs *GlobalState) {
 		k := <-gs.InputCh
 
 		buffer.SendInput(k)
-		switch k {
-		case ESC:
+		if k == ESC {
 			return
-		default:
 		}
 		m.Key = k
 		m.LineNumber = buffer.(*EditBuffer).lno

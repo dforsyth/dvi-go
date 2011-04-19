@@ -92,7 +92,7 @@ func (m *NormalModeline) String() string {
 		show = m.msg.text
 	}
 
-	ml := fmt.Sprintf("%s -- Key: %c", show, m.Key)
+	ml := fmt.Sprintf("%s -- Key: %c (%d)", show, m.Key, m.Key)
 	m.msg = nil
 	return ml
 }

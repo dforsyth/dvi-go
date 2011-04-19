@@ -105,15 +105,6 @@ func (eb *EditBuffer) SendInput(k int) {
 			eb.paste(eb.lno + 1)
 		case 'P':
 			eb.paste(eb.lno)
-		case 'i':
-			// Insert
-		case 'a':
-			// Append
-			eb.moveRight(nil)
-		case 'o':
-			// Add a line and go to insert mode
-			eb.AppendEmptyLine()
-			eb.moveDown(1)
 		case 'd':
 			eb.delete(eb.lno)
 		case 'y':
@@ -257,6 +248,10 @@ func (eb *EditBuffer) insert(e *EditLine, lno int) {
 	e.eb = eb
 }
 
+func (eb *EditBuffer) insertEmptyLine(lno int) {
+	eb.insert(NewEditLine([]byte("")), lno)
+}
+
 func (eb *EditBuffer) AppendEmptyLine() {
 	eb.insert(NewEditLine([]byte("")), eb.lno+1)
 }
@@ -356,6 +351,7 @@ func (eb *EditBuffer) moveRight(cmd *Command) bool {
 
 	nc := el.cursor() + 1
 	if nc >= l {
+		Beep()
 		nc = l - 1
 	}
 	el.moveCursor(nc)
