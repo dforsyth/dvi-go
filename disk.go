@@ -2,15 +2,22 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 )
 
-func NewTempEditBuffer(gs *GlobalState, prefix string) *EditBuffer {
+func NewTempEditBuffer(gs *GlobalState, prefix string) (*EditBuffer, os.Error) {
 	// TODO: this.
-	e := NewEditBuffer(gs, prefix)
-	e.temp = true
-	return e
+	f, e := ioutil.TempFile(os.TempDir(), prefix)
+	if e != nil {
+		return nil, e
+	}
+	defer f.Close() // close this now
+
+	eb := NewEditBuffer(gs, f.Name())
+	eb.temp = true
+	return eb, nil
 }
 
 func OpenBuffer(gs *GlobalState, pathname string) (Buffer, os.Error) {

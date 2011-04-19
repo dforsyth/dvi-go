@@ -142,9 +142,13 @@ func main() {
 			}
 		}
 	} else {
-		eb := NewTempEditBuffer(gs, TMPPREFIX)
-		eb.insert(NewEditLine([]byte("")), 0) // Insert the initial line per vi
-		gs.AddBuffer(eb)
+		if eb, e := NewTempEditBuffer(gs, TMPPREFIX); e == nil {
+			eb.insert(NewEditLine([]byte("")), 0) // Insert the initial line per vi
+			gs.AddBuffer(eb)
+		} else {
+			EndScreen()
+			panic(e.String())
+		}
 	}
 
 	NormalMode(gs)
