@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/list"
+	"os"
 	"os/signal"
 	"syscall"
 )
@@ -18,6 +19,11 @@ type DviError struct {
 
 func (e *DviError) String() string {
 	return e.msg
+}
+
+type Command struct {
+	start, end, count int
+	motion            bool
 }
 
 type Message struct {
@@ -134,4 +140,14 @@ func (gs *GlobalState) SignalsRoutine() {
 			}
 		}
 	}()
+}
+
+func (gs *GlobalState) parseConfig(pathname string) os.Error {
+	f, e := os.Open(pathname)
+	if e != nil {
+		return e
+	}
+	defer f.Close()
+
+	return nil
 }

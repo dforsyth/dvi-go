@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"container/list"
 	"curses"
 	"fmt"
 	"math"
@@ -24,6 +25,8 @@ type EditBuffer struct {
 	col      int
 	dirty    bool // This should become an int, so that updates are just after a given line
 	temp     bool
+
+	undoList list.List
 
 	// buffer settings
 	tabs     bool
@@ -97,7 +100,7 @@ func (eb *EditBuffer) SendInput(k int) {
 		case 'l':
 			b = eb.moveUp(1)
 		case ';':
-			b = eb.moveRight()
+			b = eb.moveRight(nil)
 		case 'p':
 			eb.paste(eb.lno + 1)
 		case 'P':
@@ -106,7 +109,7 @@ func (eb *EditBuffer) SendInput(k int) {
 			// Insert
 		case 'a':
 			// Append
-			eb.moveRight()
+			eb.moveRight(nil)
 		case 'o':
 			// Add a line and go to insert mode
 			eb.AppendEmptyLine()
@@ -117,6 +120,8 @@ func (eb *EditBuffer) SendInput(k int) {
 			eb.yank(eb.lno, 1)
 		case 'G':
 			eb.LastLine()
+		case 'u':
+			eb.undo(1)
 		}
 		if !b {
 			Beep()
@@ -249,6 +254,7 @@ func (eb *EditBuffer) insert(e *EditLine, lno int) {
 	}
 
 	eb.lines = append(eb.lines[:lno], append([]*EditLine{e}, eb.lines[lno:]...)...)
+	e.eb = eb
 }
 
 func (eb *EditBuffer) AppendEmptyLine() {
@@ -340,8 +346,21 @@ func (eb *EditBuffer) moveLeft() bool {
 	return eb.moveHorizontal(-1)
 }
 
-func (eb *EditBuffer) moveRight() bool {
-	return eb.moveHorizontal(1)
+func (eb *EditBuffer) moveRight(cmd *Command) bool {
+	el := eb.lines[eb.lno]
+	l := el.getLength()
+
+	if l == 0 {
+		return false
+	}
+
+	nc := el.cursor() + 1
+	if nc >= l {
+		nc = l - 1
+	}
+	el.moveCursor(nc)
+
+	return true
 }
 
 // Move vertically within the buffer.
@@ -387,6 +406,13 @@ func (eb *EditBuffer) paste(lno int) {
 		lno++
 	}
 	eb.lno = lno - 1
+}
+
+func (eb *EditBuffer) undo(c int) {
+	eb.gs.queueMessage(&Message{
+		"Got undo",
+		false,
+	})
 }
 
 func (eb *EditBuffer) EvalCmdBuff() {

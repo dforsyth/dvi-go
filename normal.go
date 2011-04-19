@@ -21,7 +21,11 @@ func NormalMode(gs *GlobalState) {
 			buffer := gs.curbuf.Value.(Buffer)
 			buffer.SendInput(k)
 			switch k {
-			case 'i', 'a', 'o':
+			case 'a':
+				appendInsertMode(gs)
+				gs.Mode = NORMAL
+				gs.SetModeline(m)
+			case 'i', 'o':
 				InsertMode(gs)
 				gs.Mode = NORMAL
 				gs.SetModeline(m)

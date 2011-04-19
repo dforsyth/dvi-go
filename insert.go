@@ -1,6 +1,23 @@
 package main
 
-func AppendInsertMode() {
+// Move the cursor in an editbuffer to the right by one and then enter insert mode.
+func appendInsertMode(gs *GlobalState) {
+	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
+		ln := eb.lines[eb.lno]
+		l := ln.getLength()
+		c := ln.cursor()
+		if c+1 == l {
+			ln.moveCursor(l)
+		} else {
+			c++
+			ln.moveCursor(c)
+		}
+		insertMode(gs)
+	}
+}
+
+func insertMode(gs *GlobalState) {
+	InsertMode(gs)
 }
 
 // insert mode
