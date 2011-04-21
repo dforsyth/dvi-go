@@ -24,7 +24,7 @@ type Buffer interface {
 	SetDimensions(int, int)
 	SendInput(int)
 	RunRoutine(func(Buffer))
-	getIdent() string
+	ident() string
 }
 
 type Modeliner interface {
@@ -33,15 +33,15 @@ type Modeliner interface {
 	msgOverride(*Message)
 }
 
-type InsertModeline struct {
+type InputModeline struct {
 	Key          int
 	LineNumber   int
 	ColumnNumber int
 	msg          *Message
 }
 
-func NewInsertModeline() *InsertModeline {
-	m := new(InsertModeline)
+func NewInputModeline() *InputModeline {
+	m := new(InputModeline)
 	m.Key = ' '
 	m.LineNumber = -1
 	m.ColumnNumber = -1
@@ -49,7 +49,7 @@ func NewInsertModeline() *InsertModeline {
 	return m
 }
 
-func (m *InsertModeline) String() string {
+func (m *InputModeline) String() string {
 	show := "INSERT"
 	if m.msg != nil {
 		show = m.msg.text
@@ -61,12 +61,12 @@ func (m *InsertModeline) String() string {
 	return ml
 }
 
-func (m *InsertModeline) GetCursor() int {
+func (m *InputModeline) GetCursor() int {
 	// We never want the cursor for this modeline
 	return -1
 }
 
-func (m *InsertModeline) msgOverride(msg *Message) {
+func (m *InputModeline) msgOverride(msg *Message) {
 	m.msg = msg
 }
 
@@ -143,7 +143,7 @@ func main() {
 		}
 	} else {
 		if eb, e := NewTempEditBuffer(gs, TMPPREFIX); e == nil {
-			eb.insert(NewEditLine([]byte("")), 0) // Insert the initial line per vi
+			eb.insert(NewEditLine([]byte("")), 0) // Input the initial line per vi
 			gs.AddBuffer(eb)
 		} else {
 			EndScreen()

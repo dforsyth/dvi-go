@@ -146,7 +146,7 @@ func (eb *EditBuffer) getCursor() (int, int) {
 	return eb.CurX, eb.CurY
 }
 
-func (eb *EditBuffer) getIdent() string {
+func (eb *EditBuffer) ident() string {
 	return eb.pathname
 }
 

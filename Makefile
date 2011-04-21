@@ -11,7 +11,7 @@ GOFILES=    d.go \
             editbuffer.go \
             editline.go \
             ex.go \
-            insert.go \
+            input.go \
             normal.go \
             window.go
 

@@ -2,10 +2,10 @@ package main
 
 // EditBuffer command map
 var ebCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState) {
-	'a': appendInsertMode,
+	'a': appendInputMode,
 	'i': insertMode,
-	'o': openInsertMode,
-	'O': aboveOpenInsertMode,
+	'o': openInputMode,
+	'O': aboveOpenInputMode,
 	'n': nextBuffer,
 	'p': prevBuffer,
 	':': exMode,
@@ -28,7 +28,7 @@ var dbCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState) {
 func nextBuffer(gs *GlobalState) {
 	r := gs.NextBuffer()
 	gs.queueMessage(&Message{
-		gs.curBuf().getIdent(),
+		gs.curBuf().ident(),
 		r == nil,
 	})
 }
@@ -36,7 +36,7 @@ func nextBuffer(gs *GlobalState) {
 func prevBuffer(gs *GlobalState) {
 	r := gs.PrevBuffer()
 	gs.queueMessage(&Message{
-		gs.curBuf().getIdent(),
+		gs.curBuf().ident(),
 		r == nil,
 	})
 }

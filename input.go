@@ -2,7 +2,7 @@ package main
 
 // Move the cursor in an editbuffer to the right by one and then enter insert mode (and force a
 // remap)
-func appendInsertMode(gs *GlobalState) {
+func appendInputMode(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		ln := eb.lines[eb.lno]
 		l := ln.getLength()
@@ -18,9 +18,9 @@ func appendInsertMode(gs *GlobalState) {
 	}
 }
 
-// Insert a line below the current line in an editbuffer, move down to the new line, then enter
+// Input a line below the current line in an editbuffer, move down to the new line, then enter
 // insert mode (and force a remap)
-func openInsertMode(gs *GlobalState) {
+func openInputMode(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		eb.AppendEmptyLine()
 		eb.moveDown(1) // move down to the new line...
@@ -29,9 +29,9 @@ func openInsertMode(gs *GlobalState) {
 	}
 }
 
-// Insert a line above the current line in an editbuffer, move up to the new line, then enter insert
+// Input a line above the current line in an editbuffer, move up to the new line, then enter insert
 // mode (and force a remap)
-func aboveOpenInsertMode(gs *GlobalState) {
+func aboveOpenInputMode(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		eb.insertEmptyLine(eb.lno)
 		eb.dirty = true
@@ -39,17 +39,17 @@ func aboveOpenInsertMode(gs *GlobalState) {
 	}
 }
 
-// Insert mode
+// Input mode
 func insertMode(gs *GlobalState) {
 	gs.Mode = INSERT
 
 	buffer := gs.curbuf.Value.(Buffer)
 
 	if buffer == nil {
-		panic("GlobalState has no curbuf in InsertMode")
+		panic("GlobalState has no curbuf in InputMode")
 	}
 
-	m := NewInsertModeline()
+	m := NewInputModeline()
 	gs.SetModeline(m)
 	for {
 		window := gs.Window

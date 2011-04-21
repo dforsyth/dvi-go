@@ -68,7 +68,7 @@ func (db *DirBuffer) GetWindow() *Window {
 	return db.gs.Window
 }
 
-func (db *DirBuffer) getIdent() string {
+func (db *DirBuffer) ident() string {
 	return db.Name
 }
 
