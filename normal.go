@@ -1,14 +1,14 @@
 package main
 
 // EditBuffer command map
-var ebCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState) {
-	'a': appendInputMode,
-	'i': insertMode,
-	'o': openInputMode,
-	'O': aboveOpenInputMode,
-	'n': nextBuffer,
-	'p': prevBuffer,
-	':': exMode,
+var ebCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState){
+	'a':  appendInputMode,
+	'i':  insertMode,
+	'o':  openInputMode,
+	'O':  aboveOpenInputMode,
+	'n':  nextBuffer,
+	'p':  prevBuffer,
+	':':  exMode,
 	0x04: test, // ^D
 }
 
@@ -20,7 +20,7 @@ func test(gs *GlobalState) {
 }
 
 // DirBuffer command map
-var dbCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState) {
+var dbCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState){
 	'n': nextBuffer,
 	'p': prevBuffer,
 }

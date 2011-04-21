@@ -39,6 +39,10 @@ func aboveOpenInputMode(gs *GlobalState) {
 	}
 }
 
+func replaceMany(gs *GlobalState) {
+
+}
+
 // Input mode
 func insertMode(gs *GlobalState) {
 	gs.Mode = INSERT
