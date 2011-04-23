@@ -70,7 +70,11 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 func (eb *EditBuffer) SendInput(k int) {
 	gs := eb.gs
 	switch gs.Mode {
-	case INSERT:
+	case MODEINSERT:
+		gs.queueMessage(&Message{
+			"mode is insert",
+			true,
+		})
 		switch k {
 		case curses.KEY_BACKSPACE, 127:
 			eb.backspace()
@@ -82,7 +86,7 @@ func (eb *EditBuffer) SendInput(k int) {
 			eb.lines[eb.lno].insertChar(byte(k))
 		}
 		eb.dirty = true
-	case NORMAL:
+	case MODENORMAL:
 		/* XXX
 		if eb.cmdbuff.String() != "" {
 			eb.cmdbuff.insertChar(byte(k))
@@ -119,7 +123,6 @@ func (eb *EditBuffer) SendInput(k int) {
 		}
 		// XXX Until I fix mapping, mark the whole buffer as dirty on movement
 		eb.dirty = true
-	case COMMAND: // XXX How did you get here?
 	}
 }
 

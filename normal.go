@@ -3,7 +3,7 @@ package main
 // EditBuffer command map
 var ebCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState){
 	'a':  appendInputMode,
-	'i':  insertMode,
+	'i':  input,
 	'o':  openInputMode,
 	'O':  aboveOpenInputMode,
 	'n':  nextBuffer,
@@ -43,7 +43,7 @@ func prevBuffer(gs *GlobalState) {
 
 // normal mode
 func NormalMode(gs *GlobalState) {
-	gs.Mode = NORMAL
+	gs.Mode = MODENORMAL
 
 	m := NewNormalModeline()
 	gs.SetModeline(m)
@@ -60,10 +60,6 @@ func NormalMode(gs *GlobalState) {
 				fn(gs)
 			} else {
 				b.SendInput(k)
-			}
-		case *DirBuffer:
-			if fn, ok := dbCmdMap[k]; ok {
-				fn(gs)
 			}
 		}
 

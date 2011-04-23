@@ -14,7 +14,8 @@ func appendInputMode(gs *GlobalState) {
 			ln.moveCursor(c)
 		}
 		eb.dirty = true
-		insertMode(gs)
+		gs.Mode = MODEINSERT
+		input(gs)
 	}
 }
 
@@ -25,7 +26,8 @@ func openInputMode(gs *GlobalState) {
 		eb.AppendEmptyLine()
 		eb.moveDown(1) // move down to the new line...
 		eb.dirty = true
-		insertMode(gs)
+		gs.Mode = MODEINSERT
+		input(gs)
 	}
 }
 
@@ -35,22 +37,27 @@ func aboveOpenInputMode(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		eb.insertEmptyLine(eb.lno)
 		eb.dirty = true
-		insertMode(gs)
+		gs.Mode = MODEINSERT
+		input(gs)
 	}
 }
 
-func replaceMany(gs *GlobalState) {
+func replaceOne(gs *GlobalState) {
+	gs.Mode = MODEREPLACE
+	input(gs)
+}
 
+func replaceMany(gs *GlobalState) {
+	gs.Mode = MODEREPLACE
+	input(gs)
 }
 
 // Input mode
-func insertMode(gs *GlobalState) {
-	gs.Mode = INSERT
-
+func input(gs *GlobalState) {
 	buffer := gs.curbuf.Value.(Buffer)
 
 	if buffer == nil {
-		panic("GlobalState has no curbuf in InputMode")
+		Die("GlobalState has no curbuf in input")
 	}
 
 	m := NewInputModeline()

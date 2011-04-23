@@ -41,9 +41,6 @@ func OpenBuffer(gs *GlobalState, pathname string) (Buffer, os.Error) {
 			if _, e = eb.readFile(f, 0); e == nil {
 				return eb, nil
 			}
-		} else if st.IsDirectory() {
-			eb := NewDirBuffer(gs, pathname)
-			return eb, nil
 		} else {
 			e = &DviError{fmt.Sprintf("%s: can't deal with this filetype", pathname)}
 		}

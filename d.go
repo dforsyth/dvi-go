@@ -118,6 +118,11 @@ func EndScreen() {
 	curses.Endwin()
 }
 
+func Die(msg string) {
+	EndScreen()
+	panic(msg)
+}
+
 func main() {
 	StartScreen()
 	defer EndScreen()

@@ -31,6 +31,12 @@ type Message struct {
 	beep bool
 }
 
+const (
+	MODEINSERT = iota
+	MODEREPLACE
+	MODENORMAL
+)
+
 type GlobalState struct {
 	Window   *Window
 	ex       *exBuffer
