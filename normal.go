@@ -1,15 +1,73 @@
 package main
 
-// EditBuffer command map
+// control commands in normal mode
 var ebCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState){
-	'a':  appendInputMode,
-	'i':  input,
-	'o':  openInputMode,
-	'O':  aboveOpenInputMode,
+	'a':  appendInsert,
+	'i':  insert,
+	'o':  openInsert,
+	'O':  aboveOpenInsert,
 	'n':  nextBuffer,
 	'p':  prevBuffer,
-	':':  exMode,
+	':':  ex,
 	0x04: test, // ^D
+}
+
+// commands on the editbuffer in normal mode
+var normalFns map[int]func(*EditBuffer) = map[int]func(*EditBuffer){
+	'j': left,
+	'k': down,
+	'l': up,
+	';': right,
+	'p': paste,
+	'P': paste, // will fix later
+	'G': maxLine,
+	'u': undo,
+}
+
+func left(b *EditBuffer) {
+	ln := b.line()
+	if !ln.move(ln.cursor() - 1) {
+		Beep()
+	}
+}
+
+func down(b *EditBuffer) {
+	if b.lno < len(b.lines)-1 {
+		b.lno++
+	} else {
+		Beep()
+	}
+}
+
+func up(b *EditBuffer) {
+	if b.lno > 0 {
+		b.lno--
+	} else {
+		Beep()
+	}
+}
+
+func right(b *EditBuffer) {
+	ln := b.line()
+	if !ln.move(ln.cursor() + 1) {
+		Beep()
+	}
+}
+
+func paste(b *EditBuffer) {
+	gs := b.gs
+	gs.queueMessage(&Message{
+		"paste.",
+		false,
+	})
+}
+
+func maxLine(b *EditBuffer) {
+	b.lno = len(b.lines) - 1
+}
+
+func undo(b *EditBuffer) {
+	// rewind
 }
 
 func test(gs *GlobalState) {
@@ -17,12 +75,6 @@ func test(gs *GlobalState) {
 		"this is a test",
 		true,
 	})
-}
-
-// DirBuffer command map
-var dbCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState){
-	'n': nextBuffer,
-	'p': prevBuffer,
 }
 
 func nextBuffer(gs *GlobalState) {
@@ -59,14 +111,17 @@ func NormalMode(gs *GlobalState) {
 			if fn, ok := ebCmdMap[k]; ok {
 				fn(gs)
 			} else {
-				b.SendInput(k)
+				if fn, ok := normalFns[k]; ok {
+					fn(gs.curbuf.Value.(*EditBuffer))
+				}
 			}
 		}
 
-		if gs.Mode != NORMAL {
-			gs.Mode = NORMAL
+		if gs.Mode != MODENORMAL {
+			gs.Mode = MODENORMAL
 			gs.SetModeline(m)
 		}
 		m.Key = k
+		gs.curbuf.Value.(*EditBuffer).dirty = true
 	}
 }

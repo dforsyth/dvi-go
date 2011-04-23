@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"container/list"
-	"curses"
 	"fmt"
 	"math"
 	"os"
@@ -67,63 +66,8 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	return eb
 }
 
-func (eb *EditBuffer) SendInput(k int) {
-	gs := eb.gs
-	switch gs.Mode {
-	case MODEINSERT:
-		gs.queueMessage(&Message{
-			"mode is insert",
-			true,
-		})
-		switch k {
-		case curses.KEY_BACKSPACE, 127:
-			eb.backspace()
-		case 0xd, 0xa:
-			eb.NewLine(byte('\n'))
-		case ESC:
-			eb.moveLeft()
-		default:
-			eb.lines[eb.lno].insertChar(byte(k))
-		}
-		eb.dirty = true
-	case MODENORMAL:
-		/* XXX
-		if eb.cmdbuff.String() != "" {
-			eb.cmdbuff.insertChar(byte(k))
-			eb.EvalCmdBuff()
-			return
-		}
-		*/
-
-		b := true
-		switch k {
-		case 'j':
-			b = eb.moveLeft()
-		case 'k':
-			b = eb.moveDown(1)
-		case 'l':
-			b = eb.moveUp(1)
-		case ';':
-			b = eb.moveRight(nil)
-		case 'p':
-			eb.paste(eb.lno + 1)
-		case 'P':
-			eb.paste(eb.lno)
-		case 'd':
-			eb.delete(eb.lno)
-		case 'y':
-			eb.yank(eb.lno, 1)
-		case 'G':
-			eb.LastLine()
-		case 'u':
-			eb.undo(1)
-		}
-		if !b {
-			Beep()
-		}
-		// XXX Until I fix mapping, mark the whole buffer as dirty on movement
-		eb.dirty = true
-	}
+func (eb *EditBuffer) line() *EditLine {
+	return eb.lines[eb.lno]
 }
 
 func (eb *EditBuffer) RunRoutine(fn func(Buffer)) {
@@ -154,11 +98,11 @@ func (eb *EditBuffer) ident() string {
 }
 
 func (eb *EditBuffer) insertChar(c byte) {
-	eb.lines[eb.lno].insertChar(c)
+	eb.lines[eb.lno].insert(c)
 }
 
 func (eb *EditBuffer) screenLines(el *EditLine) int {
-	raw := el.getRaw()
+	raw := el.raw()
 	l := len(raw)
 	if l > 0 && raw[l-1] == '\n' {
 		l--
@@ -180,7 +124,7 @@ func (eb *EditBuffer) MapToScreen() {
 		}
 
 		cnt := eb.screenLines(e)
-		raw := e.getRaw()
+		raw := e.raw()
 		wrap := 0
 		for lim := i + cnt; i < lim; i++ {
 			beg := wrap * eb.X
@@ -241,7 +185,7 @@ func (eb *EditBuffer) backspace() {
 }
 
 // Insert a line at lno, 0-n, into an EditBuffer.
-func (eb *EditBuffer) insert(e *EditLine, lno int) {
+func (eb *EditBuffer) insertLn(e *EditLine, lno int) {
 	if lno < 0 || lno > len(eb.lines) {
 		panic(fmt.Sprintf("Unable to insert line at %d in buffer of %d lines", lno,
 			len(eb.lines)))
@@ -252,11 +196,11 @@ func (eb *EditBuffer) insert(e *EditLine, lno int) {
 }
 
 func (eb *EditBuffer) insertEmptyLine(lno int) {
-	eb.insert(NewEditLine([]byte("")), lno)
+	eb.insertLn(NewEditLine([]byte("")), lno)
 }
 
 func (eb *EditBuffer) AppendEmptyLine() {
-	eb.insert(NewEditLine([]byte("")), eb.lno+1)
+	eb.insertLn(NewEditLine([]byte("")), eb.lno+1)
 }
 
 // Delete a line at lno, 0-n, from an EditBuffer
@@ -274,7 +218,7 @@ func (eb *EditBuffer) delete(lno int) *EditLine {
 
 	eb.lines = append(eb.lines[:lno], eb.lines[lno+1:]...)
 	if len(eb.lines) == 0 {
-		eb.insert(NewEditLine([]byte("")), 0)
+		eb.insertLn(NewEditLine([]byte("")), 0)
 		eb.lno = 0
 		// vim would set "--no lines in buffer--" in this case
 	} else if eb.lno > 0 {
@@ -296,7 +240,7 @@ func (eb *EditBuffer) yank(lno, cnt int) int {
 
 	eb.yb = make([]*EditLine, max-lno)
 	for i, ln := range eb.lines[lno:max] {
-		eb.yb[i] = NewEditLine(ln.getRaw())
+		eb.yb[i] = NewEditLine(ln.raw())
 	}
 
 	return max - lno
@@ -310,15 +254,6 @@ func (eb *EditBuffer) cut(lno, cnt int) *EditLine {
 	ln := eb.lines[eb.lno]
 
 	return ln
-}
-
-func (eb *EditBuffer) NewLine(d byte) {
-	l := eb.lines[eb.lno]
-	l.insertChar(d)
-	newLine := NewEditLine(l.AfterCursor())
-	l.ClearToEOL()
-	eb.insert(newLine, eb.lno+1)
-	eb.moveDown(1)
 }
 
 func (eb *EditBuffer) TopLine() {
@@ -346,7 +281,7 @@ func (eb *EditBuffer) moveLeft() bool {
 
 func (eb *EditBuffer) moveRight(cmd *Command) bool {
 	el := eb.lines[eb.lno]
-	l := el.getLength()
+	l := len(el.raw())
 
 	if l == 0 {
 		return false
@@ -385,7 +320,7 @@ func (eb *EditBuffer) moveVertical(dir int) bool {
 
 	eb.col = eb.lines[eb.lno].Cursor()
 	eb.lno = lno
-	if l := eb.lines[eb.lno]; len(l.getRaw()) > eb.col {
+	if l := eb.lines[eb.lno]; len(l.raw()) > eb.col {
 		l.moveCursor(eb.col)
 	}
 	return true
@@ -401,7 +336,7 @@ func (eb *EditBuffer) moveDown(cnt int) bool {
 
 func (eb *EditBuffer) paste(lno int) {
 	for _, ln := range eb.yb {
-		eb.insert(NewEditLine(ln.getRaw()), lno)
+		eb.insertLn(NewEditLine(ln.raw()), lno)
 		lno++
 	}
 	eb.lno = lno - 1
@@ -425,12 +360,12 @@ func (eb *EditBuffer) readFile(f *os.File, mark int) (int, os.Error) {
 	lno := mark
 	for {
 		if ln, err := rdr.ReadBytes('\n'); err == nil {
-			eb.insert(NewEditLine(ln), lno)
+			eb.insertLn(NewEditLine(ln), lno)
 		} else {
 			if err != os.EOF {
 				return -1, err
 			} else {
-				eb.insert(NewEditLine(ln), lno)
+				eb.insertLn(NewEditLine(ln), lno)
 				return lno - mark, nil
 			}
 		}
@@ -443,7 +378,7 @@ func (eb *EditBuffer) readFile(f *os.File, mark int) (int, os.Error) {
 func (eb *EditBuffer) writeFile(f *os.File) (int, os.Error) {
 	wb := 0
 	for _, ln := range eb.lines {
-		wl := ln.getRaw()
+		wl := ln.raw()
 		if len(wl) > 0 && wl[len(wl)-1] != '\n' {
 			wl = append(wl, '\n')
 		}

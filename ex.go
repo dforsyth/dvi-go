@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func exMode(gs *GlobalState) {
+func ex(gs *GlobalState) {
 
 	gs.SetModeline(gs.ex)
 	gs.ex.Reset()

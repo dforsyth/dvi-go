@@ -22,7 +22,6 @@ type Buffer interface {
 	getWindow() *Window
 	getCursor() (int, int)
 	SetDimensions(int, int)
-	SendInput(int)
 	RunRoutine(func(Buffer))
 	ident() string
 }
@@ -148,7 +147,7 @@ func main() {
 		}
 	} else {
 		if eb, e := NewTempEditBuffer(gs, TMPPREFIX); e == nil {
-			eb.insert(NewEditLine([]byte("")), 0) // Input the initial line per vi
+			eb.insertLn(NewEditLine([]byte("")), 0) // Input the initial line per vi
 			gs.AddBuffer(eb)
 		} else {
 			EndScreen()

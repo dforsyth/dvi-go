@@ -1,13 +1,17 @@
 package main
 
+import ()
+
 type EditLine struct {
 	eb     *EditBuffer // The buffer containing this line
 	gb     *GapBuffer
 	nl     bool
-	raw    []byte
 	dirty  bool
 	indent int // index of first character
-	length int
+}
+
+func newEditLine(s []byte) *EditLine {
+	return NewEditLine(s)
 }
 
 func NewEditLine(s []byte) *EditLine {
@@ -20,13 +24,20 @@ func NewEditLine(s []byte) *EditLine {
 		e.nl = false
 	}
 	e.indent = 0
-	e.raw = e.gb.GaplessBuffer()
-	e.length = len(e.raw)
 	e.dirty = false
 	return e
 }
 
-func (e *EditLine) insertChar(c byte) {
+func (el *EditLine) splitLn(pos int) *EditLine {
+	if el.move(pos) {
+		nl := newEditLine(el.afterCur())
+		el.clearToEOL()
+		return nl
+	}
+	return nil
+}
+
+func (e *EditLine) insert(c byte) {
 	e.gb.insertChar(c)
 	if c == '\n' {
 		e.nl = true
@@ -34,25 +45,24 @@ func (e *EditLine) insertChar(c byte) {
 	e.dirty = true
 }
 
+func (e *EditLine) replace(c byte) {
+}
+
 func (e *EditLine) Delete(d int) {
 	e.gb.DeleteSpan(e.gb.gs-1, d)
 	e.dirty = true
 }
 
-func (e *EditLine) getRaw() []byte {
-	if e.dirty {
-		e.raw = e.gb.GaplessBuffer()
-		e.dirty = false
-	}
-	return e.raw
+func (e *EditLine) raw() []byte {
+	return e.gb.GaplessBuffer()
 }
 
-func (e *EditLine) getLength() int {
-	return len(e.getRaw())
-}
-
-func (e *EditLine) ClearToEOL() {
+func (e *EditLine) clearToEOL() {
 	e.gb.DeleteAfterGap()
+}
+
+func (el *EditLine) move(pos int) bool {
+	return el.moveCursor(pos)
 }
 
 // XXX This still lets the client pass the visual eol when the editbuffer is in normal mode...
@@ -76,7 +86,7 @@ func (el *EditLine) cursor() int {
 	return el.gb.gs
 }
 
-func (e *EditLine) AfterCursor() []byte {
+func (e *EditLine) afterCur() []byte {
 	return e.gb.AfterGap()
 }
 

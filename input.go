@@ -1,11 +1,15 @@
 package main
 
+import (
+	"curses"
+)
+
 // Move the cursor in an editbuffer to the right by one and then enter insert mode (and force a
 // remap)
-func appendInputMode(gs *GlobalState) {
+func appendInsert(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		ln := eb.lines[eb.lno]
-		l := ln.getLength()
+		l := len(ln.raw())
 		c := ln.cursor()
 		if c+1 == l {
 			ln.moveCursor(l)
@@ -21,7 +25,7 @@ func appendInputMode(gs *GlobalState) {
 
 // Input a line below the current line in an editbuffer, move down to the new line, then enter
 // insert mode (and force a remap)
-func openInputMode(gs *GlobalState) {
+func openInsert(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		eb.AppendEmptyLine()
 		eb.moveDown(1) // move down to the new line...
@@ -33,10 +37,18 @@ func openInputMode(gs *GlobalState) {
 
 // Input a line above the current line in an editbuffer, move up to the new line, then enter insert
 // mode (and force a remap)
-func aboveOpenInputMode(gs *GlobalState) {
+func aboveOpenInsert(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		eb.insertEmptyLine(eb.lno)
 		eb.dirty = true
+		gs.Mode = MODEINSERT
+		input(gs)
+	}
+}
+
+func insert(gs *GlobalState) {
+	if _, ok := gs.curbuf.Value.(*EditBuffer); ok {
+		// dont really need to mark dirty on this one
 		gs.Mode = MODEINSERT
 		input(gs)
 	}
@@ -52,11 +64,45 @@ func replaceMany(gs *GlobalState) {
 	input(gs)
 }
 
+var inputFns map[int]func(*EditBuffer) = map[int]func(*EditBuffer){
+	ESC:                  inputEscape,
+	curses.KEY_BACKSPACE: inputBackspace,
+	127:                  inputBackspace,
+	0xd:                  inputNewline,
+	0xa:                  inputNewline,
+}
+
+func inputEscape(b *EditBuffer) {
+	ln := b.line()
+	ln.move(ln.cursor() - 1)
+}
+
+func inputBackspace(b *EditBuffer) {
+	// TODO: this
+	b.backspace()
+}
+
+func inputNewline(b *EditBuffer) {
+	ln := b.line()
+	if nl := ln.splitLn(ln.cursor()); nl != nil {
+		ln.insert(byte('\n'))
+		if len(nl.raw()) > 0 {
+			b.insertLn(nl, b.lno+1)
+		} else {
+			b.insertLn(newEditLine([]byte("")), b.lno+1)
+		}
+		b.lno++
+	} else {
+		Beep()
+	}
+}
+
+
 // Input mode
 func input(gs *GlobalState) {
-	buffer := gs.curbuf.Value.(Buffer)
+	buf := gs.curbuf.Value.(*EditBuffer)
 
-	if buffer == nil {
+	if buf == nil {
 		Die("GlobalState has no curbuf in input")
 	}
 
@@ -68,12 +114,29 @@ func input(gs *GlobalState) {
 		gs.UpdateCh <- 1
 		k := <-gs.InputCh
 
-		buffer.SendInput(k)
+		if fn, ok := inputFns[k]; ok {
+			fn(buf)
+		} else {
+			ln := buf.line()
+			if gs.Mode == MODEINSERT {
+				ln.insert(byte(k))
+			} else if gs.Mode == MODEREPLACE {
+				ln.replace(byte(k))
+			} else {
+				gs.queueMessage(&Message{
+					"no mode",
+					true,
+				})
+			}
+		}
+		buf.dirty = true
+
 		if k == ESC {
 			return
 		}
+
 		m.Key = k
-		m.LineNumber = buffer.(*EditBuffer).lno
-		m.ColumnNumber = cap(buffer.(*EditBuffer).lines)
+		m.LineNumber = buf.lno
+		m.ColumnNumber = cap(buf.lines)
 	}
 }
