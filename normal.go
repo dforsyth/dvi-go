@@ -1,5 +1,9 @@
 package main
 
+/* XXX eventually i'll need to modify these functions so they take a command struct or a variable
+ * number of interfaces so that i can pass arguments.
+ */
+
 // control commands in normal mode
 var ebCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState){
 	'a':  appendInsert,

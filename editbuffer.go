@@ -364,9 +364,11 @@ func (eb *EditBuffer) readFile(f *os.File, mark int) (int, os.Error) {
 		} else {
 			if err != os.EOF {
 				return -1, err
-			} else {
+			} else if len(ln) > 0 {
 				eb.insertLn(NewEditLine(ln), lno)
 				return lno - mark, nil
+			} else {
+				break
 			}
 		}
 		lno++
