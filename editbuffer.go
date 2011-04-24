@@ -364,17 +364,17 @@ func (eb *EditBuffer) readFile(f *os.File, mark int) (int, os.Error) {
 		} else {
 			if err != os.EOF {
 				return -1, err
-			} else if len(ln) > 0 {
-				eb.insertLn(NewEditLine(ln), lno)
-				return lno - mark, nil
 			} else {
-				break
+				if len(ln) > 0 {
+					eb.insertLn(NewEditLine(ln), lno)
+				}
+				return lno - mark, nil
 			}
 		}
 		lno++
 	}
 
-	return lno - mark, nil
+	return -1, nil // NOT REACHED
 }
 
 func (eb *EditBuffer) writeFile(f *os.File) (int, os.Error) {
