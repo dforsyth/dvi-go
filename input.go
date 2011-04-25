@@ -17,7 +17,7 @@ func appendInsert(gs *GlobalState) {
 			c++
 			ln.moveCursor(c)
 		}
-		eb.dirty = true
+		eb.redraw = true
 		gs.Mode = MODEINSERT
 		input(gs)
 	}
@@ -29,7 +29,7 @@ func openInsert(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		eb.AppendEmptyLine()
 		eb.moveDown(1) // move down to the new line...
-		eb.dirty = true
+		eb.redraw = true
 		gs.Mode = MODEINSERT
 		input(gs)
 	}
@@ -40,7 +40,7 @@ func openInsert(gs *GlobalState) {
 func aboveOpenInsert(gs *GlobalState) {
 	if eb, ok := gs.curbuf.Value.(*EditBuffer); ok {
 		eb.insertEmptyLine(eb.lno)
-		eb.dirty = true
+		eb.redraw = true
 		gs.Mode = MODEINSERT
 		input(gs)
 	}
@@ -48,7 +48,7 @@ func aboveOpenInsert(gs *GlobalState) {
 
 func insert(gs *GlobalState) {
 	if _, ok := gs.curbuf.Value.(*EditBuffer); ok {
-		// dont really need to mark dirty on this one
+		// dont really need to mark redraw on this one
 		gs.Mode = MODEINSERT
 		input(gs)
 	}
@@ -129,7 +129,7 @@ func input(gs *GlobalState) {
 				})
 			}
 		}
-		buf.dirty = true
+		buf.redraw = true
 
 		if k == ESC {
 			return

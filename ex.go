@@ -1,15 +1,40 @@
 package main
 
 import (
-	"container/list"
 	"fmt"
-	"os"
+	"strconv"
+	"unicode"
 )
+
+var aliases map[string]string = map[string]string{
+	"write": "w",
+	"quit":  "q",
+}
+
+var exFns map[string]func(*GlobalState) = map[string]func(*GlobalState){
+	"q": quit,
+}
+
+func quit(gs *GlobalState) {
+	b := gs.curBuf()
+	if t, ok := b.(*EditBuffer); ok {
+		if t.isDirty() {
+			gs.queueMessage(&Message{
+				fmt.Sprintf("%s has unsaved changes", t.ident()),
+				true,
+			})
+			return
+		}
+	}
+	Done(0)
+}
 
 func ex(gs *GlobalState) {
 
 	gs.SetModeline(gs.ex)
 	gs.ex.Reset()
+
+	gs.Mode = MODEEX
 
 	for {
 		window := gs.Window
@@ -21,10 +46,22 @@ func ex(gs *GlobalState) {
 		case ESC:
 			return
 		case 0xd, 0xa:
-			gs.ex.execute()
+			x := new(Ex)
+			x.cmd = gs.ex.buffer
+			f := x.parse()
+			if f == nil {
+				gs.queueMessage(&Message{
+					fmt.Sprintf("cmd: %s, st: %d, end: %d, cnt: %d", x.cmd,
+						x.st, x.end, x.cnt),
+					true,
+				})
+			} else {
+				f(gs)
+			}
+			// gs.ex.execute()
 			return
 		default:
-			gs.ex.SendInput(k)
+			gs.ex.buffer += string(k)
 		}
 	}
 }
@@ -52,61 +89,106 @@ func (c *exBuffer) GetCursor() int {
 func (c *exBuffer) msgOverride(m *Message) {
 }
 
-func (c *exBuffer) SendInput(k int) {
-	c.buffer += string(k)
+type Ex struct {
+	cmd string
+	st  int
+	end int
+	cnt int
+	gs  *GlobalState
 }
 
-func (c *exBuffer) execute() {
-	save := false
-	quit := false
-	all := false
-	targets := list.New()
-	targets.Init()
+func (x *Ex) clear() {
+	x.st = 0
+	x.end = 0
+	x.cnt = 0
+}
 
-	for _, c := range c.buffer {
-		switch c {
-		case 'w':
-			save = true
-		case 'q':
-			quit = true
-		case 'a':
-			all = true
+// parse a single ex cmd
+func (x *Ex) parse() func(*GlobalState) {
+	x.clear()
+
+	cmd := ""
+	// get rid of extra colons and spaces
+	for i, c := range x.cmd {
+		if c != ':' || c != ' ' {
+			cmd = x.cmd[i:]
+			break
 		}
 	}
-
-	gs := c.gs
-
-	if !all {
-		targets.PushFront(gs.curbuf.Value)
-	} else {
-		targets.PushFrontList(gs.Buffers)
+	if len(cmd) == 0 {
+		Die("0 len: " + cmd + " vs " + x.cmd)
+		return nil
 	}
 
-	for t := targets.Front(); t != nil; t = t.Next() {
-		if save {
-			switch bt := t.Value.(type) {
-			case *EditBuffer: // I should make these io.Writer s
-				eb := t.Value.(*EditBuffer)
-				if eb.temp == true {
-					c.gs.queueMessage(&Message{
-						"Buffer has no non-temp pathname",
-						true,
-					})
-					continue
-				}
-				// XXX rewrite the entire file, like a boss.
-				if f, e := os.Create(eb.pathname); e == nil {
-					eb.writeFile(f)
+	// if the line is a comment, leave
+	if cmd[0] == '"' {
+		return nil
+	}
+
+	r := false
+	comma := false
+	a := false
+	p := ""
+	for _, c := range x.cmd {
+		if c == ' ' {
+			continue
+		}
+		if c == ';' {
+			// cmd split, not supported yet.
+			goto lookup
+		}
+
+		if unicode.IsDigit(c) {
+			if a {
+				return nil
+			}
+			r = true
+			p += string(c)
+		} else {
+			if r {
+				if c == ',' {
+					if comma {
+						return nil
+					}
+					if st, err := strconv.Atoi(p); err == nil {
+						x.st = st
+						p += string(c)
+						p = ""
+						comma = true
+					} else {
+						return nil
+					}
 				} else {
-					EndScreen()
-					panic(e.String())
+					if comma {
+						if end, err := strconv.Atoi(p); err == nil {
+							x.end = end
+							p = ""
+						}
+					} else {
+						if cnt, err := strconv.Atoi(p); err == nil {
+							x.cnt = cnt
+							p = ""
+						}
+					}
+					// start building the command
+					p += string(c)
 				}
+			} else {
+				a = true
+				p += string(c)
 			}
 		}
 	}
-	if quit {
-		Done(0)
+lookup:
+	if alias, ok := aliases[p]; ok {
+		p = alias
 	}
+
+	if fn, ok := exFns[p]; ok {
+		return fn
+	}
+
+	return nil
 }
 
 func (c *exBuffer) Reset() {

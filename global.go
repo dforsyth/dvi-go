@@ -21,11 +21,6 @@ func (e *DviError) String() string {
 	return e.msg
 }
 
-type Command struct {
-	start, end, count int
-	motion            bool
-}
-
 type Message struct {
 	text string
 	beep bool
@@ -35,6 +30,7 @@ const (
 	MODEINSERT = iota
 	MODEREPLACE
 	MODENORMAL
+	MODEEX
 )
 
 type GlobalState struct {
@@ -50,6 +46,8 @@ type GlobalState struct {
 	config   map[string]interface{}
 	msgQueue *list.List
 	yb       []string // yank buffer
+	cmd      string
+	x        *Ex
 }
 
 func NewGlobalState() *GlobalState {
@@ -134,6 +132,7 @@ func (gs *GlobalState) SignalsRoutine() {
 					true,
 				})
 				gs.UpdateCh <- 1
+				Die("sigint")
 				// EndScreen()
 				// panic("sigint")
 				// Beep()

@@ -14,6 +14,7 @@ var ebCmdMap map[int]func(*GlobalState) = map[int]func(*GlobalState){
 	'p':  prevBuffer,
 	':':  ex,
 	0x04: test, // ^D
+	ESC:  cmdClear,
 }
 
 // commands on the editbuffer in normal mode
@@ -97,6 +98,10 @@ func prevBuffer(gs *GlobalState) {
 	})
 }
 
+func cmdClear(gs *GlobalState) {
+	gs.cmd = ""
+}
+
 // normal mode
 func NormalMode(gs *GlobalState) {
 	gs.Mode = MODENORMAL
@@ -104,13 +109,19 @@ func NormalMode(gs *GlobalState) {
 	m := NewNormalModeline()
 	gs.SetModeline(m)
 
+	// advertise the current buffer
+	gs.queueMessage(&Message{
+		gs.curBuf().ident(),
+		false,
+	})
+
 	for {
 		window := gs.Window
 		window.PaintMapper(0, window.Rows-1, true)
 		gs.UpdateCh <- 1
 		k := <-gs.InputCh // screen.Window.Getch()
 
-		switch b := gs.curbuf.Value.(Buffer); t := b.(type) {
+		switch b := gs.curBuf(); t := b.(type) {
 		case *EditBuffer:
 			if fn, ok := ebCmdMap[k]; ok {
 				fn(gs)
@@ -126,6 +137,6 @@ func NormalMode(gs *GlobalState) {
 			gs.SetModeline(m)
 		}
 		m.Key = k
-		gs.curbuf.Value.(*EditBuffer).dirty = true
+		gs.curbuf.Value.(*EditBuffer).redraw = true
 	}
 }

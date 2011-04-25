@@ -38,6 +38,8 @@ type EditBuffer struct {
 	cmdbuff *GapBuffer
 
 	// Stuff for painting
+	redraw bool
+
 	head int
 	tail int
 
@@ -54,7 +56,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb.lines = make([]*EditLine, 0)
 	eb.lno = 0
 	eb.col = 0
-	eb.dirty = true
+	eb.redraw = true
 	eb.temp = false
 
 	eb.cmdbuff = NewGapBuffer([]byte(""))
@@ -79,9 +81,9 @@ func (eb *EditBuffer) getWindow() *Window {
 }
 
 func (eb *EditBuffer) mapScreen() {
-	if eb.dirty {
+	if eb.redraw {
 		eb.MapToScreen()
-		eb.dirty = false
+		eb.redraw = false
 	}
 }
 
@@ -99,6 +101,10 @@ func (eb *EditBuffer) ident() string {
 
 func (eb *EditBuffer) insertChar(c byte) {
 	eb.lines[eb.lno].insert(c)
+}
+
+func (eb *EditBuffer) isDirty() bool {
+	return eb.dirty
 }
 
 func (eb *EditBuffer) screenLines(el *EditLine) int {
@@ -279,22 +285,8 @@ func (eb *EditBuffer) moveLeft() bool {
 	return eb.moveHorizontal(-1)
 }
 
-func (eb *EditBuffer) moveRight(cmd *Command) bool {
-	el := eb.lines[eb.lno]
-	l := len(el.raw())
-
-	if l == 0 {
-		return false
-	}
-
-	nc := el.cursor() + 1
-	if nc >= l {
-		Beep()
-		nc = l - 1
-	}
-	el.moveCursor(nc)
-
-	return true
+func (eb *EditBuffer) moveRight() bool {
+	return eb.moveHorizontal(1)
 }
 
 // Move vertically within the buffer.
@@ -347,9 +339,6 @@ func (eb *EditBuffer) undo(c int) {
 		"Got undo",
 		false,
 	})
-}
-
-func (eb *EditBuffer) EvalCmdBuff() {
 }
 
 // Reads a file at pathname into EditBuffer eb
