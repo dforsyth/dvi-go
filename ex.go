@@ -12,21 +12,60 @@ var aliases map[string]string = map[string]string{
 }
 
 var exFns map[string]func(*GlobalState) = map[string]func(*GlobalState){
-	"q": quit,
+	"w":  write,
+	"wq": writeQuit,
+	"q":  quit,
+}
+
+func writeEditBuffer(b *EditBuffer, path string, force bool) (int, *Message) {
+	if b.isTemp() && path == b.ident() && !force {
+		return -1, &Message{
+			fmt.Sprintf("%s is a temporary file", b.ident()),
+			true,
+		}
+	}
+
+	if !b.isDirty() {
+		return -1, nil
+	}
+
+	b.dirty = false
+	return -1, &Message{
+		"writeEditBuffer not implemented",
+		true,
+	}
+}
+
+func write(gs *GlobalState) {
+	if t, ok := gs.curBuf().(*EditBuffer); ok {
+		if _, msg := writeEditBuffer(t, t.ident(), gs.x.frc); msg != nil {
+			gs.queueMessage(msg)
+		}
+		return
+	}
 }
 
 func quit(gs *GlobalState) {
-	b := gs.curBuf()
-	if t, ok := b.(*EditBuffer); ok {
-		if t.isDirty() {
+	if t, ok := gs.curBuf().(*EditBuffer); ok {
+		if t.isDirty() && !gs.x.frc {
 			gs.queueMessage(&Message{
 				fmt.Sprintf("%s has unsaved changes", t.ident()),
-				true,
+				false,
 			})
 			return
 		}
 	}
 	Done(0)
+}
+
+func writeQuit(gs *GlobalState) {
+	if t, ok := gs.curBuf().(*EditBuffer); ok {
+		if lw, msg := writeEditBuffer(t, t.ident(), gs.x.frc); lw >= 0 {
+			Done(0)
+		} else {
+			gs.queueMessage(msg)
+		}
+	}
 }
 
 func ex(gs *GlobalState) {
@@ -47,6 +86,7 @@ func ex(gs *GlobalState) {
 			return
 		case 0xd, 0xa:
 			x := new(Ex)
+			gs.x = x
 			x.cmd = gs.ex.buffer
 			f := x.parse()
 			if f == nil {
@@ -90,17 +130,21 @@ func (c *exBuffer) msgOverride(m *Message) {
 }
 
 type Ex struct {
-	cmd string
-	st  int
-	end int
-	cnt int
-	gs  *GlobalState
+	cmd  string
+	st   int
+	end  int
+	cnt  int
+	frc  bool
+	args []string
+	gs   *GlobalState
 }
 
 func (x *Ex) clear() {
 	x.st = 0
 	x.end = 0
 	x.cnt = 0
+	x.frc = false
+	x.args = make([]string, 1)
 }
 
 // parse a single ex cmd
@@ -129,7 +173,7 @@ func (x *Ex) parse() func(*GlobalState) {
 	comma := false
 	a := false
 	p := ""
-	for _, c := range x.cmd {
+	for i, c := range x.cmd {
 		if c == ' ' {
 			continue
 		}
@@ -175,7 +219,11 @@ func (x *Ex) parse() func(*GlobalState) {
 				}
 			} else {
 				a = true
-				p += string(c)
+				if c == '!' && i == len(x.cmd)-1 {
+					x.frc = true
+				} else {
+					p += string(c)
+				}
 			}
 		}
 	}

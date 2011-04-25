@@ -103,6 +103,10 @@ func (eb *EditBuffer) insertChar(c byte) {
 	eb.lines[eb.lno].insert(c)
 }
 
+func (eb *EditBuffer) isTemp() bool {
+	return eb.temp
+}
+
 func (eb *EditBuffer) isDirty() bool {
 	return eb.dirty
 }

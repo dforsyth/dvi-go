@@ -92,6 +92,8 @@ func inputNewline(b *EditBuffer) {
 			b.insertLn(newEditLine([]byte("")), b.lno+1)
 		}
 		b.lno++
+		b.dirty = true
+		b.redraw = true
 	} else {
 		Beep()
 	}
@@ -120,8 +122,10 @@ func input(gs *GlobalState) {
 			ln := buf.line()
 			if gs.Mode == MODEINSERT {
 				ln.insert(byte(k))
+				buf.dirty = true
 			} else if gs.Mode == MODEREPLACE {
 				ln.replace(byte(k))
+				buf.dirty = true
 			} else {
 				gs.queueMessage(&Message{
 					"no mode",
