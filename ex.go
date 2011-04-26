@@ -6,19 +6,49 @@ import (
 	"unicode"
 )
 
+type excmd struct {
+	fn    func(*GlobalState)
+	usage string
+}
+
 var aliases map[string]string = map[string]string{
 	"write":   "w",
 	"quit":    "q",
 	"version": "ve",
 }
 
-var exFns map[string]func(*GlobalState) = map[string]func(*GlobalState){
-	"w":  write,
-	"wq": writeQuit,
-	"q":  quit,
-	"nb": nextBuffer,
-	"pb": prevBuffer,
-	"ve": version,
+var exFns map[string]*excmd = map[string]*excmd{
+	"w": &excmd{
+		write,
+		"w[rite][!] [file]",
+	},
+	"wq": &excmd{
+		writeQuit,
+		"wq[!] [file]",
+	},
+	"q": &excmd{
+		quit,
+		"q[uit][!]",
+	},
+	"nb": &excmd{
+		nextBuffer,
+		"nb",
+	},
+	"pb": &excmd{
+		prevBuffer,
+		"pb",
+	},
+	"ve": &excmd{
+		version,
+		"ve[rsion]",
+	},
+	/*
+		XXX init loop
+		"viu": &excmd{
+			viusage,
+			"viu[sage] [command]",
+		},
+	*/
 }
 
 func writeEditBuffer(b *EditBuffer, path string, force bool) (int, *Message) {
@@ -77,6 +107,37 @@ func version(gs *GlobalState) {
 		fmt.Sprintf("Version %s (%s) %s", gs.version, gs.buildDate, gs.author),
 		false,
 	})
+}
+
+func viusage(gs *GlobalState) {
+	gs.queueMessage(&Message{
+		"not implemented",
+		true,
+	})
+	return
+
+	if len(gs.x.args) == 0 {
+		// have do display all the commands in this case...
+		return
+	}
+
+	// XXX nvi only shows key cmds, not full commands
+	cmd := gs.x.args[0]
+	if alias, ok := aliases[cmd]; ok {
+		cmd = alias
+	}
+
+	if exc, ok := exFns[cmd]; ok {
+		gs.queueMessage(&Message{
+			exc.usage,
+			false,
+		})
+	} else {
+		gs.queueMessage(&Message{
+			fmt.Sprintf("The command %s has no current meaning", gs.x.args[0]),
+			false,
+		})
+	}
 }
 
 func ex(gs *GlobalState) {
@@ -243,8 +304,11 @@ lookup:
 		p = alias
 	}
 
-	if fn, ok := exFns[p]; ok {
-		return fn
+	if cmd, ok := exFns[p]; ok {
+		return cmd.fn
+	} else if p == "viu" {
+		// special case, since there is an init loop issue
+		return viusage
 	}
 
 	return nil
