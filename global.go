@@ -48,6 +48,7 @@ type GlobalState struct {
 	yb       []string // yank buffer
 	cmd      string
 	x        *Ex
+	n        *Nm
 }
 
 func NewGlobalState() *GlobalState {
@@ -128,11 +129,10 @@ func (gs *GlobalState) SignalsRoutine() {
 			switch s.(signal.UnixSignal) {
 			case syscall.SIGINT:
 				gs.queueMessage(&Message{
-					"quit with :q",
+					"Interrupted",
 					true,
 				})
 				gs.UpdateCh <- 1
-				Die("sigint")
 				// EndScreen()
 				// panic("sigint")
 				// Beep()

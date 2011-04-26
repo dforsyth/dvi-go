@@ -15,6 +15,8 @@ var exFns map[string]func(*GlobalState) = map[string]func(*GlobalState){
 	"w":  write,
 	"wq": writeQuit,
 	"q":  quit,
+	"nb": nextBuffer,
+	"pb": prevBuffer,
 }
 
 func writeEditBuffer(b *EditBuffer, path string, force bool) (int, *Message) {
