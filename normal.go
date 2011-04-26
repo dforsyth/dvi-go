@@ -288,11 +288,14 @@ func normalCtlG(gs *GlobalState) {
 		}
 		// XXX This is actual not correct.  When the file is empty, we want to show "empty
 		// file" rather than file position information.
-		lno := b.lno + 1
-		lns := len(b.lines)
-		per := int((float32(lno) / float32(lns)) * 100)
+		info := "empty file"
+		if lns := len(b.lines); lns > 1 || len(b.line().raw()) > 0 {
+			lno := b.lno + 1
+			per := int((float32(lno) / float32(lns)) * 100)
+			info = fmt.Sprintf("line %d of %d [%d%]", lno, lns, per)
+		}
 		gs.queueMessage(&Message{
-			fmt.Sprintf("%s: %s: line %d of %d [%d%]", b.ident(), mod, lno, lns, per),
+			fmt.Sprintf("%s: %s: %s", b.ident(), mod, info),
 			false,
 		})
 	}
