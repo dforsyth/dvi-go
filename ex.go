@@ -15,6 +15,7 @@ var aliases map[string]string = map[string]string{
 	"write":   "w",
 	"quit":    "q",
 	"version": "ve",
+	"set":     "se",
 }
 
 var exFns map[string]*excmd = map[string]*excmd{
@@ -49,6 +50,11 @@ var exFns map[string]*excmd = map[string]*excmd{
 			"viu[sage] [command]",
 		},
 	*/
+	"se": &excmd{
+		set,
+		// lol im sure ill be able to figure this out
+		"se[t] [option[=[value]] ...] [nooption ...] [option? ...] [all]",
+	},
 }
 
 func writeEditBuffer(b *EditBuffer, path string, force bool) (int, *Message) {
@@ -138,6 +144,13 @@ func viusage(gs *GlobalState) {
 			false,
 		})
 	}
+}
+
+func set(gs *GlobalState) {
+	gs.queueMessage(&Message{
+		"not implemented",
+		false,
+	})
 }
 
 func ex(gs *GlobalState) {

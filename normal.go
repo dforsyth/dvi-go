@@ -34,6 +34,7 @@ var normalFns map[int]func(*GlobalState) = map[int]func(*GlobalState){
 	'!': normalBang,
 	'<': normalLShift,
 	'>': normalRShift,
+	'$': normalDollar,
 	// XXX why the fuck did i do these in hex?
 	1: normalCtlA, // ^A
 	2: normalCtlB, // ^B
@@ -224,6 +225,20 @@ func normalRShift(gs *GlobalState) {
 		"not implemented",
 		true,
 	})
+}
+
+func normalDollar(gs *GlobalState) {
+	switch c := gs.curBuf(); b := c.(type) {
+	case *EditBuffer:
+		cnt := gs.n.cnt - 1
+		if b.lno+cnt > len(b.lines)-1 {
+			return
+		}
+
+		b.lno += cnt
+		ln := b.line()
+		ln.move(len(ln.raw()) - 1)
+	}
 }
 
 func normalCtlA(gs *GlobalState) {
