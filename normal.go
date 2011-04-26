@@ -36,9 +36,8 @@ var normalFns map[int]func(*GlobalState) = map[int]func(*GlobalState){
 	'>': normalRShift,
 	'$': normalDollar,
 	'0': normal0,
-	// XXX why the fuck did i do these in hex?
-	1: normalCtlA, // ^A
-	2: normalCtlB, // ^B
+	1:   normalCtlA, // ^A
+	2:   normalCtlB, // ^B
 	// 3: normalCtlC, // ^C
 	4:  normalCtlD,   // ^D
 	5:  normalCtlE,   // ^E
