@@ -49,6 +49,10 @@ type GlobalState struct {
 	cmd      string
 	x        *Ex
 	n        *Nm
+
+	version   string
+	buildDate string
+	author    string
 }
 
 func NewGlobalState() *GlobalState {
@@ -60,6 +64,11 @@ func NewGlobalState() *GlobalState {
 	gs.InputCh = make(chan int)
 	gs.UpdateCh = make(chan int)
 	gs.msgQueue = list.New()
+
+	// lol
+	gs.version = "0.0"
+	gs.buildDate = "0/0/20XX"
+	gs.author = "David Forsythe"
 	return gs
 }
 

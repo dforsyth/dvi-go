@@ -7,8 +7,9 @@ import (
 )
 
 var aliases map[string]string = map[string]string{
-	"write": "w",
-	"quit":  "q",
+	"write":   "w",
+	"quit":    "q",
+	"version": "ve",
 }
 
 var exFns map[string]func(*GlobalState) = map[string]func(*GlobalState){
@@ -17,6 +18,7 @@ var exFns map[string]func(*GlobalState) = map[string]func(*GlobalState){
 	"q":  quit,
 	"nb": nextBuffer,
 	"pb": prevBuffer,
+	"ve": version,
 }
 
 func writeEditBuffer(b *EditBuffer, path string, force bool) (int, *Message) {
@@ -68,6 +70,13 @@ func writeQuit(gs *GlobalState) {
 			gs.queueMessage(msg)
 		}
 	}
+}
+
+func version(gs *GlobalState) {
+	gs.queueMessage(&Message{
+		fmt.Sprintf("Version %s (%s) %s", gs.version, gs.buildDate, gs.author),
+		false,
+	})
 }
 
 func ex(gs *GlobalState) {
