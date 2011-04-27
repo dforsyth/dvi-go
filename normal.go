@@ -10,54 +10,226 @@ import (
  * number of interfaces so that i can pass arguments.
  */
 
+type nmcmd struct {
+	fn     func(*GlobalState)
+	usage  string
+	motion bool
+}
+
 // normal commands
-var normalFns map[int]func(*GlobalState) = map[int]func(*GlobalState){
-	'j': normalj,
-	'k': normalk,
-	'l': normall,
-	';': normalSemiColon,
-	'p': normalp,
-	'P': normalP, // will fix later
-	'G': normalG,
-	'u': normalu,
-	'a': normala,
-	'i': normali,
-	'o': normalo,
-	'O': normalO,
-	// 'n':  nextBuffer,
-	// 'p':  prevBuffer,
-	':': normalColon,
-	'-': normalMinus,
-	'+': normalPlus,
-	'#': normalHash,
-	' ': normalSpace,
-	'!': normalBang,
-	'<': normalLShift,
-	'>': normalRShift,
-	'$': normalDollar,
-	'0': normal0,
-	1:   normalCtlA, // ^A
-	2:   normalCtlB, // ^B
+var normalFns map[int]*nmcmd = map[int]*nmcmd{
+	'j': &nmcmd{
+		normalj,
+		"[count]j",
+		false,
+	},
+	'k': &nmcmd{
+		normalk,
+		"[count]k",
+		false,
+	},
+	'l': &nmcmd{
+		normall,
+		"[count]l",
+		false,
+	},
+	';': &nmcmd{
+		normalSemiColon,
+		"[count];",
+		false,
+	},
+	'p': &nmcmd{
+		normalp,
+		"",
+		false,
+	},
+	'P': &nmcmd{
+		normalP,
+		"",
+		false,
+	},
+	'G': &nmcmd{
+		normalG,
+		"",
+		false,
+	},
+	'u': &nmcmd{
+		normalu,
+		"",
+		false,
+	},
+	'a': &nmcmd{
+		normala,
+		"",
+		false,
+	},
+	'i': &nmcmd{
+		normali,
+		"",
+		false,
+	},
+	'o': &nmcmd{
+		normalo,
+		"",
+		false,
+	},
+	'O': &nmcmd{
+		normalO,
+		"",
+		false,
+	},
+	':': &nmcmd{
+		normalColon,
+		":",
+		false,
+	},
+	'-': &nmcmd{
+		normalMinus,
+		"",
+		false,
+	},
+	'+': &nmcmd{
+		normalPlus,
+		"",
+		false,
+	},
+	'#': &nmcmd{
+		normalHash,
+		"",
+		false,
+	},
+	' ': &nmcmd{
+		normalSpace,
+		"",
+		false,
+	},
+	'!': &nmcmd{
+		normalBang,
+		"",
+		false,
+	},
+	'<': &nmcmd{
+		normalLShift,
+		"",
+		false,
+	},
+	'>': &nmcmd{
+		normalRShift,
+		"",
+		false,
+	},
+	'$': &nmcmd{
+		normalDollar,
+		"",
+		false,
+	},
+	'0': &nmcmd{
+		normal0,
+		"",
+		false,
+	},
+	1: &nmcmd{
+		normalCtlA,
+		"",
+		false,
+	}, // ^A
+	2: &nmcmd{
+		normalCtlB,
+		"",
+		false,
+	}, // ^B
 	// 3: normalCtlC, // ^C
-	4:  normalCtlD,   // ^D
-	5:  normalCtlE,   // ^E
-	6:  normalCtlF,   // ^F
-	7:  normalCtlG,   // ^G
-	8:  normalCtlH,   // ^H
-	9:  normalCtlI,   // ^I
-	10: normalCtlJ,   // ^J
-	11: normalCtlK,   // ^K
-	12: normalCtlL,   // ^L
-	13: normalCtlM,   // ^M
-	16: normalCtlP,   // ^P
-	20: normalCtlT,   // ^T
-	21: normalCtlU,   // ^U
-	23: normalCtlW,   // ^W
-	25: normalCtlY,   // ^Y
-	26: normalCtlZ,   // ^Z
-	29: normalCtlRSB, // ^] (right square bracket)
+	4: &nmcmd{
+		normalCtlD,
+		"",
+		false,
+	}, // ^D
+	5: &nmcmd{
+		normalCtlE,
+		"",
+		false,
+	}, // ^E
+	6: &nmcmd{
+		normalCtlF,
+		"",
+		false,
+	}, // ^F
+	7: &nmcmd{
+		normalCtlG,
+		"",
+		false,
+	}, // ^G
+	8: &nmcmd{
+		normalCtlH,
+		"",
+		false,
+	}, // ^H
+	9: &nmcmd{
+		normalCtlI,
+		"",
+		false,
+	}, // ^I
+	10: &nmcmd{
+		normalCtlJ,
+		"",
+		false,
+	}, // ^J
+	11: &nmcmd{
+		normalCtlK,
+		"",
+		false,
+	}, // ^K
+	12: &nmcmd{
+		normalCtlL,
+		"",
+		false,
+	}, // ^L
+	13: &nmcmd{
+		normalCtlM,
+		"",
+		false,
+	}, // ^M
+	16: &nmcmd{
+		normalCtlP,
+		"",
+		false,
+	}, // ^P
+	20: &nmcmd{
+		normalCtlT,
+		"",
+		false,
+	}, // ^T
+	21: &nmcmd{
+		normalCtlU,
+		"",
+		false,
+	}, // ^U
+	23: &nmcmd{
+		normalCtlW,
+		"",
+		false,
+	}, // ^W
+	25: &nmcmd{
+		normalCtlY,
+		"",
+		false,
+	}, // ^Y
+	26: &nmcmd{
+		normalCtlZ,
+		"",
+		false,
+	}, // ^Z
+	29: &nmcmd{
+		normalCtlRSB,
+		"",
+		false,
+	}, // ^] (right square bracket)
 	// x: normalCtlCaret
-	ESC: cmdClear,
+	ESC: &nmcmd{
+		cmdClear,
+		"",
+		false,
+	},
 }
 
 func normalj(gs *GlobalState) {
@@ -286,8 +458,6 @@ func normalCtlG(gs *GlobalState) {
 		if !b.isDirty() {
 			mod = "un" + mod
 		}
-		// XXX This is actual not correct.  When the file is empty, we want to show "empty
-		// file" rather than file position information.
 		info := "empty file"
 		if lns := len(b.lines); lns > 1 || len(b.line().raw()) > 0 {
 			lno := b.lno + 1
@@ -405,7 +575,9 @@ func cmdClear(gs *GlobalState) {
 
 type Nm struct {
 	buf string
+	cmd int
 	cnt int
+	mtn int
 }
 
 // normal mode
@@ -442,8 +614,13 @@ func NormalMode(gs *GlobalState) {
 				}
 			}
 
-			if fn, ok := normalFns[k]; ok {
-				fn(gs)
+			if cmd, ok := normalFns[k]; ok {
+				// XXX motion
+				if cmd.motion {
+					m := <-gs.InputCh
+					gs.n.mtn = m
+				}
+				cmd.fn(gs)
 			}
 			buf = ""
 		} else {
