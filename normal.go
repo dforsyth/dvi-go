@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 	"unicode"
 )
@@ -50,7 +49,7 @@ var normalFns map[int]*nmcmd = map[int]*nmcmd{
 	},
 	'G': &nmcmd{
 		normalG,
-		"",
+		"[count]G",
 		false,
 	},
 	'u': &nmcmd{
@@ -75,7 +74,12 @@ var normalFns map[int]*nmcmd = map[int]*nmcmd{
 	},
 	'O': &nmcmd{
 		normalO,
-		"",
+		"[count]O",
+		false,
+	},
+	'^': &nmcmd{
+		normalCaret,
+		"^",
 		false,
 	},
 	':': &nmcmd{
@@ -307,6 +311,7 @@ func normalG(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
 		b.lno = len(b.lines) - 1
+		b.line().move(0)
 	}
 }
 
@@ -343,6 +348,21 @@ func normalO(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
 		aboveOpenInsert(gs)
+	}
+}
+
+func normalCaret(gs *GlobalState) {
+	switch t := gs.curBuf(); b := t.(type) {
+	case *EditBuffer:
+		ln := b.line()
+		raw := ln.raw()
+		for i, c := range raw {
+			if c != ' ' && c != '\t' {
+				ln.move(i)
+				return
+			}
+		}
+		ln.move(len(raw) - 1)
 	}
 }
 
@@ -454,18 +474,8 @@ func normalCtlF(gs *GlobalState) {
 func normalCtlG(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
-		mod := "modified"
-		if !b.isDirty() {
-			mod = "un" + mod
-		}
-		info := "empty file"
-		if lns := len(b.lines); lns > 1 || len(b.line().raw()) > 0 {
-			lno := b.lno + 1
-			per := int((float32(lno) / float32(lns)) * 100)
-			info = fmt.Sprintf("line %d of %d [%d%]", lno, lns, per)
-		}
 		gs.queueMessage(&Message{
-			fmt.Sprintf("%s: %s: %s", b.ident(), mod, info),
+			editBufferInfo(b),
 			false,
 		})
 	}
@@ -620,6 +630,8 @@ func NormalMode(gs *GlobalState) {
 					m := <-gs.InputCh
 					gs.n.mtn = m
 				}
+				// " is going to have to steal input/ go into its own loop or
+				// something
 				cmd.fn(gs)
 			}
 			buf = ""

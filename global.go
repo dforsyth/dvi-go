@@ -45,10 +45,13 @@ type GlobalState struct {
 	Wd       string
 	config   map[string]interface{}
 	msgQueue *list.List
-	yb       []string // yank buffer
-	cmd      string
-	x        *Ex
-	n        *Nm
+	yb       []string            // yank buffer
+	ub       map[int][]string    // unnamed buffers
+	nb       map[string][]string // named buffers
+
+	cmd string
+	x   *Ex
+	n   *Nm
 
 	version   string
 	buildDate string

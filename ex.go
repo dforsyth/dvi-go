@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -12,13 +13,19 @@ type excmd struct {
 }
 
 var aliases map[string]string = map[string]string{
+	"file":    "f",
 	"write":   "w",
 	"quit":    "q",
 	"version": "ve",
 	"set":     "se",
+	"yank":    "ya",
 }
 
 var exFns map[string]*excmd = map[string]*excmd{
+	"f": &excmd{
+		file,
+		"f[ile] [file]",
+	},
 	"w": &excmd{
 		write,
 		"w[rite][!] [file]",
@@ -54,6 +61,10 @@ var exFns map[string]*excmd = map[string]*excmd{
 		set,
 		// lol im sure ill be able to figure this out
 		"se[t] [option[=[value]] ...] [nooption ...] [option? ...] [all]",
+	},
+	"ya": &excmd{
+		yank,
+		"[range] ya[nk] [buffer] [count]",
 	},
 }
 
@@ -128,7 +139,7 @@ func viusage(gs *GlobalState) {
 	}
 
 	// XXX nvi only shows key cmds, not full commands
-	cmd := gs.x.args[0]
+	cmd := gs.x.args
 	if alias, ok := aliases[cmd]; ok {
 		cmd = alias
 	}
@@ -151,6 +162,38 @@ func set(gs *GlobalState) {
 		"not implemented",
 		false,
 	})
+}
+
+func file(gs *GlobalState) {
+	switch t := gs.curBuf(); b := t.(type) {
+	case *EditBuffer:
+		a := strings.Split(gs.x.args, " ", -1)
+		if len(a) == 1 && len(a[0]) > 1 {
+			b.pathname = a[0]
+			b.nc = true
+		} else if len(a) > 1 {
+			/*
+				XXX init loop...
+				gs.queueMessage(&Message{
+					exFns["f"].usage,
+					false,
+				})
+			*/
+			gs.queueMessage(&Message{
+				"usage",
+				false,
+			})
+			return
+		}
+
+		gs.queueMessage(&Message{
+			editBufferInfo(b),
+			false,
+		})
+	}
+}
+
+func yank(gs *GlobalState) {
 }
 
 func ex(gs *GlobalState) {
@@ -220,7 +263,7 @@ type Ex struct {
 	end  int
 	cnt  int
 	frc  bool
-	args []string
+	args string // explode this in the handler function
 	gs   *GlobalState
 }
 
@@ -229,7 +272,7 @@ func (x *Ex) clear() {
 	x.end = 0
 	x.cnt = 0
 	x.frc = false
-	x.args = make([]string, 1)
+	x.args = ""
 }
 
 // parse a single ex cmd

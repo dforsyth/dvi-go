@@ -4,6 +4,16 @@ import (
 	"curses"
 )
 
+/*
+type incmd struct {
+	fn func(*GlobalState)
+	usage string
+}
+
+var inputFns map[int]*incmd = map[int]*incmd {
+}
+*/
+
 // Move the cursor in an editbuffer to the right by one and then enter insert mode (and force a
 // remap)
 func appendInsert(gs *GlobalState) {

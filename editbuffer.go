@@ -24,6 +24,7 @@ type EditBuffer struct {
 	col      int
 	dirty    bool // This should become an int, so that updates are just after a given line
 	temp     bool
+	nc       bool
 
 	undoList list.List
 
@@ -58,6 +59,7 @@ func NewEditBuffer(gs *GlobalState, name string) *EditBuffer {
 	eb.col = 0
 	eb.redraw = true
 	eb.temp = false
+	eb.nc = false
 
 	eb.cmdbuff = NewGapBuffer([]byte(""))
 
@@ -109,6 +111,10 @@ func (eb *EditBuffer) isTemp() bool {
 
 func (eb *EditBuffer) isDirty() bool {
 	return eb.dirty
+}
+
+func (eb *EditBuffer) nameChanged() bool {
+	return eb.nc
 }
 
 func (eb *EditBuffer) screenLines(el *EditLine) int {

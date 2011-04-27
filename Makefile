@@ -12,6 +12,7 @@ GOFILES=    d.go \
             ex.go \
             input.go \
             normal.go \
-            window.go
+            window.go \
+	    util.go
 
 include $(GOROOT)/src/Make.cmd
