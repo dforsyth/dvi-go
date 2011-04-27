@@ -19,6 +19,7 @@ var aliases map[string]string = map[string]string{
 	"version": "ve",
 	"set":     "se",
 	"yank":    "ya",
+	"display": "di",
 }
 
 var exFns map[string]*excmd = map[string]*excmd{
@@ -66,6 +67,12 @@ var exFns map[string]*excmd = map[string]*excmd{
 		yank,
 		"[range] ya[nk] [buffer] [count]",
 	},
+	/*
+		"di": &nmcmd{
+			display,
+			"di[splay] b[uffers]",
+		},
+	*/
 }
 
 func writeEditBuffer(b *EditBuffer, path string, force bool) (int, *Message) {

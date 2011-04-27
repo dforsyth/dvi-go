@@ -17,6 +17,11 @@ type nmcmd struct {
 
 // normal commands
 var normalFns map[int]*nmcmd = map[int]*nmcmd{
+	'h': &nmcmd{
+		normalh,
+		"[count]h",
+		false,
+	},
 	'j': &nmcmd{
 		normalj,
 		"[count]j",
@@ -236,7 +241,7 @@ var normalFns map[int]*nmcmd = map[int]*nmcmd{
 	},
 }
 
-func normalj(gs *GlobalState) {
+func normalh(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
 		// left
@@ -250,7 +255,7 @@ func normalj(gs *GlobalState) {
 	}
 }
 
-func normalk(gs *GlobalState) {
+func normalj(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
 		// down
@@ -266,7 +271,7 @@ func normalk(gs *GlobalState) {
 	}
 }
 
-func normall(gs *GlobalState) {
+func normalk(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
 		// up
@@ -279,7 +284,7 @@ func normall(gs *GlobalState) {
 	}
 }
 
-func normalSemiColon(gs *GlobalState) {
+func normall(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
 		// right
@@ -291,6 +296,9 @@ func normalSemiColon(gs *GlobalState) {
 			Beep()
 		}
 	}
+}
+
+func normalSemiColon(gs *GlobalState) {
 }
 
 func normalp(gs *GlobalState) {
@@ -374,17 +382,11 @@ func normalColon(gs *GlobalState) {
 }
 
 func normalMinus(gs *GlobalState) {
-	gs.queueMessage(&Message{
-		"not implemented",
-		true,
-	})
+	normalk(gs)
 }
 
 func normalPlus(gs *GlobalState) {
-	gs.queueMessage(&Message{
-		"not implemented",
-		true,
-	})
+	normalj(gs)
 }
 
 func normalHash(gs *GlobalState) {
@@ -424,6 +426,7 @@ func normalDollar(gs *GlobalState) {
 	case *EditBuffer:
 		cnt := gs.n.cnt - 1
 		if b.lno+cnt > len(b.lines)-1 {
+			Beep()
 			return
 		}
 
@@ -512,7 +515,11 @@ func normalCtlL(gs *GlobalState) {
 }
 
 func normalCtlM(gs *GlobalState) {
-	normalPlus(gs)
+	normalj(gs)
+}
+
+func normalCtlN(gs *GlobalState) {
+	normalj(gs)
 }
 
 func normalCtlP(gs *GlobalState) {
