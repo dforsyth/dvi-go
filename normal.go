@@ -129,7 +129,12 @@ var normalFns map[int]*nmcmd = map[int]*nmcmd{
 	},
 	'$': &nmcmd{
 		normalDollar,
-		"",
+		"[count]$",
+		false,
+	},
+	'%': &nmcmd{
+		normalPercent,
+		"%",
 		false,
 	},
 	'0': &nmcmd{
@@ -289,10 +294,22 @@ func normall(gs *GlobalState) {
 	case *EditBuffer:
 		// right
 		ln := b.line()
-		if ln.cursor()+gs.n.cnt < len(ln.raw()) {
+		raw := ln.raw()
+
+		if len(raw) == 0 {
+			Beep()
+			return
+		}
+
+		max := len(raw) - 1
+		if raw[max] == '\n' {
+			max--
+		}
+
+		if ln.cursor()+gs.n.cnt < max {
 			ln.move(ln.cursor() + gs.n.cnt)
 		} else {
-			ln.move(len(ln.raw()) - 1)
+			ln.move(max)
 			Beep()
 		}
 	}
@@ -397,7 +414,7 @@ func normalHash(gs *GlobalState) {
 }
 
 func normalSpace(gs *GlobalState) {
-	normalSemiColon(gs)
+	normall(gs)
 }
 
 func normalBang(gs *GlobalState) {
@@ -433,6 +450,12 @@ func normalDollar(gs *GlobalState) {
 		b.lno += cnt
 		ln := b.line()
 		ln.move(len(ln.raw()) - 1)
+	}
+}
+
+func normalPercent(gs *GlobalState) {
+	switch c := gs.curBuf(); b := c.(type) {
+	case *EditBuffer:
 	}
 }
 
