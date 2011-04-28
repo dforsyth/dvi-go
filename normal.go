@@ -496,6 +496,7 @@ func normalPercent(gs *GlobalState) {
 			for j, c := range cl.raw()[idx:] {
 				if c == m {
 					cntr++
+					continue
 				}
 				if c == match[m] {
 					cntr--
