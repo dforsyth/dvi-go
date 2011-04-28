@@ -487,10 +487,10 @@ func normalPercent(gs *GlobalState) {
 		// be guaranteed c == m in the first iteration of loop below.
 		cntr := 0
 		/*
-		// increment past the match char
-		if idx < len(b.line().raw()) - 1 {
-			idx++
-		}
+			// increment past the match char
+			if idx < len(b.line().raw()) - 1 {
+				idx++
+			}
 		*/
 		for i, cl := range b.lines[b.lno:] {
 			for j, c := range cl.raw()[idx:] {
