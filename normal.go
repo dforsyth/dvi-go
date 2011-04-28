@@ -456,6 +456,61 @@ func normalDollar(gs *GlobalState) {
 func normalPercent(gs *GlobalState) {
 	switch c := gs.curBuf(); b := c.(type) {
 	case *EditBuffer:
+		// implemented according to the posix spec
+
+		// match := map[int]int{
+		match := map[byte]byte{
+			'(': ')',
+			'[': ']',
+			'{': '}',
+		}
+
+		ln := b.line()
+		// first, move to the first matchable char in the current line after cursor
+		idx := -1
+		m := byte(' ')
+		for i, c := range ln.raw()[ln.cursor():] {
+			if _, ok := match[c]; ok {
+				m = c
+				idx = ln.cursor() + i
+				break
+			}
+		}
+
+		// nothing on this line, which is an error
+		if idx < 0 {
+			Beep()
+			return
+		}
+
+		// XXX So, the spec says to set counter to 1.  We don't do that, because we should
+		// be guaranteed c == m in the first iteration of loop below.
+		cntr := 0
+		/*
+		// increment past the match char
+		if idx < len(b.line().raw()) - 1 {
+			idx++
+		}
+		*/
+		for i, cl := range b.lines[b.lno:] {
+			for j, c := range cl.raw()[idx:] {
+				if c == m {
+					cntr++
+				}
+				if c == match[m] {
+					cntr--
+				}
+				if cntr == 0 {
+					b.lno = b.lno + i
+					b.line().move(j)
+					// leave
+					return
+				}
+			}
+			// reset idx
+			idx = 0
+		}
+		Beep()
 	}
 }
 
