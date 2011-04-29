@@ -137,6 +137,11 @@ var normalFns map[int]*nmcmd = map[int]*nmcmd{
 		"%",
 		false,
 	},
+	'|': &nmcmd{
+		normalPipe,
+		"|",
+		false,
+	},
 	'0': &nmcmd{
 		normal0,
 		"",
@@ -515,7 +520,24 @@ func normalPercent(gs *GlobalState) {
 	}
 }
 
+func normalPipe(gs *GlobalState) {
+	switch c := gs.curBuf(); b := c.(type) {
+	case *EditBuffer:
+		// column indexing is 1 based in the posix spec
+		ln := b.line()
+		if l := len(ln.raw()); gs.n.cnt > l {
+			ln.move(l - 1)
+		} else {
+			ln.move(gs.n.cnt - 1)
+		}
+	}
+}
+
 func normal0(gs *GlobalState) {
+	switch c := gs.curBuf(); b := c.(type) {
+	case *EditBuffer:
+		b.line().move(0)
+	}
 }
 
 func normalCtlA(gs *GlobalState) {
@@ -699,7 +721,7 @@ func NormalMode(gs *GlobalState) {
 		gs.UpdateCh <- 1
 		k := <-gs.InputCh // screen.Window.Getch()
 
-		if !unicode.IsDigit(k) {
+		if !unicode.IsDigit(k) || (k == '0' && buf == "") {
 			if len(buf) == 0 {
 				gs.n.cnt = 1
 				buf = string(k)
