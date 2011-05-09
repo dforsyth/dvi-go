@@ -1,0 +1,86 @@
+package main
+
+import (
+	"curses"
+	"os"
+)
+
+type Terminal struct {
+	fid     uint64
+	ln, col uint64
+	cache   map[uint64]string
+	client  *Client
+	x, y    int
+	cwin    *curses.Window
+}
+
+func NewTerminal(client *Client) *Terminal {
+	t := new(Terminal)
+	t.client = client
+	t.cache = make(map[uint64]string)
+	t.ln, t.col = 0, 0
+	t.fid = 0
+	return t
+}
+
+func (t *Terminal) init() {
+	curses.Initscr()
+	curses.Cbreak()
+	curses.Noecho()
+	curses.Nonl()
+	curses.Stdwin.Keypad(true)
+
+	t.cwin = curses.Stdwin
+	t.x = *curses.Rows
+	t.y = *curses.Cols
+	t.ln = 0
+	t.col = 0
+}
+
+func (t *Terminal) run() {
+	for {
+		t.display()
+		k := t.cwin.Getch()
+		switch k {
+		case 'o':
+			if o, e := t.client.open("Makefile"); e == nil {
+				t.fid = o.fid
+			} else {
+				panic(e.String())
+			}
+		}
+	}
+}
+
+func (t *Terminal) display() {
+	t.clear()
+	if t.fid == 0 {
+		return
+	}
+	for y := 0; y < t.y; y++ {
+		if ln, e := t.fetch(uint64(y)); e == nil {
+			t.draw(0, y, ln)
+		} else if e.String() == "noline" {
+			t.draw(0, y, "~")
+		}
+	}
+}
+
+func (t *Terminal) clear() {
+}
+
+func (t *Terminal) draw(x, y int, ln string) {
+	t.cwin.Mvwaddnstr(y, x, ln, t.x)
+}
+
+func (t *Terminal) fetch(lno uint64) (string, os.Error) {
+	if ln, ok := t.cache[lno]; ok {
+		return ln, nil
+	} else {
+		if lr, e := t.client.line(t.fid, lno); e == nil {
+			t.cache[lno] = lr.text
+			return t.cache[lno], nil
+		}
+	}
+	return "", &DviError{"noline"}
+}
