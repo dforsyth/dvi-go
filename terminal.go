@@ -3,17 +3,17 @@ package main
 import (
 	"curses"
 	"os"
+	"strings"
 )
 
 const (
 	ESC = 27
 	NOLINE = "~"
-
 )
 
 type Terminal struct {
 	fid     uint64
-	ln, col uint64
+	ln, col int
 	cache   map[uint64]string
 	client  *Client
 	x, y    int
@@ -52,23 +52,9 @@ func (t *Terminal) run() {
 		t.display()
 		t.k = t.cwin.Getch()
 		switch t.k {
-		case 'o':
-			if o, e := t.client.open("Makefile"); e == nil {
-				t.fid = o.fid
-			} else {
-				panic(e.String())
-			}
 		case ':':
 			t.basicEx()
-		case ESC:
-			if _, e := t.client.close(t.fid); e == nil {
-				t.fid = 0
-				for lno, _ := range t.cache {
-					t.cache[lno] = "", false
-				}
-			} else {
-				panic(e.String())
-			}
+		default:
 		}
 	}
 }
@@ -81,10 +67,35 @@ func (t *Terminal) basicEx() {
 		k := t.cwin.Getch()
 		if k == ESC {
 			break
+		} else if k == 0xa || k == 0xd {
+			t.parseAndExecEx(t.exbuff)
+			break
 		}
 		t.exbuff += string(k)
 	}
 	t.ex = false
+}
+
+func (t *Terminal) parseAndExecEx(exbuff string) {
+	exploded := strings.Split(exbuff, " ", -1)
+	if len(exploded[0]) == 0 {
+		return
+	} else if len(exploded) == 1 && exploded[0] == "q" {
+		if _, e := t.client.close(t.fid); e == nil {
+			t.fid = 0
+			for lno, _ := range t.cache {
+				t.cache[lno] = "", false
+			}
+		} else {
+			panic(e.String())
+		}
+	} else if len(exploded) >= 2 && exploded[0] == "e" {
+		if o, e := t.client.open(exploded[1]); e == nil {
+			t.fid = o.fid
+		} else {
+			panic(e.String())
+		}
+	}
 }
 
 func (t *Terminal) modeline() string {
@@ -109,6 +120,7 @@ lastline:
 		t.draw(0, t.y-1, ":" + t.exbuff)
 	} else {
 		t.draw(0, t.y-1, t.modeline())
+		t.cwin.Move(t.ln, t.col)
 	}
 }
 
