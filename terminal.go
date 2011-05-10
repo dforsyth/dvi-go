@@ -1,13 +1,14 @@
 package main
 
 import (
+	"container/list"
 	"curses"
 	"os"
 	"strings"
 )
 
 const (
-	ESC = 27
+	ESC    = 27
 	NOLINE = "~"
 )
 
@@ -18,9 +19,10 @@ type Terminal struct {
 	client  *Client
 	x, y    int
 	cwin    *curses.Window
-	k int
-	ex bool
-	exbuff string
+	k       int
+	ex      bool
+	exbuff  string
+	q       *list.List
 }
 
 func NewTerminal(client *Client) *Terminal {
@@ -29,6 +31,7 @@ func NewTerminal(client *Client) *Terminal {
 	t.cache = make(map[uint64]string)
 	t.ln, t.col = 0, 0
 	t.fid = 0
+	t.q = list.New()
 	return t
 }
 
@@ -45,6 +48,7 @@ func (t *Terminal) init() {
 	t.ln = 0
 	t.col = 0
 	t.ex = false
+	t.q.Init()
 }
 
 func (t *Terminal) run() {
@@ -93,12 +97,31 @@ func (t *Terminal) parseAndExecEx(exbuff string) {
 		if o, e := t.client.open(exploded[1]); e == nil {
 			t.fid = o.fid
 		} else {
-			panic(e.String())
+			t.qmsg(e.String())
 		}
 	}
 }
 
+func (t *Terminal) qmsg(msg string) {
+	t.pushMsg(msg)
+}
+
+func (t *Terminal) pushMsg(msg string) {
+	t.q.PushBack(msg)
+}
+
+func (t *Terminal) popMsg() string {
+	if msg := t.q.Front(); msg != nil {
+		t.q.Remove(msg)
+		return msg.Value.(string)
+	}
+	return ""
+}
+
 func (t *Terminal) modeline() string {
+	if msg := t.popMsg(); msg != "" {
+		return msg
+	}
 	return string(t.k)
 }
 
@@ -117,7 +140,7 @@ func (t *Terminal) display() {
 	}
 lastline:
 	if t.ex {
-		t.draw(0, t.y-1, ":" + t.exbuff)
+		t.draw(0, t.y-1, ":"+t.exbuff)
 	} else {
 		t.draw(0, t.y-1, t.modeline())
 		t.cwin.Move(t.ln, t.col)

@@ -141,7 +141,7 @@ func (m *LineMessage) message() string {
 }
 
 type CloseMessage struct {
-	fid uint64
+	fid  uint64
 	sync bool
 }
 
@@ -150,6 +150,7 @@ func (m *CloseMessage) message() string {
 }
 
 type ListMessage struct {
+
 }
 
 func (m *ListMessage) message() string {

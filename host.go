@@ -35,8 +35,9 @@ func (h *Host) serve() {
 			// fmt.Println(c.message())
 			r, e := h.open(m)
 			if e != nil {
-				log.Panicln(e.String())
-				h.out <- nil
+				// log.Panicln(e.String())
+				h.out <- ErrorResponse(e)
+				break
 			}
 			h.out <- r
 		case *StatMessage:
