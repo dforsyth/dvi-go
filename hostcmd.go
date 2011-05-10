@@ -51,3 +51,22 @@ func (h *Host) line(m *LineMessage) (*LineRespMessage, os.Error) {
 	l := NewLineRespMessage(text, m.fid, m.lno)
 	return l, nil
 }
+
+func (h *Host) close(m *CloseMessage) (*CloseRespMessage, os.Error) {
+	if f, ok := h.files[m.fid]; ok {
+		f.close()
+		h.files[m.fid] = nil, false
+		c := NewCloseRespMessage(m.fid)
+		return c, nil
+	}
+	return nil, &DviError{fmt.Sprintf("Fid %d not in files map")}
+}
+
+// deceptively named -- you actually get a map
+func (h *Host) list(m *ListMessage) (*ListRespMessage, os.Error) {
+	files := make(map[uint64]string)
+	for fid, file := range h.files {
+		files[fid] = file.name
+	}
+	return NewListRespMessage(files), nil
+}

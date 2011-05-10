@@ -24,12 +24,16 @@ func NewFile(name string, f *os.File) (*File, os.Error) {
 	return nf, nil
 }
 
+func (f *File) close() {
+	f.f.Close()
+}
+
 func (f *File) fileInfo() (*os.FileInfo, os.Error) {
 	return f.f.Stat()
 }
 
 func (f *File) line(ln int) ([]byte, os.Error) {
-	if len(f.buf)-1 < ln {
+	if ln > len(f.buf)-1 {
 		return nil, &DviError{"Line number out of range"}
 	}
 

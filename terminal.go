@@ -12,12 +12,14 @@ type Terminal struct {
 	client  *Client
 	x, y    int
 	cwin    *curses.Window
+	input chan int
 }
 
 func NewTerminal(client *Client) *Terminal {
 	t := new(Terminal)
 	t.client = client
 	t.cache = make(map[uint64]string)
+	t.input = make(chan int)
 	t.ln, t.col = 0, 0
 	t.fid = 0
 	return t
@@ -38,13 +40,28 @@ func (t *Terminal) init() {
 }
 
 func (t *Terminal) run() {
+	go func() {
+		for {
+			t.input <-t.cwin.Getch()
+		}
+	}()
+
 	for {
 		t.display()
-		k := t.cwin.Getch()
+		k := <-t.input
 		switch k {
 		case 'o':
 			if o, e := t.client.open("Makefile"); e == nil {
 				t.fid = o.fid
+			} else {
+				panic(e.String())
+			}
+		case 'q':
+			if _, e := t.client.close(t.fid); e == nil {
+				t.fid = 0
+				for lno, _ := range t.cache {
+					t.cache[lno] = "", false
+				}
 			} else {
 				panic(e.String())
 			}
@@ -55,7 +72,11 @@ func (t *Terminal) run() {
 func (t *Terminal) display() {
 	t.clear()
 	if t.fid == 0 {
-		return
+		t.draw(0, 0, "No file...")
+		for lno, text := range t.cache {
+			t.draw(0, int(lno+1), text)
+		}
+		goto refresh
 	}
 	for y := 0; y < t.y; y++ {
 		if ln, e := t.fetch(uint64(y)); e == nil {
@@ -64,9 +85,13 @@ func (t *Terminal) display() {
 			t.draw(0, y, "~")
 		}
 	}
+refresh:
+	// refresh since we can't rely on getch
+	t.cwin.Refresh()
 }
 
 func (t *Terminal) clear() {
+	t.cwin.Clear()
 }
 
 func (t *Terminal) draw(x, y int, ln string) {

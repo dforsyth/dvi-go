@@ -35,14 +35,6 @@ func (m *OpenRespMessage) message() string {
 	return fmt.Sprintf("OPEN %s : %d", m.pathname, m.fid)
 }
 
-type CloseRespMessage struct {
-
-}
-
-func (m *CloseRespMessage) message() string {
-	return "ok"
-}
-
 type LineRespMessage struct {
 	fid  uint64
 	lno  uint64
@@ -77,6 +69,38 @@ func NewStatRespMessage(file *File, fi *os.FileInfo) *StatRespMessage {
 
 func (m *StatRespMessage) message() string {
 	return fmt.Sprintf("NAME: %s: LINES: %d: DIRTY: %t", m.name, m.lines, m.dirty)
+}
+
+type CloseRespMessage struct {
+	fid uint64
+}
+
+func (m *CloseRespMessage) message() string {
+	return fmt.Sprintf("CLOSED: FID: %d", m.fid)
+}
+
+func NewCloseRespMessage(fid uint64) *CloseRespMessage {
+	c := new(CloseRespMessage)
+	c.fid = fid
+	return c
+}
+
+type ListRespMessage struct {
+	files map[uint64]string
+}
+
+func (m *ListRespMessage) message() string {
+	r := "LIST: "
+	for fid, name := range m.files {
+		r += fmt.Sprintf("(%d:%s) ", fid, name)
+	}
+	return r
+}
+
+func NewListRespMessage(files map[uint64]string) *ListRespMessage {
+	l := new(ListRespMessage)
+	l.files = files
+	return l
 }
 
 // commands from client
@@ -114,4 +138,20 @@ type LineMessage struct {
 
 func (m *LineMessage) message() string {
 	return fmt.Sprintf("LINE: FID: %d LNO: %d", m.fid, m.lno)
+}
+
+type CloseMessage struct {
+	fid uint64
+	sync bool
+}
+
+func (m *CloseMessage) message() string {
+	return fmt.Sprintf("CLOSE: FID: %d", m.fid)
+}
+
+type ListMessage struct {
+}
+
+func (m *ListMessage) message() string {
+	return "LIST"
 }
