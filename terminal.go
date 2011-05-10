@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+const (
+	ESC = 27
+	NOLINE = "~"
+
+)
+
 type Terminal struct {
 	fid     uint64
 	ln, col uint64
@@ -12,14 +18,12 @@ type Terminal struct {
 	client  *Client
 	x, y    int
 	cwin    *curses.Window
-	input chan int
 }
 
 func NewTerminal(client *Client) *Terminal {
 	t := new(Terminal)
 	t.client = client
 	t.cache = make(map[uint64]string)
-	t.input = make(chan int)
 	t.ln, t.col = 0, 0
 	t.fid = 0
 	return t
@@ -40,15 +44,9 @@ func (t *Terminal) init() {
 }
 
 func (t *Terminal) run() {
-	go func() {
-		for {
-			t.input <-t.cwin.Getch()
-		}
-	}()
-
 	for {
 		t.display()
-		k := <-t.input
+		k := t.cwin.Getch()
 		switch k {
 		case 'o':
 			if o, e := t.client.open("Makefile"); e == nil {
@@ -56,7 +54,7 @@ func (t *Terminal) run() {
 			} else {
 				panic(e.String())
 			}
-		case 'q':
+		case ESC:
 			if _, e := t.client.close(t.fid); e == nil {
 				t.fid = 0
 				for lno, _ := range t.cache {
@@ -76,18 +74,15 @@ func (t *Terminal) display() {
 		for lno, text := range t.cache {
 			t.draw(0, int(lno+1), text)
 		}
-		goto refresh
+		return
 	}
 	for y := 0; y < t.y; y++ {
 		if ln, e := t.fetch(uint64(y)); e == nil {
 			t.draw(0, y, ln)
 		} else if e.String() == "noline" {
-			t.draw(0, y, "~")
+			t.draw(0, y, NOLINE)
 		}
 	}
-refresh:
-	// refresh since we can't rely on getch
-	t.cwin.Refresh()
 }
 
 func (t *Terminal) clear() {
