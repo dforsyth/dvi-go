@@ -18,6 +18,9 @@ type Terminal struct {
 	client  *Client
 	x, y    int
 	cwin    *curses.Window
+	k int
+	ex bool
+	exbuff string
 }
 
 func NewTerminal(client *Client) *Terminal {
@@ -37,23 +40,26 @@ func (t *Terminal) init() {
 	curses.Stdwin.Keypad(true)
 
 	t.cwin = curses.Stdwin
-	t.x = *curses.Rows
-	t.y = *curses.Cols
+	t.x = *curses.Cols
+	t.y = *curses.Rows
 	t.ln = 0
 	t.col = 0
+	t.ex = false
 }
 
 func (t *Terminal) run() {
 	for {
 		t.display()
-		k := t.cwin.Getch()
-		switch k {
+		t.k = t.cwin.Getch()
+		switch t.k {
 		case 'o':
 			if o, e := t.client.open("Makefile"); e == nil {
 				t.fid = o.fid
 			} else {
 				panic(e.String())
 			}
+		case ':':
+			t.basicEx()
 		case ESC:
 			if _, e := t.client.close(t.fid); e == nil {
 				t.fid = 0
@@ -67,21 +73,42 @@ func (t *Terminal) run() {
 	}
 }
 
+func (t *Terminal) basicEx() {
+	t.ex = true
+	t.exbuff = ""
+	for {
+		t.display()
+		k := t.cwin.Getch()
+		if k == ESC {
+			break
+		}
+		t.exbuff += string(k)
+	}
+	t.ex = false
+}
+
+func (t *Terminal) modeline() string {
+	return string(t.k)
+}
+
 func (t *Terminal) display() {
 	t.clear()
 	if t.fid == 0 {
 		t.draw(0, 0, "No file...")
-		for lno, text := range t.cache {
-			t.draw(0, int(lno+1), text)
-		}
-		return
+		goto lastline
 	}
-	for y := 0; y < t.y; y++ {
+	for y := 0; y < t.y-1; y++ {
 		if ln, e := t.fetch(uint64(y)); e == nil {
 			t.draw(0, y, ln)
 		} else if e.String() == "noline" {
 			t.draw(0, y, NOLINE)
 		}
+	}
+lastline:
+	if t.ex {
+		t.draw(0, t.y-1, ":" + t.exbuff)
+	} else {
+		t.draw(0, t.y-1, t.modeline())
 	}
 }
 
