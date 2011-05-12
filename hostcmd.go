@@ -44,12 +44,34 @@ func (h *Host) line(m *LineMessage) (*LineRespMessage, os.Error) {
 	if !ok {
 		return nil, &DviError{fmt.Sprintf("Fid %d not in files map")}
 	}
-	if m.lno > uint64(len(file.buf)-1) {
-		return nil, &DviError{fmt.Sprintf("Line %d not in Fid %d", m.lno, m.fid)}
+	if m.last > m.first {
+		return nil, &DviError{fmt.Sprintf("Last and first out of order: %d > %d", m.last,
+			m.first)}
 	}
-	text := string(file.buf[m.lno])
-	l := NewLineRespMessage(text, m.fid, m.lno)
+	if m.first > uint64(len(file.buf)-1) {
+		return nil, &DviError{fmt.Sprintf("First is out of range: %d > %d", m.first,
+			len(file.buf)-1)}
+	}
+	if m.last > uint64(len(file.buf)-1) {
+		return nil, &DviError{fmt.Sprintf("First is out of range: %d > %d", m.last,
+			len(file.buf)-1)}
+	}
+
+	first, last := m.first, m.last
+	lnmap := make(map[uint64]string)
+	for i := first; i < uint64(len(file.buf)) && i < last+1; i++ {
+		lnmap[i] = string(file.buf[i])
+	}
+	l := NewLineRespMessage(lnmap, m.fid)
 	return l, nil
+}
+
+func (h *Host) insert(m *InsertMessage) (*InsertRespMessage, os.Error) {
+	return nil, nil
+}
+
+func (h *Host) newline(m *NewlineMessage) (*NewlineRespMessage, os.Error) {
+	return nil, nil
 }
 
 func (h *Host) close(m *CloseMessage) (*CloseRespMessage, os.Error) {

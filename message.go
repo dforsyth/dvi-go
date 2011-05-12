@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type Message interface {
@@ -37,20 +38,25 @@ func (m *OpenRespMessage) message() string {
 
 type LineRespMessage struct {
 	fid  uint64
-	lno  uint64
-	text string
+	lnmap map[uint64]string
 }
 
-func NewLineRespMessage(text string, fid, lno uint64) *LineRespMessage {
+func NewLineRespMessage(lnmap map[uint64]string, fid uint64) *LineRespMessage {
 	return &LineRespMessage{
 		fid,
-		lno,
-		text,
+		lnmap,
 	}
 }
 
 func (m *LineRespMessage) message() string {
-	return fmt.Sprintf("FID: %d: LINE: %d: %s", m.fid, m.lno, m.text)
+	rval := fmt.Sprintf("FID: %d", m.fid)
+	for k, v := range m.lnmap {
+		// have to do this out here because the compiler thinks k and v aren't used if we do
+		// this inside of the join call
+		arr := []string{rval, fmt.Sprintf("LINE: %d: %s", k, v)}
+		rval = strings.Join(arr, "\n")
+	}
+	return rval
 }
 
 type StatRespMessage struct {
@@ -103,6 +109,12 @@ func NewListRespMessage(files map[uint64]string) *ListRespMessage {
 	return l
 }
 
+type InsertRespMessage struct {
+}
+
+type NewlineRespMessage struct {
+}
+
 // commands from client
 
 type InsertMessage struct {
@@ -133,11 +145,11 @@ func (m *StatMessage) message() string {
 
 type LineMessage struct {
 	fid uint64
-	lno uint64
+	first, last uint64
 }
 
 func (m *LineMessage) message() string {
-	return fmt.Sprintf("LINE: FID: %d LNO: %d", m.fid, m.lno)
+	return fmt.Sprintf("LINE: FID: %d START: %d: FINISH: %d", m.fid, m.first, m.last)
 }
 
 type CloseMessage struct {
@@ -155,4 +167,7 @@ type ListMessage struct {
 
 func (m *ListMessage) message() string {
 	return "LIST"
+}
+
+type NewlineMessage struct {
 }

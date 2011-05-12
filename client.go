@@ -54,8 +54,8 @@ func (c *Client) open(pathname string) (*OpenRespMessage, os.Error) {
 }
 
 // Send a message to clients host asking for lno in file fid
-func (c *Client) line(fid, lno uint64) (*LineRespMessage, os.Error) {
-	l := &LineMessage{fid, lno}
+func (c *Client) line(fid, first, last uint64) (*LineRespMessage, os.Error) {
+	l := &LineMessage{fid, first, last}
 	c.send(l)
 	r := c.receive()
 	if r == nil {

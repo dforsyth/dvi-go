@@ -14,7 +14,7 @@ const (
 
 type Terminal struct {
 	fid     uint64
-	ln, col int
+	lno, col int
 	cache   map[uint64]string
 	client  *Client
 	x, y    int
@@ -29,7 +29,7 @@ func NewTerminal(client *Client) *Terminal {
 	t := new(Terminal)
 	t.client = client
 	t.cache = make(map[uint64]string)
-	t.ln, t.col = 0, 0
+	t.lno, t.col = 0, 0
 	t.fid = 0
 	t.q = list.New()
 	return t
@@ -45,19 +45,40 @@ func (t *Terminal) init() {
 	t.cwin = curses.Stdwin
 	t.x = *curses.Cols
 	t.y = *curses.Rows
-	t.ln = 0
-	t.col = 0
 	t.ex = false
 	t.q.Init()
 }
 
 func (t *Terminal) run() {
+	t.basicNm()
+}
+
+func (t *Terminal) basicNm() {
 	for {
 		t.display()
 		t.k = t.cwin.Getch()
 		switch t.k {
 		case ':':
 			t.basicEx()
+		case 'h':
+			if t.col-1 >= 0 {
+				t.col--
+			}
+		case 'j':
+			if _, e := t.fetch(uint64(t.lno+1)); e == nil {
+				t.lno++
+			}
+		case 'k':
+			if t.lno-1 >= 0 {
+				t.lno--
+				if s, _ := t.fetch(uint64(t.lno)); t.col >= len(s)-1 {
+					t.col = len(s)-1
+				}
+			}
+		case 'l':
+			if s, _ := t.fetch(uint64(t.lno)); t.col+1 < len(s)-1 {
+				t.col++
+			}
 		default:
 		}
 	}
@@ -143,7 +164,7 @@ lastline:
 		t.draw(0, t.y-1, ":"+t.exbuff)
 	} else {
 		t.draw(0, t.y-1, t.modeline())
-		t.cwin.Move(t.ln, t.col)
+		t.cwin.Move(t.lno, t.col)
 	}
 }
 
@@ -159,8 +180,8 @@ func (t *Terminal) fetch(lno uint64) (string, os.Error) {
 	if ln, ok := t.cache[lno]; ok {
 		return ln, nil
 	} else {
-		if lr, e := t.client.line(t.fid, lno); e == nil {
-			t.cache[lno] = lr.text
+		if lr, e := t.client.line(t.fid, lno, lno); e == nil {
+			t.cache[lno] = lr.lnmap[lno]
 			return t.cache[lno], nil
 		}
 	}
