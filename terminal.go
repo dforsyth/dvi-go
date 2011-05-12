@@ -71,7 +71,7 @@ func (t *Terminal) basicNm() {
 		case 'k':
 			if t.lno-1 >= 0 {
 				t.lno--
-				if s, _ := t.fetch(uint64(t.lno)); t.col >= len(s)-1 {
+				if s, _ := t.fetch(uint64(t.lno)); t.col > len(s)-1 {
 					t.col = len(s)-1
 				}
 			}
