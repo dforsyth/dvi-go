@@ -92,11 +92,16 @@ func (t *Terminal) basicEx() {
 		k := t.cwin.Getch()
 		if k == ESC {
 			break
+		} else if k == curses.KEY_BACKSPACE || k == 127 {
+			if len(t.exbuff) > 0 {
+				t.exbuff = t.exbuff[:len(t.exbuff)-1]
+			}
 		} else if k == 0xa || k == 0xd {
 			t.parseAndExecEx(t.exbuff)
 			break
+		} else {
+			t.exbuff += string(k)
 		}
-		t.exbuff += string(k)
 	}
 	t.ex = false
 }
