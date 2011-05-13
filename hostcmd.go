@@ -66,7 +66,7 @@ func (h *Host) line(m *LineMessage) (*LineRespMessage, os.Error) {
 	return l, nil
 }
 
-func (h *Host) insert(m *InsertMessage) (*InsertRespMessage, os.Error) {
+func (h *Host) update(m *UpdateMessage) (*UpdateRespMessage, os.Error) {
 	return nil, nil
 }
 

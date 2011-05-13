@@ -44,6 +44,10 @@ func (f *File) insert(ln, p int, b []byte) os.Error {
 	return nil
 }
 
+func (f *File) update(ln uint64, b []byte) os.Error {
+	return nil
+}
+
 func (f *File) newline(ln int) os.Error {
 	return nil
 }

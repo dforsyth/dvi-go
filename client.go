@@ -34,7 +34,7 @@ func (c *Client) receive() Message {
 
 // Send a message to clients host telling host to open up the file at pathname
 func (c *Client) open(pathname string) (*OpenRespMessage, os.Error) {
-	o := &OpenMessage{pathname}
+	o := &OpenMessage{pathname, false}
 	c.send(o)
 	r := c.receive()
 	if r == nil {

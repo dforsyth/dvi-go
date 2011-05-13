@@ -37,7 +37,7 @@ func (m *OpenRespMessage) message() string {
 }
 
 type LineRespMessage struct {
-	fid  uint64
+	fid   uint64
 	lnmap map[uint64]string
 }
 
@@ -109,26 +109,37 @@ func NewListRespMessage(files map[uint64]string) *ListRespMessage {
 	return l
 }
 
-type InsertRespMessage struct {
+type UpdateRespMessage struct {
+
+}
+
+func (m *UpdateRespMessage) message() string {
+	return ""
 }
 
 type NewlineRespMessage struct {
+
 }
 
 // commands from client
 
-type InsertMessage struct {
-	text     string
-	line     uint64
-	position uint64
+type UpdateMessage struct {
+	fid uint64
+	upd map[uint64]string
 }
 
-func (m *InsertMessage) message() string {
-	return fmt.Sprintf("INSERT %s @ LINE %d POSITION %d", m.text, m.line, m.position)
+func (m *UpdateMessage) message() string {
+	r := "UPDATE: FID: %d:"
+	for k, v := range m.upd {
+		arr := []string{r, fmt.Sprintf("LNO: %d: %s", k, v)}
+		r = strings.Join(arr, "\n")
+	}
+	return r
 }
 
 type OpenMessage struct {
 	pathname string
+	force    bool
 }
 
 func (m *OpenMessage) message() string {
@@ -144,7 +155,7 @@ func (m *StatMessage) message() string {
 }
 
 type LineMessage struct {
-	fid uint64
+	fid         uint64
 	first, last uint64
 }
 
@@ -170,4 +181,5 @@ func (m *ListMessage) message() string {
 }
 
 type NewlineMessage struct {
+
 }

@@ -13,16 +13,16 @@ const (
 )
 
 type Terminal struct {
-	fid     uint64
+	fid      uint64
 	lno, col int
-	cache   map[uint64]string
-	client  *Client
-	x, y    int
-	cwin    *curses.Window
-	k       int
-	ex      bool
-	exbuff  string
-	q       *list.List
+	cache    map[uint64]string
+	client   *Client
+	x, y     int
+	cwin     *curses.Window
+	k        int
+	ex       bool
+	exbuff   string
+	q        *list.List
 }
 
 func NewTerminal(client *Client) *Terminal {
@@ -65,14 +65,14 @@ func (t *Terminal) basicNm() {
 				t.col--
 			}
 		case 'j':
-			if _, e := t.fetch(uint64(t.lno+1)); e == nil {
+			if _, e := t.fetch(uint64(t.lno + 1)); e == nil {
 				t.lno++
 			}
 		case 'k':
 			if t.lno-1 >= 0 {
 				t.lno--
 				if s, _ := t.fetch(uint64(t.lno)); t.col > len(s)-1 {
-					t.col = len(s)-1
+					t.col = len(s) - 1
 				}
 			}
 		case 'l':
