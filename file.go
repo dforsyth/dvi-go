@@ -8,14 +8,12 @@ import (
 type File struct {
 	name  string // the identifying name on both the client and the host
 	fid   uint64
-	f     *os.File
 	buf   [][]byte
 	dirty bool
 }
 
 func NewFile(name string, f *os.File) (*File, os.Error) {
 	nf := new(File)
-	nf.f = f
 	nf.name = name
 	nf.fid = uint64(f.Fd())
 	if e := nf.read(f); e != nil {
@@ -25,11 +23,10 @@ func NewFile(name string, f *os.File) (*File, os.Error) {
 }
 
 func (f *File) close() {
-	f.f.Close()
 }
 
 func (f *File) fileInfo() (*os.FileInfo, os.Error) {
-	return f.f.Stat()
+	return os.Stat(f.name)
 }
 
 func (f *File) line(ln int) ([]byte, os.Error) {
@@ -77,6 +74,18 @@ func (f *File) read(fi *os.File) os.Error {
 	return nil
 }
 
-func (f *File) sync() os.Error {
-	return nil
+func (f *File) sync(fi *os.File) (uint64, os.Error) {
+	tw := uint64(0)
+	for _, ln := range f.buf {
+		if len(ln) > 0 && ln[len(ln)-1] != '\n' {
+			ln = append(ln, '\n')
+		}
+		if w, e := fi.Write(ln); e != nil {
+			return tw, e
+		} else {
+			tw += uint64(w)
+		}
+	}
+
+	return tw, nil
 }

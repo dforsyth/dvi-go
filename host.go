@@ -64,6 +64,13 @@ func (h *Host) serve() {
 				break
 			}
 			h.out <- r
+		case *SyncMessage:
+			r, e := h.sync(m)
+			if e != nil {
+				h.out <- ErrorResponse(e)
+				break
+			}
+			h.out <- r
 		default:
 			h.out <- ErrorResponse(&DviError{"unknown message"})
 		}

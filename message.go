@@ -117,8 +117,24 @@ func (m *UpdateRespMessage) message() string {
 	return ""
 }
 
+func NewUpdateRespMessage() *UpdateRespMessage {
+	return new(UpdateRespMessage)
+}
+
 type NewlineRespMessage struct {
 
+}
+
+type SyncRespMessage struct {
+	w uint64
+}
+
+func (m *SyncRespMessage) message() string {
+	return ""
+}
+
+func NewSyncRespMessage(w uint64) *SyncRespMessage {
+	return &SyncRespMessage{w}
 }
 
 // commands from client
@@ -182,4 +198,13 @@ func (m *ListMessage) message() string {
 
 type NewlineMessage struct {
 
+}
+
+type SyncMessage struct {
+	fid  uint64
+	path string
+}
+
+func (m *SyncMessage) message() string {
+	return ""
 }

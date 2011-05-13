@@ -72,6 +72,42 @@ func (c *Client) line(fid, first, last uint64) (*LineRespMessage, os.Error) {
 	return nil, nil
 }
 
+func (c *Client) update(fid uint64, upd map[uint64]string) (*UpdateRespMessage, os.Error) {
+	u := &UpdateMessage{fid, upd}
+	c.send(u)
+	r := c.receive()
+	if r == nil {
+		return nil, &DviError{"nil received"}
+	}
+	switch m := r.(type) {
+	case *UpdateRespMessage:
+		return m, nil
+	case *ErrorRespMessage:
+		return nil, &DviError{m.message()}
+	default:
+		return nil, &DviError{"Recieved unexpected Message type"}
+	}
+	return nil, nil
+}
+
+func (c *Client) sync(fid uint64) (*SyncRespMessage, os.Error) {
+	u := &SyncMessage{fid, ""}
+	c.send(u)
+	r := c.receive()
+	if r == nil {
+		return nil, &DviError{"nil received"}
+	}
+	switch m := r.(type) {
+	case *SyncRespMessage:
+		return m, nil
+	case *ErrorRespMessage:
+		return nil, &DviError{m.message()}
+	default:
+		return nil, &DviError{"Recieved unexpected Message type"}
+	}
+	return nil, nil
+}
+
 func (c *Client) stat(fid uint64) (*StatRespMessage, os.Error) {
 	s := &StatMessage{fid}
 	c.send(s)

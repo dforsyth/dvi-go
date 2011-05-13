@@ -13,22 +13,23 @@ const (
 )
 
 type Terminal struct {
-	fid      uint64
-	lno, col int
-	cache    map[uint64]string
-	client   *Client
-	x, y     int
-	cwin     *curses.Window
-	k        int
-	ex       bool
-	exbuff   string
-	q        *list.List
+	fid        uint64
+	lno, col   uint64
+	upd, cache map[uint64]string
+	client     *Client
+	x, y       int
+	cwin       *curses.Window
+	k          int
+	ex         bool
+	exbuff     string
+	q          *list.List
 }
 
 func NewTerminal(client *Client) *Terminal {
 	t := new(Terminal)
 	t.client = client
 	t.cache = make(map[uint64]string)
+	t.upd = make(map[uint64]string)
 	t.lno, t.col = 0, 0
 	t.fid = 0
 	t.q = list.New()
@@ -60,23 +61,25 @@ func (t *Terminal) basicNm() {
 		switch t.k {
 		case ':':
 			t.basicEx()
+		case 'i':
+			t.basicIn()
 		case 'h':
 			if t.col-1 >= 0 {
 				t.col--
 			}
 		case 'j':
-			if _, e := t.fetch(uint64(t.lno + 1)); e == nil {
+			if _, e := t.fetch(t.lno + 1); e == nil {
 				t.lno++
 			}
 		case 'k':
 			if t.lno-1 >= 0 {
 				t.lno--
-				if s, _ := t.fetch(uint64(t.lno)); t.col > len(s)-1 {
-					t.col = len(s) - 1
+				if s, _ := t.fetch(t.lno); t.col > uint64(len(s)-1) {
+					t.col = uint64(len(s) - 1)
 				}
 			}
 		case 'l':
-			if s, _ := t.fetch(uint64(t.lno)); t.col+1 < len(s)-1 {
+			if s, _ := t.fetch(t.lno); t.col+1 < uint64(len(s)-1) {
 				t.col++
 			}
 		default:
@@ -89,21 +92,39 @@ func (t *Terminal) basicEx() {
 	t.exbuff = ""
 	for {
 		t.display()
-		k := t.cwin.Getch()
-		if k == ESC {
-			break
-		} else if k == curses.KEY_BACKSPACE || k == 127 {
+		switch k := t.cwin.Getch(); k {
+		case ESC:
+			goto exit
+		case curses.KEY_BACKSPACE, 127:
 			if len(t.exbuff) > 0 {
 				t.exbuff = t.exbuff[:len(t.exbuff)-1]
 			}
-		} else if k == 0xa || k == 0xd {
+		case 0xa, 0xd:
 			t.parseAndExecEx(t.exbuff)
-			break
-		} else {
+			goto exit
+		default:
 			t.exbuff += string(k)
 		}
 	}
+exit:
 	t.ex = false
+}
+
+func (t *Terminal) basicIn() {
+	for {
+		t.display()
+		switch k := t.cwin.Getch(); k {
+		case ESC:
+			goto exit
+		default:
+			s, _ := t.fetch(t.lno)
+			l := s[:t.col] + string(k) + s[t.col:]
+			t.update(t.lno, l)
+			t.col++
+		}
+	}
+exit:
+	return
 }
 
 func (t *Terminal) parseAndExecEx(exbuff string) {
@@ -124,6 +145,19 @@ func (t *Terminal) parseAndExecEx(exbuff string) {
 			t.fid = o.fid
 		} else {
 			t.qmsg(e.String())
+		}
+	} else if len(exploded) == 1 && exploded[0] == "w" {
+		if _, e := t.client.update(t.fid, t.upd); e != nil {
+			panic(e.String())
+		} else {
+			for k, _ := range t.upd {
+				t.upd[k] = "", false
+			}
+		}
+		if s, e := t.client.sync(t.fid); e != nil {
+			panic(e.String())
+		} else {
+			t.qmsg(s.message())
 		}
 	}
 }
@@ -169,7 +203,8 @@ lastline:
 		t.draw(0, t.y-1, ":"+t.exbuff)
 	} else {
 		t.draw(0, t.y-1, t.modeline())
-		t.cwin.Move(t.lno, t.col)
+		// XXX needs to be relative
+		t.cwin.Move(int(t.lno), int(t.col))
 	}
 }
 
@@ -191,4 +226,10 @@ func (t *Terminal) fetch(lno uint64) (string, os.Error) {
 		}
 	}
 	return "", &DviError{"noline"}
+}
+
+func (t *Terminal) update(lno uint64, text string) {
+	// XXX add undo stack
+	t.cache[lno] = text
+	t.upd[lno] = t.cache[lno]
 }

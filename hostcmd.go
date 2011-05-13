@@ -11,6 +11,7 @@ func (h *Host) open(m *OpenMessage) (*OpenRespMessage, os.Error) {
 	if e != nil {
 		return nil, e
 	}
+	defer f.Close()
 
 	file, e := NewFile(path, f)
 	if e != nil {
@@ -67,11 +68,52 @@ func (h *Host) line(m *LineMessage) (*LineRespMessage, os.Error) {
 }
 
 func (h *Host) update(m *UpdateMessage) (*UpdateRespMessage, os.Error) {
-	return nil, nil
+	f, ok := h.files[m.fid]
+	if !ok {
+		return nil, &DviError{fmt.Sprintf("Fid %d not in files map")}
+	}
+
+	rb := make(map[uint64][]byte)
+	max := uint64(len(f.buf) - 1)
+	for lno, text := range m.upd {
+		if lno > max {
+			// rollback
+			return nil, &DviError{fmt.Sprintf("Line out of range: %d > %d", lno, max)}
+		}
+		rb[lno] = f.buf[lno]
+		f.buf[lno] = []byte(text)
+	}
+	return NewUpdateRespMessage(), nil
 }
 
 func (h *Host) newline(m *NewlineMessage) (*NewlineRespMessage, os.Error) {
 	return nil, nil
+}
+
+func (h *Host) sync(m *SyncMessage) (*SyncRespMessage, os.Error) {
+	file, ok := h.files[m.fid]
+	if !ok {
+		return nil, &DviError{fmt.Sprintf("Fid %d not in files map")}
+	}
+
+	path := file.name
+	if len(m.path) > 0 {
+		path = m.path
+	}
+
+	f, e := os.Create(path)
+	if e != nil {
+		return nil, e
+	}
+	defer f.Close()
+
+	w, e := file.sync(f)
+	if e != nil {
+		return nil, e
+	}
+	file.name = path
+
+	return NewSyncRespMessage(w), nil
 }
 
 func (h *Host) close(m *CloseMessage) (*CloseRespMessage, os.Error) {
