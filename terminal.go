@@ -62,7 +62,9 @@ func (t *Terminal) basicNm() {
 		case ':':
 			t.basicEx()
 		case 'i':
-			t.basicIn()
+			if t.fid > 0 {
+				t.basicIn()
+			}
 		case 'h':
 			if t.col-1 >= 0 {
 				t.col--
@@ -115,6 +117,13 @@ func (t *Terminal) basicIn() {
 		t.display()
 		switch k := t.cwin.Getch(); k {
 		case ESC:
+			if _, e := t.client.update(t.fid, t.upd); e == nil {
+				for k, _ := range t.upd {
+					t.upd[k] = "", false
+				}
+			} else {
+				t.pushMsg("update failed")
+			}
 			goto exit
 		default:
 			s, _ := t.fetch(t.lno)
@@ -170,7 +179,7 @@ func (t *Terminal) pushMsg(msg string) {
 	t.q.PushBack(msg)
 }
 
-func (t *Terminal) popMsg() string {
+func (t *Terminal) nextMsg() string {
 	if msg := t.q.Front(); msg != nil {
 		t.q.Remove(msg)
 		return msg.Value.(string)
@@ -179,7 +188,7 @@ func (t *Terminal) popMsg() string {
 }
 
 func (t *Terminal) modeline() string {
-	if msg := t.popMsg(); msg != "" {
+	if msg := t.nextMsg(); msg != "" {
 		return msg
 	}
 	return string(t.k)
