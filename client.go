@@ -1,12 +1,14 @@
 package main
 
 import (
+	"netchan"
 	"os"
 )
 
 type Client struct {
 	out chan Message
 	in  chan Message
+	imp *netchan.Importer
 }
 
 type DviError struct {
@@ -17,10 +19,19 @@ func (e *DviError) String() string {
 	return e.message
 }
 
-func NewClient(host *Host) *Client {
+func NewClient() *Client {
 	c := new(Client)
-	c.out = host.in
-	c.in = host.out
+	c.out = make(chan Message)
+	c.in = make(chan Message)
+
+	imp, e := netchan.Import("tcp", "localhost:4334")
+	if e != nil {
+		panic(e.String())
+	}
+	c.imp = imp
+	c.imp.Import("dviToHost", c.out, netchan.Send, 1)
+	c.imp.Import("dviToClient", c.in, netchan.Recv, 1)
+
 	return c
 }
 

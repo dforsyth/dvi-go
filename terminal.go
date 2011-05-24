@@ -122,7 +122,7 @@ func (t *Terminal) basicIn() {
 					t.upd[k] = "", false
 				}
 			} else {
-				t.pushMsg("update failed")
+				t.pushMsg(e.String())
 			}
 			goto exit
 		default:
