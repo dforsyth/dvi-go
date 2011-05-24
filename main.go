@@ -11,8 +11,8 @@ func main() {
 	flag.Parse()
 
 	h := NewHost()
-	c := NewClient(h)
-	go h.serve()
+	h.serve()
+	c := NewClient()
 
 	if !*noterm {
 		t := NewTerminal(c)
