@@ -3,6 +3,16 @@ include $(GOROOT)/src/Make.inc
 .DEFAULT_GOAL=  all
 
 TARG=   dvi
-GOFILES=    host.go client.go file.go main.go message.go hostcmd.go terminal.go
+GOFILES=    d.go \
+            disk.go \
+            gapbuffer.go \
+            global.go \
+            editbuffer.go \
+            editline.go \
+            ex.go \
+            input.go \
+            normal.go \
+            window.go \
+	    util.go
 
 include $(GOROOT)/src/Make.cmd
