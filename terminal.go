@@ -3,6 +3,7 @@ package main
 import (
 	"container/list"
 	"curses"
+	"log"
 	"os"
 	"strings"
 )
@@ -23,6 +24,7 @@ type Terminal struct {
 	ex         bool
 	exbuff     string
 	q          *list.List
+	log   *log.Logger
 }
 
 func NewTerminal(client *Client) *Terminal {
@@ -48,6 +50,8 @@ func (t *Terminal) init() {
 	t.y = *curses.Rows
 	t.ex = false
 	t.q.Init()
+
+	t.log = log.New(os.Stderr, "client", 0)
 }
 
 func (t *Terminal) run() {
@@ -151,7 +155,7 @@ func (t *Terminal) parseAndExecEx(exbuff string) {
 		}
 	} else if len(exploded) >= 2 && exploded[0] == "e" {
 		if o, e := t.client.open(exploded[1]); e == nil {
-			t.fid = o.fid
+			t.fid = o.Fid
 		} else {
 			t.qmsg(e.String())
 		}
@@ -230,7 +234,10 @@ func (t *Terminal) fetch(lno uint64) (string, os.Error) {
 		return ln, nil
 	} else {
 		if lr, e := t.client.line(t.fid, lno, lno); e == nil {
-			t.cache[lno] = lr.lnmap[lno]
+			if lr.Lnmap == nil {
+				return "", &DviError{"noline"}
+			}
+			t.cache[lno] = lr.Lnmap[lno]
 			return t.cache[lno], nil
 		}
 	}
@@ -238,7 +245,7 @@ func (t *Terminal) fetch(lno uint64) (string, os.Error) {
 }
 
 func (t *Terminal) update(lno uint64, text string) {
-	// XXX add undo stack
+	// XXX add undo stack (actually, that should probably be on host)
 	t.cache[lno] = text
 	t.upd[lno] = t.cache[lno]
 }

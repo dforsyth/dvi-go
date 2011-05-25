@@ -7,10 +7,19 @@ import (
 )
 
 type Host struct {
-	in    chan Message
-	out   chan Message
+	openrecv chan *OpenMessage
+	opensend chan *OpenRespMessage
+
+	linerecv chan *LineMessage
+	linesend chan *LineRespMessage
+
+	updaterecv chan *UpdateMessage
+	updatesend chan *UpdateRespMessage
+
 	log   *log.Logger
 	files map[uint64]*File
+
+	laddr string
 }
 
 func ErrorResponse(e os.Error) *ErrorRespMessage {
@@ -19,71 +28,63 @@ func ErrorResponse(e os.Error) *ErrorRespMessage {
 	}
 }
 
-func NewHost() *Host {
-	h := new(Host)
-	h.log = log.New(os.Stderr, "host", 0)
-	h.in = make(chan Message)
-	h.out = make(chan Message)
-	h.files = make(map[uint64]*File)
+func NewHost(laddr string) *Host {
+	h := &Host {
+		openrecv: make(chan *OpenMessage),
+		opensend: make(chan *OpenRespMessage),
+		linerecv: make(chan *LineMessage),
+		linesend: make(chan *LineRespMessage),
+		updaterecv: make(chan *UpdateMessage),
+		updatesend: make(chan *UpdateRespMessage),
+		files: make(map[uint64]*File),
+		log: log.New(os.Stderr, "host(" + laddr + ")", 0),
+		laddr: laddr,
+	}
+
 	return h
 }
 
 func (h *Host) serve() {
 	exp := netchan.NewExporter()
 
-	exp.Export("dviToHost", h.in, netchan.Recv)
-	exp.Export("dviToClient", h.out, netchan.Send)
+	exp.Export("open", h.openrecv, netchan.Recv)
+	exp.Export("openresp", h.opensend, netchan.Send)
 
-	exp.ListenAndServe("tcp", "localhost:4334")
+	exp.Export("line", h.linerecv, netchan.Recv)
+	exp.Export("lineresp", h.linesend, netchan.Send)
 
-	go func() {
-		for {
-			// wait for a command
-			switch c := <-h.in; m := c.(type) {
-			case *OpenMessage:
-				// fmt.Println(c.message())
-				r, e := h.open(m)
-				if e != nil {
-					// log.Panicln(e.String())
-					h.out <- ErrorResponse(e)
-					break
-				}
-				h.out <- r
-			case *StatMessage:
-				// fmt.Println(c.message())
-				r, e := h.stat(m)
-				if e != nil {
-					log.Panicln(e.String())
-					h.out <- nil
-				}
-				h.out <- r
-			case *LineMessage:
-				// fmt.Println(c.message())
-				r, e := h.line(m)
-				if e != nil {
-					// log.Panicln(e.String())
-					h.out <- ErrorResponse(e)
-					break
-				}
-				h.out <- r
-			case *UpdateMessage:
-				r, e := h.update(m)
-				if e != nil {
-					h.out <- ErrorResponse(e)
-					break
-				}
-				h.out <- r
-			case *SyncMessage:
-				r, e := h.sync(m)
-				if e != nil {
-					h.out <- ErrorResponse(e)
-					break
-				}
-				h.out <- r
-			default:
-				h.out <- ErrorResponse(&DviError{"unknown message"})
-			}
+	exp.Export("update", h.updaterecv, netchan.Recv)
+	exp.Export("updateresp", h.updatesend, netchan.Send)
+
+	exp.ListenAndServe("tcp", h.laddr)
+
+	var m Message
+	for {
+		select {
+		case m = <-h.openrecv:
+		case m = <-h.linerecv:
+		// case m = <-h.statrecv:
+		case m = <-h.updaterecv:
+		// case m = <-h.syncrecv:
 		}
-	}()
+
+		switch t := m.(type) {
+		case *OpenMessage:
+			r, _ := h.open(t)
+			h.opensend <- r
+		case *LineMessage:
+			r, _ := h.line(t)
+			h.linesend <- r
+		case *UpdateMessage:
+			h.log.Println("update message")
+			r, _ := h.update(t)
+			h.updatesend <- r
+			h.log.Println("update finished")
+		default:
+		}
+
+		h.log.Println(m.message())
+	}
+
 	return
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func (h *Host) open(m *OpenMessage) (*OpenRespMessage, os.Error) {
-	path := m.pathname
+	path := m.Pathname
 	f, e := os.Open(path)
 	if e != nil {
 		return nil, e
@@ -41,41 +41,41 @@ func (h *Host) stat(m *StatMessage) (*StatRespMessage, os.Error) {
 }
 
 func (h *Host) line(m *LineMessage) (*LineRespMessage, os.Error) {
-	file, ok := h.files[m.fid]
+	file, ok := h.files[m.Fid]
 	if !ok {
-		return nil, &DviError{fmt.Sprintf("Fid %d not in files map")}
+		return NewLineRespMessage(nil, m.Fid), &DviError{fmt.Sprintf("Fid %d not in files map")}
 	}
-	if m.last > m.first {
-		return nil, &DviError{fmt.Sprintf("Last and first out of order: %d > %d", m.last,
-			m.first)}
+	if m.Last > m.First {
+		return NewLineRespMessage(nil, m.Fid), &DviError{fmt.Sprintf("Last and first out of order: %d > %d", m.Last,
+			m.First)}
 	}
-	if m.first > uint64(len(file.buf)-1) {
-		return nil, &DviError{fmt.Sprintf("First is out of range: %d > %d", m.first,
+	if m.First > uint64(len(file.buf)-1) {
+		return NewLineRespMessage(nil, m.Fid), &DviError{fmt.Sprintf("First is out of range: %d > %d", m.First,
 			len(file.buf)-1)}
 	}
-	if m.last > uint64(len(file.buf)-1) {
-		return nil, &DviError{fmt.Sprintf("First is out of range: %d > %d", m.last,
+	if m.Last > uint64(len(file.buf)-1) {
+		return NewLineRespMessage(nil, m.Fid), &DviError{fmt.Sprintf("First is out of range: %d > %d", m.Last,
 			len(file.buf)-1)}
 	}
 
-	first, last := m.first, m.last
+	first, last := m.First, m.Last
 	lnmap := make(map[uint64]string)
 	for i := first; i < uint64(len(file.buf)) && i < last+1; i++ {
 		lnmap[i] = string(file.buf[i])
 	}
-	l := NewLineRespMessage(lnmap, m.fid)
+	l := NewLineRespMessage(lnmap, m.Fid)
 	return l, nil
 }
 
 func (h *Host) update(m *UpdateMessage) (*UpdateRespMessage, os.Error) {
-	f, ok := h.files[m.fid]
+	f, ok := h.files[m.Fid]
 	if !ok {
-		return nil, &DviError{fmt.Sprintf("Fid %d not in files map")}
+		return NewUpdateRespMessage(false), &DviError{fmt.Sprintf("Fid %d not in files map")}
 	}
 
 	rb := make(map[uint64][]byte)
 	max := uint64(len(f.buf) - 1)
-	for lno, text := range m.upd {
+	for lno, text := range m.Upd {
 		if lno > max {
 			// rollback
 			return nil, &DviError{fmt.Sprintf("Line out of range: %d > %d", lno, max)}
@@ -83,7 +83,7 @@ func (h *Host) update(m *UpdateMessage) (*UpdateRespMessage, os.Error) {
 		rb[lno] = f.buf[lno]
 		f.buf[lno] = []byte(text)
 	}
-	return NewUpdateRespMessage(), nil
+	return NewUpdateRespMessage(true), nil
 }
 
 func (h *Host) newline(m *NewlineMessage) (*NewlineRespMessage, os.Error) {

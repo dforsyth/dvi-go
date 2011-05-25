@@ -21,24 +21,24 @@ func (m *ErrorRespMessage) message() string {
 }
 
 type OpenRespMessage struct {
-	fid      uint64
-	pathname string
+	Fid      uint64
+	Pathname string
 }
 
 func NewOpenRespMessage(f *File) *OpenRespMessage {
 	m := new(OpenRespMessage)
-	m.fid = f.fid
-	m.pathname = f.name
+	m.Fid = f.fid
+	m.Pathname = f.name
 	return m
 }
 
 func (m *OpenRespMessage) message() string {
-	return fmt.Sprintf("OPEN %s : %d", m.pathname, m.fid)
+	return fmt.Sprintf("OPEN %s : %d", m.Pathname, m.Fid)
 }
 
 type LineRespMessage struct {
-	fid   uint64
-	lnmap map[uint64]string
+	Fid   uint64
+	Lnmap map[uint64]string
 }
 
 func NewLineRespMessage(lnmap map[uint64]string, fid uint64) *LineRespMessage {
@@ -49,8 +49,8 @@ func NewLineRespMessage(lnmap map[uint64]string, fid uint64) *LineRespMessage {
 }
 
 func (m *LineRespMessage) message() string {
-	rval := fmt.Sprintf("FID: %d", m.fid)
-	for k, v := range m.lnmap {
+	rval := fmt.Sprintf("FID: %d", m.Fid)
+	for k, v := range m.Lnmap {
 		// have to do this out here because the compiler thinks k and v aren't used if we do
 		// this inside of the join call
 		arr := []string{rval, fmt.Sprintf("LINE: %d: %s", k, v)}
@@ -110,15 +110,19 @@ func NewListRespMessage(files map[uint64]string) *ListRespMessage {
 }
 
 type UpdateRespMessage struct {
-
+	Success bool
 }
 
 func (m *UpdateRespMessage) message() string {
-	return ""
+	return fmt.Sprintf("UPDATE: SUCCESS: %T", m.Success)
 }
 
-func NewUpdateRespMessage() *UpdateRespMessage {
-	return new(UpdateRespMessage)
+func NewUpdateRespMessage(success bool) *UpdateRespMessage {
+	u := &UpdateRespMessage {
+		Success: success,
+	}
+
+	return u
 }
 
 type NewlineRespMessage struct {
@@ -140,13 +144,13 @@ func NewSyncRespMessage(w uint64) *SyncRespMessage {
 // commands from client
 
 type UpdateMessage struct {
-	fid uint64
-	upd map[uint64]string
+	Fid uint64
+	Upd map[uint64]string
 }
 
 func (m *UpdateMessage) message() string {
-	r := "UPDATE: FID: %d:"
-	for k, v := range m.upd {
+	r := fmt.Sprintf("UPDATE: FID: %d:", m.Fid)
+	for k, v := range m.Upd {
 		arr := []string{r, fmt.Sprintf("LNO: %d: %s", k, v)}
 		r = strings.Join(arr, "\n")
 	}
@@ -154,12 +158,12 @@ func (m *UpdateMessage) message() string {
 }
 
 type OpenMessage struct {
-	pathname string
-	force    bool
+	Pathname string
+	Force    bool
 }
 
 func (m *OpenMessage) message() string {
-	return fmt.Sprintf("OPEN: %s", m.pathname)
+	return fmt.Sprintf("OPEN: %s", m.Pathname)
 }
 
 type StatMessage struct {
@@ -171,12 +175,12 @@ func (m *StatMessage) message() string {
 }
 
 type LineMessage struct {
-	fid         uint64
-	first, last uint64
+	Fid         uint64
+	First, Last uint64
 }
 
 func (m *LineMessage) message() string {
-	return fmt.Sprintf("LINE: FID: %d START: %d: FINISH: %d", m.fid, m.first, m.last)
+	return fmt.Sprintf("LINE: FID: %d START: %d: FINISH: %d", m.Fid, m.First, m.Last)
 }
 
 type CloseMessage struct {
