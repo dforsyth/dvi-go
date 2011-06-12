@@ -16,14 +16,14 @@ type CmdArgs struct {
 
 func cmdBackwards(a *CmdArgs) {
 	f := a.s.f
-	for i := a.c1; i > 0; i-- {
+	for i := a.c1; i > 0 && f.pos.off > 0; i-- {
 		f.pos = prevChar(*f.pos)
 	}
 }
 
 func cmdForwards(a *CmdArgs) {
 	f := a.s.f
-	for i := a.c1; i > 0; i-- {
+	for i := a.c1; i > 0 && f.pos.off < len(f.pos.line.text)-1; i-- {
 		f.pos = nextChar(*f.pos)
 	}
 }

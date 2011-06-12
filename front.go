@@ -36,6 +36,9 @@ func insertmode(s *State) {
 		k := s.w.Getch()
 		switch k {
 		case 27:
+			if p := prevChar(*s.f.pos); p.line == s.f.pos.line {
+				s.f.pos = p
+			}
 			return
 		case ctrl('H'), 127, curses.KEY_BACKSPACE:
 			s.f.pos = remove(*prevChar(*s.f.pos), *s.f.pos)
@@ -94,8 +97,7 @@ func main() {
 		c.c2 = 0
 	}
 
-	var cmdargs CmdArgs
-
+	cmdargs := &CmdArgs{}
 	for {
 		k := s.w.Getch()
 
@@ -106,7 +108,7 @@ func main() {
 		}
 
 		if cmd, ok := vicmds[k]; ok {
-			resetargs(&cmdargs)
+			resetargs(cmdargs)
 			if count != 0 {
 				cmdargs.c1 = count
 				count = 0
@@ -118,7 +120,7 @@ func main() {
 
 			// execute the command
 			cmdargs.s = s
-			cmd.fn(&cmdargs)
+			cmd.fn(cmdargs)
 		} else {
 			curses.Beep()
 		}

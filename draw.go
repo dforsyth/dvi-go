@@ -123,4 +123,3 @@ func draw(s *State) os.Error {
 
 	return nil
 }
-
