@@ -1,18 +1,8 @@
 include $(GOROOT)/src/Make.inc
-
-.DEFAULT_GOAL=  all
-
-TARG=   dvi
-GOFILES=    d.go \
-            disk.go \
-            gapbuffer.go \
-            global.go \
-            editbuffer.go \
-            editline.go \
-            ex.go \
-            input.go \
-            normal.go \
-            window.go \
-	    util.go
+# 1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
+.DEFAULT_GOAL=	all
+TARG=	dvi
+GOFILES=	file.go front.go draw.go vicmds.go edit.go position.go
 
 include $(GOROOT)/src/Make.cmd
+
