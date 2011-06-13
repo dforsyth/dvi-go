@@ -40,6 +40,10 @@ func cmdDown(a *CmdArgs) {
 	for i := a.c1; i > 0; i-- {
 		f.pos = nextLine(*f.pos)
 	}
+	// XXX this needs to be visually oriented
+	if f.pos.off > len(f.pos.line.text) - 1 {
+		f.pos.off = len(f.pos.line.text) - 1
+	}
 }
 
 func cmdInsert(a *CmdArgs) {
@@ -48,7 +52,9 @@ func cmdInsert(a *CmdArgs) {
 
 func cmdAppend(a *CmdArgs) {
 	f := a.s.f
-	f.pos = nextChar(*f.pos)
+	if p := nextChar(*f.pos); p.line == f.pos.line {
+		f.pos = p
+	}
 	insertmode(a.s)
 	for i := a.c1; i > 0; i-- {
 		// append what happened a.c1 times...
@@ -142,3 +148,4 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 		motion: false,
 	},
 }
+
