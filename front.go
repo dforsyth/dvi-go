@@ -26,6 +26,13 @@ func message(s *State) string {
 func (s *State) queueMsg(msg string, colors int32, beep bool) {
 }
 
+var worddelim map[byte]interface{} = map[byte]interface{} {
+	' ': nil,
+	'\n': nil,
+	'\t': nil,
+	'\r': nil,
+}
+
 func ctrl(k int) int {
 	return k & 0x1F
 }
@@ -148,14 +155,16 @@ func exmode(s *State) {
 				endscreen()
 				syscall.Exit(0)
 			} else if i, e := strconv.Atoi(string(buf)); e == nil {
-				l := s.f.pos.line
-				for i > 0 && l != nil {
+				l := s.f.first
+				for i > 1 && l != nil {
 					l = l.next
 					i--
 				}
-				if i == 0 {
+				if i == 1 {
 					s.f.pos.line = l
 					s.f.pos.off = 0
+				} else {
+					// error
 				}
 			}
 			s.msg = old
