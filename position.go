@@ -75,9 +75,10 @@ func nextLine(p Position) *Position {
 }
 
 func eol(f *File) {
-	f.pos.off = len(f.pos.line.text)
+	f.pos.off = len(f.pos.line.text) - 1
 }
 
 func bol(f *File) {
 	f.pos.off = 0
 }
+

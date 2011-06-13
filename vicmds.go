@@ -70,6 +70,10 @@ func cmdEOL(a *CmdArgs) {
 	eol(a.s.f)
 }
 
+func cmdBOL(a *CmdArgs) {
+	bol(a.s.f)
+}
+
 func cmdPrevWord(a *CmdArgs) {
 }
 
@@ -98,6 +102,9 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	},
 	':': &vicmd{
 		fn: cmdEx,
+	},
+	'0': &vicmd {
+		fn: cmdBOL,
 	},
 	'a': &vicmd{
 		fn:        cmdAppend,
@@ -148,4 +155,5 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 		motion: false,
 	},
 }
+
 
