@@ -102,7 +102,15 @@ func (f *File) writeFile() os.Error {
 	}
 	defer wf.Close()
 	for l := f.first; l != nil; l = l.next {
-		wf.Write(append(l.text, '\n'))
+		if l.next != nil {
+			if _, e := wf.Write(append(l.text, '\n')); e != nil {
+				return e
+			}
+		} else {
+			if _, e := wf.Write(l.text); e != nil {
+				return e
+			}
+		}
 	}
 	return nil
 }

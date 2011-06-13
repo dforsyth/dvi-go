@@ -81,4 +81,3 @@ func eol(f *File) {
 func bol(f *File) {
 	f.pos.off = 0
 }
-

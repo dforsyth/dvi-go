@@ -43,7 +43,9 @@ func remove(a, b Position) *Position {
 			a.line.next.prev = a.line
 		}
 		a.line.text = append(a.line.text[:a.off], b.line.text[b.off:]...)
-		b.line.next.prev = a.line
+		if b.line.next != nil {
+			b.line.next.prev = a.line
+		}
 		a.line.next = b.line.next
 	}
 	return &a

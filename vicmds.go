@@ -33,6 +33,13 @@ func cmdUp(a *CmdArgs) {
 	for i := a.c1; i > 0; i-- {
 		f.pos = prevLine(*f.pos)
 	}
+	// XXX this needs to be visually oriented
+	if f.pos.off > len(f.pos.line.text)-1 {
+		f.pos.off = len(f.pos.line.text) - 1
+		if f.pos.off < 0 {
+			f.pos.off = 0
+		}
+	}
 }
 
 func cmdDown(a *CmdArgs) {
@@ -41,8 +48,11 @@ func cmdDown(a *CmdArgs) {
 		f.pos = nextLine(*f.pos)
 	}
 	// XXX this needs to be visually oriented
-	if f.pos.off > len(f.pos.line.text) - 1 {
+	if f.pos.off > len(f.pos.line.text)-1 {
 		f.pos.off = len(f.pos.line.text) - 1
+		if f.pos.off < 0 {
+			f.pos.off = 0
+		}
 	}
 }
 
@@ -103,7 +113,7 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	':': &vicmd{
 		fn: cmdEx,
 	},
-	'0': &vicmd {
+	'0': &vicmd{
 		fn: cmdBOL,
 	},
 	'a': &vicmd{
@@ -155,5 +165,3 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 		motion: false,
 	},
 }
-
-
