@@ -68,19 +68,15 @@ func cmdInsert(a *CmdArgs) {
 }
 
 func cmdAppend(a *CmdArgs) {
-	f := a.s.f
-	if p := nextChar(*f.pos); p.line == f.pos.line {
-		f.pos = p
+	if p := nextChar(*a.s.f.pos); p.line == a.s.f.pos.line {
+		a.s.f.pos = p
 	}
-	insertmode(a.s)
-	for i := a.c1; i > 0; i-- {
-		// append what happened a.c1 times...
-	}
+	cmdInsert(a)
 }
 
 func cmdAppendEOL(a *CmdArgs) {
 	eol(a.s.f)
-	insertmode(a.s)
+	cmdInsert(a)
 }
 
 func cmdEOL(a *CmdArgs) {
@@ -136,7 +132,7 @@ func cmdInsertLineBelow(a *CmdArgs) {
 	insertLineBelow(a.s.f.pos.line, l)
 	a.s.f.pos.line = l
 	a.s.f.pos.off = 0
-	insertmode(a.s)
+	cmdInsert(a)
 }
 
 func cmdInsertLineAbove(a *CmdArgs) {
@@ -144,7 +140,7 @@ func cmdInsertLineAbove(a *CmdArgs) {
 	insertLineAbove(a.s.f.pos.line, l)
 	a.s.f.pos.line = l
 	a.s.f.pos.off = 0
-	insertmode(a.s)
+	cmdInsert(a)
 }
 
 func cmdEx(a *CmdArgs) {
