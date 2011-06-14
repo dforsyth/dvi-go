@@ -115,7 +115,7 @@ func cmdToLine(a *CmdArgs) {
 			a.s.f.pos.off = 0
 		}
 	} else {
-		for l != nil {
+		for l.next != nil {
 			l = l.next
 		}
 		a.s.f.pos.line = l
@@ -168,6 +168,7 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	},
 	'G': &vicmd {
 		fn: cmdToLine,
+		zerocount: true,
 	},
 	'h': &vicmd{
 		fn:     cmdBackwards,

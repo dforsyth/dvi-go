@@ -120,7 +120,11 @@ func main() {
 				cmdargs.c1 = count
 				count = 0
 			} else {
-				cmdargs.c1 = 1
+				if !cmd.zerocount {
+					cmdargs.c1 = 1
+				} else {
+					cmdargs.c1 = 0
+				}
 			}
 			if cmd.motion {
 			}
