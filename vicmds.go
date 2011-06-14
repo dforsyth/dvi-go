@@ -102,6 +102,28 @@ func cmdEndOfWord(a *CmdArgs) {
 func cmdEndOfBigWord(a *CmdArgs) {
 }
 
+func cmdToLine(a *CmdArgs) {
+	l := a.s.f.first
+	c := a.c1
+	if c != 0 {
+		for c > 1 && l != nil {
+			l = l.next
+			c--
+		}
+		if c == 1 {
+			a.s.f.pos.line = l
+			a.s.f.pos.off = 0
+		}
+	} else {
+		for l != nil {
+			l = l.next
+		}
+		a.s.f.pos.line = l
+		a.s.f.pos.off = 0
+	}
+	// center line on screen
+}
+
 func cmdEx(a *CmdArgs) {
 	exmode(a.s)
 }
@@ -143,6 +165,9 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	},
 	'E': &vicmd{
 		fn: cmdEndOfBigWord,
+	},
+	'G': &vicmd {
+		fn: cmdToLine,
 	},
 	'h': &vicmd{
 		fn:     cmdBackwards,
