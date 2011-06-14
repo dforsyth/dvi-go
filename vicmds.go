@@ -124,6 +124,22 @@ func cmdToLine(a *CmdArgs) {
 	// center line on screen
 }
 
+func cmdInsertLineBelow(a *CmdArgs) {	
+	l := NewLine([]byte{})
+	insertLineBelow(a.s.f.pos.line, l)
+	a.s.f.pos.line = l
+	a.s.f.pos.off = 0
+	insertmode(a.s)
+}
+
+func cmdInsertLineAbove(a *CmdArgs) {
+	l := NewLine([]byte{})
+	insertLineAbove(a.s.f.pos.line, l)
+	a.s.f.pos.line = l
+	a.s.f.pos.off = 0
+	insertmode(a.s)
+}
+
 func cmdEx(a *CmdArgs) {
 	exmode(a.s)
 }
@@ -189,5 +205,14 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	'l': &vicmd{
 		fn:     cmdForwards,
 		motion: false,
+	},
+	'm': nil,
+	'o': &vicmd{
+		fn: cmdInsertLineBelow,
+		zerocount: true,
+	},
+	'O': &vicmd{
+		fn: cmdInsertLineAbove,
+		zerocount: true,
 	},
 }

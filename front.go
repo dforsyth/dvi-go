@@ -12,6 +12,7 @@ import (
 type State struct {
 	f       *File
 	w       *curses.Window
+	lastcmd int
 	msg     *[]byte
 	lastkey int
 	currx   int

@@ -20,17 +20,38 @@ func add(p Position, text []byte) *Position {
 			linetext := p.line.text
 			l := NewLine(linetext[p.off:])
 			p.line.text = linetext[:p.off]
+			/*
 			if p.line.next != nil {
 				p.line.next.prev = l
 				l.next = p.line.next
 			}
 			l.prev = p.line
 			p.line.next = l
+			*/
+			insertLineBelow(p.line, l)
 			p.line = l
 			p.off = 0
 		}
 	}
 	return &p
+}
+
+func insertLineBelow(l, n *Line) {
+	if l.next != nil {
+		l.next.prev = n
+		n.next = l.next
+	}
+	n.prev = l
+	l.next = n
+}
+
+func insertLineAbove(l, n *Line) {
+	if l.prev != nil {
+		l.prev.next = n
+		n.prev = l.prev
+	}
+	n.next = l
+	l.prev = n
 }
 
 // remove text between a and b.  return position the text was remove from.
