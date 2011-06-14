@@ -70,6 +70,7 @@ func NewFile(path string) *File {
 	nf.appendLine(NewLine([]byte{}))
 	nf.pos.line = nf.first
 	nf.pos.off = 0
+	nf.dirty = false
 	return nf
 }
 

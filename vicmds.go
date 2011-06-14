@@ -6,7 +6,7 @@ type vicmd struct {
 	fn        func(*CmdArgs)
 	motion    bool // need motion
 	rw        bool // test writable
-	zerocount bool
+	zerocount bool // count default is zero instead of 1
 }
 
 type CmdArgs struct {
@@ -166,8 +166,8 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	'E': &vicmd{
 		fn: cmdEndOfBigWord,
 	},
-	'G': &vicmd {
-		fn: cmdToLine,
+	'G': &vicmd{
+		fn:        cmdToLine,
 		zerocount: true,
 	},
 	'h': &vicmd{

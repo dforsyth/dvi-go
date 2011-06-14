@@ -26,8 +26,8 @@ func message(s *State) string {
 func (s *State) queueMsg(msg string, colors int32, beep bool) {
 }
 
-var worddelim map[byte]interface{} = map[byte]interface{} {
-	' ': nil,
+var worddelim map[byte]interface{} = map[byte]interface{}{
+	' ':  nil,
 	'\n': nil,
 	'\t': nil,
 	'\r': nil,
@@ -51,6 +51,7 @@ func insertmode(s *State) {
 			s.f.pos = remove(*prevChar(*s.f.pos), *s.f.pos)
 		default:
 			s.f.insert([]byte{byte(k)})
+			s.f.dirty = true
 		}
 	}
 }
@@ -155,7 +156,12 @@ func exmode(s *State) {
 		case 0xd, 0xa, curses.KEY_ENTER:
 			if string(buf) == "w" {
 				s.f.writeFile()
-			} else if string(buf) == "q" {
+				s.f.dirty = false
+			} else if string(buf) == "q" || string(buf) == "q!" {
+				if s.f.dirty && string(buf) != "q!" {
+					curses.Beep()
+					return
+				}
 				endscreen()
 				syscall.Exit(0)
 			} else if i, e := strconv.Atoi(string(buf)); e == nil {
