@@ -57,7 +57,14 @@ func cmdDown(a *CmdArgs) {
 }
 
 func cmdInsert(a *CmdArgs) {
+	s := *a.s.f.pos
 	insertmode(a.s)
+	if a.c1 > 0 {
+		text := get(&s, a.s.f.pos)
+		for i := a.c1; i > 0; i-- {
+			a.s.f.pos = add(*a.s.f.pos, text)
+		}
+	}
 }
 
 func cmdAppend(a *CmdArgs) {

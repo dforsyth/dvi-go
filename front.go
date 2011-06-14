@@ -48,6 +48,8 @@ func insertmode(s *State) {
 				s.f.pos = p
 			}
 			return
+		case curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_UP, curses.KEY_DOWN:
+			curses.Beep()
 		case ctrl('H'), 127, curses.KEY_BACKSPACE:
 			s.f.pos = remove(*prevChar(*s.f.pos), *s.f.pos)
 		default:
