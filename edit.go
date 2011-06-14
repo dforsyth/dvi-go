@@ -21,12 +21,12 @@ func add(p Position, text []byte) *Position {
 			l := NewLine(linetext[p.off:])
 			p.line.text = linetext[:p.off]
 			/*
-			if p.line.next != nil {
-				p.line.next.prev = l
-				l.next = p.line.next
-			}
-			l.prev = p.line
-			p.line.next = l
+				if p.line.next != nil {
+					p.line.next.prev = l
+					l.next = p.line.next
+				}
+				l.prev = p.line
+				p.line.next = l
 			*/
 			insertLineBelow(p.line, l)
 			p.line = l

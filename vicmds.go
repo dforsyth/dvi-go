@@ -124,7 +124,7 @@ func cmdToLine(a *CmdArgs) {
 	// center line on screen
 }
 
-func cmdInsertLineBelow(a *CmdArgs) {	
+func cmdInsertLineBelow(a *CmdArgs) {
 	l := NewLine([]byte{})
 	insertLineBelow(a.s.f.pos.line, l)
 	a.s.f.pos.line = l
@@ -208,11 +208,11 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	},
 	'm': nil,
 	'o': &vicmd{
-		fn: cmdInsertLineBelow,
+		fn:        cmdInsertLineBelow,
 		zerocount: true,
 	},
 	'O': &vicmd{
-		fn: cmdInsertLineAbove,
+		fn:        cmdInsertLineAbove,
 		zerocount: true,
 	},
 }
