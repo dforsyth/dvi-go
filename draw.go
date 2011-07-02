@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func initscreen(s *State) {
+func initscreen(s *Dvi) {
 	curses.Initscr()
 	curses.Cbreak()
 	curses.Noecho()
@@ -15,6 +15,7 @@ func initscreen(s *State) {
 
 	s.w = curses.Stdwin
 	curses.Init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
+	curses.Init_pair(2, curses.COLOR_RED, curses.COLOR_WHITE)
 }
 
 func endscreen() {
@@ -29,13 +30,12 @@ func charlen(c byte) int {
 }
 
 func screenlines(l *Line) int {
-	// TODO this fn
 	return 1
 }
 
-func draw(s *State) os.Error {
+func draw(d *Dvi) os.Error {
 
-	f := s.f
+	f := d.b
 	if f == nil {
 		return nil
 	}
@@ -62,10 +62,11 @@ func draw(s *State) os.Error {
 	cursory := 0
 	cursorx := 0
 	str := ""
-	for y, l := 0, f.disp; y < *curses.Rows-1 && l != nil; y, l = y+1, l.next {
+	y := 0
+	for l := f.disp; y < *curses.Rows-1 && l != nil; y, l = y+1, l.next {
 		x := 0
-		s.w.Move(y, 0)
-		s.w.Clrtoeol()
+		d.w.Move(y, 0)
+		d.w.Clrtoeol()
 
 		if l == f.pos.line {
 			cursory = y
@@ -90,36 +91,47 @@ func draw(s *State) os.Error {
 			if x > *curses.Cols-1 {
 				y++
 				x = 0
-				s.w.Move(y, 0)
-				s.w.Clrtoeol()
+				d.w.Move(y, 0)
+				d.w.Clrtoeol()
 			}
 			for i := x; i < x+charlen(c); i++ {
-				s.w.Mvwaddch(y, i, int32(c), colors)
+				d.w.Mvwaddch(y, i, int32(c), colors)
 			}
 			x += charlen(c)
 		}
 		if colors != 0 {
 			for ; x < *curses.Cols; x++ {
-				s.w.Mvwaddch(y, x, int32(' '), colors)
+				d.w.Mvwaddch(y, x, int32(' '), colors)
 			}
 		}
 	}
 
-	s.currx = cursorx
-	s.curry = cursory
+	for ; y < *curses.Rows-1; y++ {
+		d.w.Move(y, 0)
+		d.w.Clrtoeol()
+		d.w.Mvwaddch(y, 0, int32('~'), 0)
+	}
+
+	d.currx = cursorx
+	d.curry = cursory
 
 	msg := ""
-	if s.msg == nil {
-		msg = message(s) + " " + str
+	if d.msg == nil {
+		msg = message(d) + " " + str
 	} else {
-		msg = ":" + string(*s.msg)
+		msg = ":" + d.msg.message
+		d.msg = nil
 	}
-	s.w.Move(*curses.Rows-1, 0)
-	s.w.Clrtoeol()
-	s.w.Mvwaddnstr(*curses.Rows-1, 0, msg, *curses.Cols)
+	d.w.Move(*curses.Rows-1, 0)
+	d.w.Clrtoeol()
 
-	s.w.Move(cursory, cursorx)
-	s.w.Refresh()
+	for i := 0; i < *curses.Cols && i < len(msg); i++ {
+		d.w.Mvwaddch(*curses.Rows-1, i, int32(msg[i]), curses.Color_pair(2))
+	}
+	// s.w.Mvwaddnstr(*curses.Rows-1, 0, msg, *curses.Cols)
+
+	d.w.Move(cursory, cursorx)
+	d.w.Refresh()
 
 	return nil
 }
