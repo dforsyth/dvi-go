@@ -77,4 +77,12 @@ func emacs(d *Dvi) {
 
 func gdb(d *Dvi) {
 	// not implemented
+	for {
+		draw(d)
+		switch k := getC(d); k {
+		case ctrl('B'):
+			// un/set breakpoint
+		default:
+		}
+	}
 }

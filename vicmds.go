@@ -2,6 +2,8 @@ package main
 
 // XXX Some position pointers in these commands are NOT COPIED.  FIX!!!
 
+// XXX: delete/yank/put is busted.
+
 import (
 	"os"
 )
@@ -307,6 +309,7 @@ func cmdPut(a *CmdArgs) (*Position, os.Error) {
 func cmdNextWord(a *CmdArgs) (*Position, os.Error) {
 	// TODO: Add next/prevword to position api
 	// TODO: Account for error conditions
+	// TODO: fix implementation
 	p := a.start
 	for i := a.c1; i > 0; i-- {
 		for {

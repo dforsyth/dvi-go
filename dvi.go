@@ -38,7 +38,7 @@ type Dvi struct {
 
 type DviMessage struct {
 	message string
-	color   int32
+	color   int
 	beep    bool
 }
 
@@ -47,7 +47,7 @@ func message(s *Dvi) string {
 		s.b.pos.off, s.curry)
 }
 
-func (d *Dvi) queueMsg(msg string, colors int32, beep bool) {
+func (d *Dvi) queueMsg(msg string, colors int, beep bool) {
 	d.msg = &DviMessage{
 		msg,
 		colors,
@@ -60,6 +60,13 @@ var breakchars map[int]interface{} = map[int]interface{}{
 	'\n': nil,
 	'\t': nil,
 	'\r': nil,
+	'(':  nil,
+	')':  nil,
+	'[':  nil,
+	']':  nil,
+	'/':  nil,
+	'\\': nil,
+	'.':  nil,
 }
 
 func validBufName(n byte) bool {
@@ -188,7 +195,7 @@ func commandmode(d *Dvi) {
 						// error reporting should be set up in the cmd fn
 					}
 				} else {
-					d.queueMsg(fmt.Sprintf("%c is not a valid motion", mk), 1, true)
+					d.queueMsg(fmt.Sprintf("%c is not a valid motion", mk), 2, true)
 				}
 			}
 
@@ -200,7 +207,7 @@ func commandmode(d *Dvi) {
 				d.b.pos = p
 			}
 		} else {
-			d.queueMsg(fmt.Sprintf("%c is not a dvi command", k), 1, true)
+			d.queueMsg(fmt.Sprintf("%c is not a dvi command", k), 2, true)
 		}
 
 		count = 0

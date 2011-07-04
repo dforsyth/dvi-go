@@ -16,6 +16,7 @@ func initscreen(s *Dvi) {
 	s.w = curses.Stdwin
 	curses.Init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
 	curses.Init_pair(2, curses.COLOR_RED, curses.COLOR_WHITE)
+	curses.Init_pair(3, curses.COLOR_BLACK, curses.COLOR_YELLOW)
 }
 
 func endscreen() {
@@ -116,21 +117,28 @@ func draw(d *Dvi) os.Error {
 	d.curry = cursory
 
 	msg := ""
+	mcolor := 3
+	beep := false
 	if d.msg == nil {
 		msg = message(d) + " " + str
 	} else {
 		msg = ":" + d.msg.message
+		mcolor = d.msg.color
+		beep = d.msg.beep
 		d.msg = nil
 	}
 	d.w.Move(*curses.Rows-1, 0)
 	d.w.Clrtoeol()
 
 	for i := 0; i < *curses.Cols && i < len(msg); i++ {
-		d.w.Mvwaddch(*curses.Rows-1, i, int32(msg[i]), curses.Color_pair(2))
+		d.w.Mvwaddch(*curses.Rows-1, i, int32(msg[i]), curses.Color_pair(mcolor))
 	}
 	// s.w.Mvwaddnstr(*curses.Rows-1, 0, msg, *curses.Cols)
 
 	d.w.Move(cursory, cursorx)
+	if beep {
+		curses.Beep()
+	}
 	d.w.Refresh()
 
 	return nil
