@@ -130,7 +130,7 @@ func commandmode(d *Dvi) {
 		k := getC(d)
 		if (k >= '1' && k <= '9') || (count != 0 && k == '0') {
 			count *= 10
-			count += k-'0'
+			count += k - '0'
 			continue
 		}
 
@@ -140,7 +140,7 @@ func commandmode(d *Dvi) {
 			if count != 0 {
 				ca.c1 = count
 			} else if !cmd.zerocount {
-					ca.c1 = 1
+				ca.c1 = 1
 			}
 
 			ca.start = &(*d.b.pos)
@@ -152,7 +152,7 @@ func commandmode(d *Dvi) {
 				mk := getC(d)
 				if (mk >= '1' && mk <= '9') || (mcount != 0 && mk == '0') {
 					mcount *= 10
-					mcount += mk-'0'
+					mcount += mk - '0'
 					continue
 				}
 				resetCmdArgs(ma)
