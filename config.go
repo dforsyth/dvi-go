@@ -8,8 +8,7 @@ import (
 func dirmode(d *Dvi) *Buffer {
 	for {
 		draw(d)
-		k := d.w.Getch()
-		switch k {
+		switch k := getC(d); k {
 		case 'j':
 			d.b.pos = nextLine(*d.b.pos)
 		case 'k':
@@ -61,7 +60,7 @@ func directoryBrowser(d *Dvi, path string) {
 func emacs(d *Dvi) {
 	for {
 		draw(d)
-		switch k := d.w.Getch(); k {
+		switch k := getC(d); k {
 		case ctrl('N'):
 			d.b.pos = nextLine(*d.b.pos)
 		case ctrl('P'):
@@ -74,4 +73,8 @@ func emacs(d *Dvi) {
 			d.b.pos = d.b.add(*d.b.pos, []byte{byte(k)})
 		}
 	}
+}
+
+func gdb(d *Dvi) {
+	// not implemented
 }

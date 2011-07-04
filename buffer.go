@@ -12,6 +12,7 @@ type Line struct {
 	next    *Line
 	prev    *Line
 	dirty   bool
+	// attributes
 }
 
 func (l *Line) length() int {
@@ -130,8 +131,9 @@ func (b *Buffer) add(p Position, text []byte) *Position {
 	return &p
 }
 
-// This probably shouldn't take pointers...
-func (b *Buffer) remove(start, end *Position, line bool) *Position {
+func (b *Buffer) remove(start, end Position, line bool) *Position {
+	// XXX This function returns b.pos.  It should actually just return the first safe 
+	// position after (or before) the removed chunk.
 	if start.line == end.line && !line {
 		start.line.text = append(start.line.text[:start.off], start.line.text[end.off:]...)
 		return &Position{
@@ -141,8 +143,8 @@ func (b *Buffer) remove(start, end *Position, line bool) *Position {
 	} else {
 		if !line {
 			// If we aren't in line mode, check if only the 0th char is marked by end.
-			// If it is, move back to the end of the prev, because we don't actua want
-			// to delete the line.
+			// If it is, move back to the end of the prev, because we don't actually
+			// want to delete the line.
 			if end.off == 0 {
 				end.line = end.line.prev
 				end.off = end.line.length()
@@ -181,8 +183,9 @@ func (b *Buffer) remove(start, end *Position, line bool) *Position {
 				b.first = NewLine([]byte{})
 				b.last = b.first
 				b.disp = b.first
-			}
-			if !b.contains(b.pos.line) {
+				b.pos.line = b.first
+				b.pos.off = 0
+			} else if !b.contains(b.pos.line) {
 				b.pos.line = b.first
 				b.pos.off = 0
 			}

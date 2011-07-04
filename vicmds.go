@@ -27,6 +27,20 @@ type CmdArgs struct {
 	buffer     byte
 }
 
+func resetCmdArgs(a *CmdArgs) {
+	a.d = nil
+	a.c1 = 0
+	a.c2 = 0
+	a.buffer = 0
+	a.line = false
+}
+
+/* XXX wrapper to force cursor fixes
+func doViCmd(a *CmdArgs, cmdfn func(*CmdArgs)(*Position, os.Error)) {
+	defer fixCursor(a)
+}
+*/
+
 func cmdBackwards(a *CmdArgs) (*Position, os.Error) {
 	p := a.start
 	for i := a.c1; i > 0 && p.off > 0; i-- {
@@ -170,7 +184,7 @@ func cmdDelete(a *CmdArgs) (*Position, os.Error) {
 	} else {
 		return nil, &DviError{"Buffer does not exist", 1}
 	}
-	p := a.d.b.remove(a.start, a.end, a.line)
+	p := a.d.b.remove(*a.start, *a.end, a.line)
 	return p, nil
 }
 
@@ -253,14 +267,14 @@ func cmdInsertLineAbove(a *CmdArgs) (*Position, os.Error) {
 
 func cmdDeleteAtCursor(a *CmdArgs) (*Position, os.Error) {
 	for i := 0; i < a.c1; i++ {
-		a.d.b.pos = a.d.b.remove(a.d.b.pos, nextChar(*a.d.b.pos), a.line)
+		a.d.b.pos = a.d.b.remove(*a.d.b.pos, *nextChar(*a.d.b.pos), a.line)
 	}
 	return a.d.b.pos, nil
 }
 
 func cmdDeleteBeforeCursor(a *CmdArgs) (*Position, os.Error) {
 	for i := 0; i < a.c1; i++ {
-		a.d.b.pos = a.d.b.remove(prevChar(*a.d.b.pos), a.d.b.pos, a.line)
+		a.d.b.pos = a.d.b.remove(*prevChar(*a.d.b.pos), *a.d.b.pos, a.line)
 	}
 	return a.d.b.pos, nil
 }
