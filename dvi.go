@@ -150,7 +150,7 @@ func commandmode(d *Dvi) {
 				ca.c1 = 1
 			}
 
-			ca.start = &(*d.b.pos)
+			ca.start = &Position{d.b.pos.line, d.b.pos.off}
 			if cmd.motion {
 				// This is a motion command
 				// XXX so much dup here.  really should pull this out.
@@ -165,8 +165,7 @@ func commandmode(d *Dvi) {
 				resetCmdArgs(ma)
 				if mk == k {
 					ca.start.off = 0
-					ca.end = &(*ca.start)
-					ca.end.off = ca.end.line.length()
+					ca.end = &Position{ca.start.line, ca.start.line.length()}
 					ca.line = true
 				} else if mcmd, ok := vicmds[k]; ok && mcmd.isMotion {
 					ma.motion = true

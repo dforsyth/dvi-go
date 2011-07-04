@@ -2,9 +2,8 @@ package main
 
 // XXX Some position pointers in these commands are NOT COPIED.  FIX!!!
 
-// XXX: delete/yank/put is busted.
-
 import (
+	"fmt"
 	"os"
 )
 
@@ -39,8 +38,13 @@ func resetCmdArgs(a *CmdArgs) {
 
 /* XXX wrapper to force cursor fixes
 func doViCmd(a *CmdArgs, cmdfn func(*CmdArgs)(*Position, os.Error)) {
-	defer fixCursor(a)
+	defer fixCursor(a.d.b.pos)
 }
+
+func fixCursor(pos *Position) {
+	for pos.off >= pos.line.length() {
+		pos.off--
+	}
 */
 
 func cmdBackwards(a *CmdArgs) (*Position, os.Error) {
@@ -363,6 +367,7 @@ func cmdYank(a *CmdArgs) (*Position, os.Error) {
 		buf.clear()
 		buf.add(*(&Position{buf.first, 0}), y)
 		buf.line = a.line
+		a.d.queueMsg(fmt.Sprintf("yanked: %s", string(y)), 2, true)
 	}
 	return a.start, nil
 }
