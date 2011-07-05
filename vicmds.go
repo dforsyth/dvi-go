@@ -3,7 +3,6 @@ package main
 // XXX Some position pointers in these commands are NOT COPIED.  FIX!!!
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -32,6 +31,8 @@ func resetCmdArgs(a *CmdArgs) {
 	a.d = nil
 	a.c1 = 0
 	a.c2 = 0
+	a.start = nil
+	a.end = nil
 	a.buffer = 0
 	a.line = false
 }
@@ -367,7 +368,6 @@ func cmdYank(a *CmdArgs) (*Position, os.Error) {
 		buf.clear()
 		buf.add(*(&Position{buf.first, 0}), y)
 		buf.line = a.line
-		a.d.queueMsg(fmt.Sprintf("yanked: %s", string(y)), 2, true)
 	}
 	return a.start, nil
 }

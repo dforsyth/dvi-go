@@ -28,6 +28,7 @@ type Dvi struct {
 	b       *Buffer
 	w       *curses.Window
 	lastcmd int
+	showmsg bool
 	msg     *DviMessage
 	lastkey int
 	currx   int
@@ -301,6 +302,8 @@ func exmode(d *Dvi) {
 				directoryBrowser(d, ".")
 			} else if msg.message == "emacs" {
 				emacs(d)
+			} else if msg.message == "showmsg" {
+				d.showmsg = !d.showmsg
 			} else {
 				curses.Beep()
 			}

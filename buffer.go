@@ -131,6 +131,14 @@ func (b *Buffer) add(p Position, text []byte) *Position {
 	return &p
 }
 
+func (b *Buffer) lineCount() int {
+	i := 0
+	for l := b.first; l != b.last.next; l = l.next {
+		i++
+	}
+	return i
+}
+
 func (b *Buffer) remove(start, end Position, line bool) *Position {
 	// XXX This function returns b.pos.  It should actually just return the first safe 
 	// position after (or before) the removed chunk.

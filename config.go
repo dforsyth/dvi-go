@@ -34,7 +34,6 @@ func directoryBrowser(d *Dvi, path string) {
 	o := d.b
 	// set up a new buffer
 	b := newBuffer()
-	b = newBuffer()
 	if ls, e := ioutil.ReadDir(path); e == nil {
 		for i, d := range ls {
 			b.add(*b.pos, []byte(d.Name))
