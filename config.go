@@ -85,3 +85,102 @@ func gdb(d *Dvi) {
 		}
 	}
 }
+
+var vicmds map[int]*vicmd = map[int]*vicmd{
+	'$': &vicmd{
+		fn: cmdEOL,
+	},
+	':': &vicmd{
+		fn: cmdEx,
+	},
+	'0': &vicmd{
+		fn: cmdBOL,
+	},
+	'a': &vicmd{
+		fn:     cmdAppend,
+		motion: false,
+	},
+	'A': &vicmd{
+		fn:     cmdAppendEOL,
+		motion: false,
+	},
+	'b': &vicmd{
+		fn:       cmdPrevWord,
+		isMotion: true,
+	},
+	'B': &vicmd{
+		fn: cmdPrevBigWord,
+	},
+	'd': &vicmd{
+		fn:     cmdDelete,
+		motion: true,
+	},
+	'D': &vicmd{
+		fn: cmdDeleteEOL,
+	},
+	'e': &vicmd{
+		fn: cmdEndOfWord,
+	},
+	'E': &vicmd{
+		fn: cmdEndOfBigWord,
+	},
+	'G': &vicmd{
+		fn:        cmdToLine,
+		zerocount: true,
+	},
+	'h': &vicmd{
+		fn:       cmdBackwards,
+		motion:   false,
+		isMotion: true,
+	},
+	'i': &vicmd{
+		fn:     cmdInsert,
+		motion: false,
+	},
+	'j': &vicmd{
+		name: "cmddown",
+		fn:       cmdDown,
+		motion:   false,
+		isMotion: true,
+		line:     true,
+	},
+	'k': &vicmd{
+		fn:       cmdUp,
+		motion:   false,
+		isMotion: true,
+		line:     true,
+	},
+	'l': &vicmd{
+		fn:       cmdForwards,
+		motion:   false,
+		isMotion: true,
+	},
+	'o': &vicmd{
+		fn: cmdInsertLineBelow,
+	},
+	'O': &vicmd{
+		fn: cmdInsertLineAbove,
+	},
+	'p': &vicmd{
+		fn:     cmdPut,
+		motion: false,
+	},
+	'w': &vicmd{
+		fn:       cmdNextWord,
+		isMotion: true,
+	},
+	'x': &vicmd{
+		fn: cmdDeleteAtCursor,
+	},
+	'X': &vicmd{
+		fn: cmdDeleteBeforeCursor,
+	},
+	'y': &vicmd{
+		fn:        cmdYank,
+		motion:    true,
+		zerocount: false,
+	},
+	ctrl('G'): &vicmd{
+		fn: cmdDisplayInfo,
+	},
+}

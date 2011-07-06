@@ -139,6 +139,25 @@ func (b *Buffer) lineCount() int {
 	return i
 }
 
+func (b *Buffer) lineNumber(l *Line) int {
+	for i, bl := 1, b.first; bl != nil && l != nil; i, bl = i+1, bl.next {
+		if bl == l {
+			return i
+		}
+	}
+	return -1
+}
+
+func (b *Buffer) getLine(lno int) *Line {
+	l := b.first
+	for i := 1; i < lno; i, l = i+1, l.next {
+		if l.next == nil || l == b.last {
+			break
+		}
+	}
+	return l
+}
+
 func (b *Buffer) remove(start, end Position, line bool) {
 	// XXX This function returns b.pos.  It should actually just return the first safe 
 	// position after (or before) the removed chunk.

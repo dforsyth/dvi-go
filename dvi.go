@@ -186,7 +186,7 @@ func commandmode(d *Dvi) {
 
 					ma.start = ca.start
 					ma.d = d
-					if p, e := mcmd.fn(ma); e != nil {
+					if p, e := mcmd.fn(ma); e == nil {
 						ca.end = p
 						ca.line = mcmd.line
 						if ca.line {

@@ -14,6 +14,7 @@ type vicmd struct {
 	line      bool // in motion, this command used start and end line positions (must be isMotion)
 	rw        bool // test writable
 	zerocount bool // count default is zero instead of 1
+	name string
 }
 
 type CmdArgs struct {
@@ -45,7 +46,7 @@ func doViCmd(a *CmdArgs, cmdfn func(*CmdArgs)(*Position, os.Error)) {
 
 func fixCursor(pos *Position) {
 	for pos.off > pos.line.length()-1 {
-		pos.off--
+		pos = prevChar(*pos)
 	}
 }
 
@@ -192,8 +193,14 @@ func cmdDelete(a *CmdArgs) (*Position, os.Error) {
 	} else {
 		return nil, &DviError{"Buffer does not exist", 1}
 	}
+	lno := a.d.b.lineNumber(a.start.line)
 	a.d.b.remove(*a.start, *a.end, a.line)
-	return a.d.b.pos, nil
+	ln := a.d.b.getLine(lno)
+	off := a.start.off
+	if a.line {
+		off = 0
+	}
+	return &Position{ln, off}, nil
 }
 
 func cmdDeleteEOL(a *CmdArgs) (*Position, os.Error) {
@@ -390,102 +397,4 @@ func cmdEx(a *CmdArgs) (*Position, os.Error) {
 func cmdDisplayInfo(a *CmdArgs) (*Position, os.Error) {
 	a.d.msg = &DviMessage{message: "fileinformation"}
 	return a.d.b.pos, nil
-}
-
-var vicmds map[int]*vicmd = map[int]*vicmd{
-	'$': &vicmd{
-		fn: cmdEOL,
-	},
-	':': &vicmd{
-		fn: cmdEx,
-	},
-	'0': &vicmd{
-		fn: cmdBOL,
-	},
-	'a': &vicmd{
-		fn:     cmdAppend,
-		motion: false,
-	},
-	'A': &vicmd{
-		fn:     cmdAppendEOL,
-		motion: false,
-	},
-	'b': &vicmd{
-		fn:       cmdPrevWord,
-		isMotion: true,
-	},
-	'B': &vicmd{
-		fn: cmdPrevBigWord,
-	},
-	'd': &vicmd{
-		fn:     cmdDelete,
-		motion: true,
-	},
-	'D': &vicmd{
-		fn: cmdDeleteEOL,
-	},
-	'e': &vicmd{
-		fn: cmdEndOfWord,
-	},
-	'E': &vicmd{
-		fn: cmdEndOfBigWord,
-	},
-	'G': &vicmd{
-		fn:        cmdToLine,
-		zerocount: true,
-	},
-	'h': &vicmd{
-		fn:       cmdBackwards,
-		motion:   false,
-		isMotion: true,
-	},
-	'i': &vicmd{
-		fn:     cmdInsert,
-		motion: false,
-	},
-	'j': &vicmd{
-		fn:       cmdDown,
-		motion:   false,
-		isMotion: true,
-		line:     true,
-	},
-	'k': &vicmd{
-		fn:       cmdUp,
-		motion:   false,
-		isMotion: true,
-		line:     true,
-	},
-	'l': &vicmd{
-		fn:       cmdForwards,
-		motion:   false,
-		isMotion: true,
-	},
-	'o': &vicmd{
-		fn: cmdInsertLineBelow,
-	},
-	'O': &vicmd{
-		fn: cmdInsertLineAbove,
-	},
-	'p': &vicmd{
-		fn:     cmdPut,
-		motion: false,
-	},
-	'w': &vicmd{
-		fn:       cmdNextWord,
-		isMotion: true,
-	},
-	'x': &vicmd{
-		fn: cmdDeleteAtCursor,
-	},
-	'X': &vicmd{
-		fn: cmdDeleteBeforeCursor,
-	},
-	'y': &vicmd{
-		fn:        cmdYank,
-		motion:    true,
-		zerocount: false,
-	},
-	ctrl('G'): &vicmd{
-		fn: cmdDisplayInfo,
-	},
 }
