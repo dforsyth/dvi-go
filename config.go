@@ -138,7 +138,6 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 		motion: false,
 	},
 	'j': &vicmd{
-		name: "cmddown",
 		fn:       cmdDown,
 		motion:   false,
 		isMotion: true,

@@ -159,45 +159,50 @@ func commandmode(d *Dvi) {
 				// XXX so much dup here.  really should pull this out.
 				ma := &CmdArgs{}
 				mcount := 0
-				mk := getC(d)
-				if (mk >= '1' && mk <= '9') || (mcount != 0 && mk == '0') {
-					mcount *= 10
-					mcount += mk - '0'
-					continue
-				}
-				resetCmdArgs(ma)
-				if mk == k {
-					ca.start.off = 0
-					ca.end = &Position{ca.start.line, ca.start.line.length()}
-					ca.line = true
-				} else if mcmd, ok := vicmds[k]; ok && mcmd.isMotion {
-					ma.motion = true
-					if mcount != 0 {
-						ma.c1 = mcount
-					} else if !mcmd.zerocount {
-						ma.c1 = 1
+				for {
+					mk := getC(d)
+					if (mk >= '1' && mk <= '9') || (mcount != 0 && mk == '0') {
+						mcount *= 10
+						mcount += mk - '0'
+						continue
 					}
-
+					
 					// if the initial command and the motion command are both given counts, then the two
 					// counts are multiplied to form the final count
 					if count != 0 {
 						ma.c1 *= count
 					}
 
-					ma.start = ca.start
-					ma.d = d
-					if p, e := mcmd.fn(ma); e == nil {
-						ca.end = p
-						ca.line = mcmd.line
-						if ca.line {
-							ca.start.off = 0
-							ca.end.off = ca.end.line.length()
+					resetCmdArgs(ma)
+					if mk == k {
+						ca.start.off = 0
+						ca.end = &Position{ca.start.line, ca.start.line.length()}
+						ca.line = true
+					} else if mcmd, ok := vicmds[mk]; ok && mcmd.isMotion {
+						ma.motion = true
+						if mcount != 0 {
+							ma.c1 = mcount
+						} else if !mcmd.zerocount {
+							ma.c1 = 1
+						}
+
+						ma.start = ca.start
+						ma.d = d
+						if p, e := mcmd.fn(ma); e == nil {
+							ca.end = p
+							ca.line = mcmd.line
+							if ca.line {
+								ca.start.off = 0
+								ca.end.off = ca.end.line.length()
+							}
+						} else {
+							// error reporting should be set up in the cmd fn
 						}
 					} else {
-						// error reporting should be set up in the cmd fn
+						d.queueMsg(fmt.Sprintf("%c is not a valid motion", mk), 2, true)
+						panic("not a valid motion")
 					}
-				} else {
-					d.queueMsg(fmt.Sprintf("%c is not a valid motion", mk), 2, true)
+					break
 				}
 			}
 

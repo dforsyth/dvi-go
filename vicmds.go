@@ -14,7 +14,6 @@ type vicmd struct {
 	line      bool // in motion, this command used start and end line positions (must be isMotion)
 	rw        bool // test writable
 	zerocount bool // count default is zero instead of 1
-	name string
 }
 
 type CmdArgs struct {
