@@ -96,13 +96,13 @@ func draw(d *Dvi) os.Error {
 				d.w.Clrtoeol()
 			}
 			for i := x; i < x+charlen(c); i++ {
-				d.w.Mvwaddch(y, i, int32(c), colors)
+				d.w.Mvaddch(y, i, int32(c), colors)
 			}
 			x += charlen(c)
 		}
 		if colors != 0 {
 			for ; x < *curses.Cols; x++ {
-				d.w.Mvwaddch(y, x, int32(' '), colors)
+				d.w.Mvaddch(y, x, int32(' '), colors)
 			}
 		}
 	}
@@ -110,7 +110,7 @@ func draw(d *Dvi) os.Error {
 	for ; y < *curses.Rows-1; y++ {
 		d.w.Move(y, 0)
 		d.w.Clrtoeol()
-		d.w.Mvwaddch(y, 0, int32('~'), 0)
+		d.w.Mvaddch(y, 0, int32('~'), 0)
 	}
 
 	d.currx = cursorx
@@ -131,7 +131,7 @@ func draw(d *Dvi) os.Error {
 	d.w.Clrtoeol()
 
 	for i := 0; i < *curses.Cols && i < len(msg); i++ {
-		d.w.Mvwaddch(*curses.Rows-1, i, int32(msg[i]), curses.Color_pair(mcolor))
+		d.w.Mvaddch(*curses.Rows-1, i, int32(msg[i]), curses.Color_pair(mcolor))
 	}
 	// s.w.Mvwaddnstr(*curses.Rows-1, 0, msg, *curses.Cols)
 

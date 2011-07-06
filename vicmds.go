@@ -41,12 +41,13 @@ func resetCmdArgs(a *CmdArgs) {
 func doViCmd(a *CmdArgs, cmdfn func(*CmdArgs)(*Position, os.Error)) {
 	defer fixCursor(a.d.b.pos)
 }
+*/
 
 func fixCursor(pos *Position) {
-	for pos.off >= pos.line.length() {
+	for pos.off > pos.line.length()-1 {
 		pos.off--
 	}
-*/
+}
 
 func cmdBackwards(a *CmdArgs) (*Position, os.Error) {
 	p := a.start
@@ -191,8 +192,8 @@ func cmdDelete(a *CmdArgs) (*Position, os.Error) {
 	} else {
 		return nil, &DviError{"Buffer does not exist", 1}
 	}
-	p := a.d.b.remove(*a.start, *a.end, a.line)
-	return p, nil
+	a.d.b.remove(*a.start, *a.end, a.line)
+	return a.d.b.pos, nil
 }
 
 func cmdDeleteEOL(a *CmdArgs) (*Position, os.Error) {
@@ -273,17 +274,26 @@ func cmdInsertLineAbove(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdDeleteAtCursor(a *CmdArgs) (*Position, os.Error) {
+	p := a.d.b.pos
 	for i := 0; i < a.c1; i++ {
-		a.d.b.pos = a.d.b.remove(*a.d.b.pos, *nextChar(*a.d.b.pos), a.line)
+		pp := prevChar(*p)
+		a.d.b.remove(*p, *nextChar(*p), a.line)
+		if p.off > p.line.length()-1 {
+			p = pp
+		}
 	}
-	return a.d.b.pos, nil
+
+	return p, nil
 }
 
 func cmdDeleteBeforeCursor(a *CmdArgs) (*Position, os.Error) {
+	p := a.d.b.pos
 	for i := 0; i < a.c1; i++ {
-		a.d.b.pos = a.d.b.remove(*prevChar(*a.d.b.pos), *a.d.b.pos, a.line)
+		pp := prevChar(*p)
+		a.d.b.remove(*prevChar(*p), *p, a.line)
+		p = pp
 	}
-	return a.d.b.pos, nil
+	return p, nil
 }
 
 func cmdPut(a *CmdArgs) (*Position, os.Error) {

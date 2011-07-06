@@ -96,7 +96,9 @@ func insertmode(d *Dvi) {
 		case curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_UP, curses.KEY_DOWN:
 			curses.Beep()
 		case ctrl('H'), 127, curses.KEY_BACKSPACE:
-			d.b.pos = d.b.remove(*prevChar(*d.b.pos), *d.b.pos, false)
+			pp := prevChar(*d.b.pos)
+			d.b.remove(*prevChar(*d.b.pos), *d.b.pos, false)
+			d.b.pos = pp
 		default:
 			d.b.pos = d.b.add(*d.b.pos, []byte{byte(k)})
 			d.b.dirty = true

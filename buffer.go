@@ -139,15 +139,15 @@ func (b *Buffer) lineCount() int {
 	return i
 }
 
-func (b *Buffer) remove(start, end Position, line bool) *Position {
+func (b *Buffer) remove(start, end Position, line bool) {
 	// XXX This function returns b.pos.  It should actually just return the first safe 
 	// position after (or before) the removed chunk.
 	if start.line == end.line && !line {
 		start.line.text = append(start.line.text[:start.off], start.line.text[end.off:]...)
-		return &Position{
+		/*return &Position{
 			line: start.line,
 			off:  start.off,
-		}
+		}*/
 	} else {
 		if !line {
 			// If we aren't in line mode, check if only the 0th char is marked by end.
@@ -199,7 +199,7 @@ func (b *Buffer) remove(start, end Position, line bool) *Position {
 			}
 		}
 	}
-	return b.pos
+	// return b.pos
 }
 
 func (b *Buffer) contains(l *Line) bool {
