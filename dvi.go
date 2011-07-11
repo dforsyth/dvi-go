@@ -341,6 +341,9 @@ func exmode(d *Dvi) {
 				directoryBrowser(d, ".")
 			} else if msg.message == "emacs" {
 				emacs(d)
+			} else if msg.message == "file" {
+				d.queueMsg(d.b.information(), 1, false)
+				return
 			} else if msg.message == "showmsg" {
 				d.showmsg = !d.showmsg
 			} else {
