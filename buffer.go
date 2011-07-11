@@ -51,7 +51,7 @@ type Buffer struct {
 	line              bool // line mode buffer, for yank/put
 	next, prev        *Buffer
 	db                []*Line
-	ro	bool
+	ro                bool
 }
 
 func newBuffer() *Buffer {
