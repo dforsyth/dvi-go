@@ -2,6 +2,7 @@ package main
 
 import (
 	"curses"
+	"math"
 	"os"
 )
 
@@ -31,6 +32,9 @@ func charlen(c byte) int {
 }
 
 func screenlines(l *Line) int {
+	if s := int(math.Ceil(float64(l.length()) / float64(*curses.Cols))); s > 0 {
+		return s
+	}
 	return 1
 }
 
@@ -122,9 +126,9 @@ func draw(d *Dvi) os.Error {
 	if d.msg == nil {
 		msg = message(d) + " " + str
 	} else {
-		msg = ":" + d.msg.message
-		mcolor = d.msg.color
-		beep = d.msg.beep
+		msg = ":" + d.msg.Message()
+		mcolor = d.msg.Color()
+		beep = d.msg.Beep()
 		d.msg = nil
 	}
 	d.w.Move(*curses.Rows-1, 0)

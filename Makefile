@@ -1,7 +1,6 @@
 include $(GOROOT)/src/Make.inc
-# 1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
 .DEFAULT_GOAL=	all
 TARG=	dvi
-GOFILES=	dvi.go draw.go vicmds.go position.go buffer.go config.go
+GOFILES=	dvi.go draw.go vicmds.go position.go buffer.go config.go extend.go
 
 include $(GOROOT)/src/Make.cmd

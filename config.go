@@ -1,100 +1,48 @@
 package main
 
-import (
-	"io/ioutil"
-	"os"
-)
-
-func dirmode(d *Dvi) *Buffer {
-	for {
-		draw(d)
-		switch k := getC(d); k {
-		case 'j':
-			d.b.pos = nextLine(*d.b.pos)
-		case 'k':
-			d.b.pos = prevLine(*d.b.pos)
-		case 13:
-			b := newBuffer()
-			// XXX gross
-			if f, e := os.Open(string(d.b.pos.line.text)); e == nil {
-				defer f.Close()
-				b.loadFile(f)
-			}
-			return b
-		case 27:
-			return nil
-		default:
-		}
-	}
-	return nil
-}
-
-func directoryBrowser(d *Dvi, path string) {
-	// remember the old buffer
-	o := d.b
-	// set up a new buffer
-	b := newBuffer()
-	if ls, e := ioutil.ReadDir(path); e == nil {
-		for i, d := range ls {
-			b.add(*b.pos, []byte(d.Name))
-			if i < len(ls)-1 {
-				b.add(*b.pos, []byte("\n"))
-			}
-		}
-	}
-	b.disp = b.first
-	// set the current buffer to the directory listing
-	d.b = b
-	// enter "dirmode"
-	if n := dirmode(d); n != nil {
-		d.b = n
-		d.b.disp = d.b.first
-		d.b.pos.line = d.b.first
-		d.b.pos.off = 0
-	} else {
-		d.b = o
-	}
-}
-
-func emacs(d *Dvi) {
-	for {
-		draw(d)
-		switch k := getC(d); k {
-		case ctrl('N'):
-			d.b.pos = nextLine(*d.b.pos)
-		case ctrl('P'):
-			d.b.pos = prevLine(*d.b.pos)
-		case ctrl('B'):
-			d.b.pos = prevChar2(*d.b.pos)
-		case ctrl('F'):
-			d.b.pos = nextChar2(*d.b.pos)
-		default:
-			d.b.pos = d.b.add(*d.b.pos, []byte{byte(k)})
-		}
-	}
-}
-
-func gdb(d *Dvi) {
-	// not implemented
-	for {
-		draw(d)
-		switch k := getC(d); k {
-		case ctrl('B'):
-			// un/set breakpoint
-		default:
-		}
-	}
+var config map[string]interface{} = map[string]interface{}{
+	// edit options, set to the default specified by the spec
+	// TODO: create a mapping from long to short option names
+	"autoindent": false, // ai
+	"autoprint":  true,  // ap
+	"autowrite":  false, // aw
+	"wrapscan":   true,  // ws
 }
 
 var vicmds map[int]*vicmd = map[int]*vicmd{
+	' ': &vicmd{
+		fn:       cmdForwards,
+		motion:   false,
+		isMotion: true,
+	},
+	'_': &vicmd{
+		fn:       cmdCurrLineAndAbove,
+		line:     true,
+		isMotion: true,
+	},
+	'|': &vicmd{
+		fn:       cmdMoveToColumn,
+		isMotion: true,
+	},
 	'$': &vicmd{
 		fn: cmdEOL,
+	},
+	'^': &vicmd{
+		fn:       cmdFirstNonBlank,
+		isMotion: true,
+		line:     true,
+	},
+	'/': &vicmd{
+		fn:       cmdFindRegex,
+		isMotion: true,
+		// can be both character and line mode
 	},
 	':': &vicmd{
 		fn: cmdEx,
 	},
 	'0': &vicmd{
-		fn: cmdBOL,
+		fn:       cmdBOL,
+		isMotion: true,
 	},
 	'a': &vicmd{
 		fn:     cmdAppend,
@@ -111,6 +59,7 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	'B': &vicmd{
 		fn: cmdPrevBigWord,
 	},
+	'c': &vicmd{},
 	'd': &vicmd{
 		fn:     cmdDelete,
 		motion: true,

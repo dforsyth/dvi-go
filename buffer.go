@@ -30,8 +30,8 @@ func NewLine(text []byte) *Line {
 }
 
 const (
-	REMOVE = iota
-	ADD
+	ADD = iota
+	REMOVE
 )
 
 type Action struct {
@@ -221,6 +221,10 @@ func (b *Buffer) remove(start, end Position, line bool) {
 	// return b.pos
 }
 
+func (b *Buffer) removeLine(l *Line) *Line {
+	return nil
+}
+
 func (b *Buffer) contains(l *Line) bool {
 	for c := b.first; c != b.last.next; c = c.next {
 		if l == c {
@@ -258,14 +262,13 @@ func (b *Buffer) clear() {
 func (b *Buffer) loadFile(f *os.File) os.Error {
 	rdr := bufio.NewReader(f)
 	buf := make([]byte, 4096)
-	for {
-		if n, e := rdr.Read(buf); n > 0 {
-			b.pos = b.add(*b.pos, buf[:n])
-		} else if n == 0 && e == os.EOF {
-			break
-		} else {
-			return e
-		}
+	var e os.Error
+	var n int
+	for n, e = rdr.Read(buf); n > 0 && e == nil; n, e = rdr.Read(buf) {
+		b.pos = b.add(*b.pos, buf[:n])
+	}
+	if e != os.EOF {
+		return e
 	}
 	if b.last.length() == 0 && b.last != b.first {
 		p := b.last.prev
@@ -283,14 +286,8 @@ func (b *Buffer) writeFile() os.Error {
 	}
 	defer wf.Close()
 	for l := b.first; l != nil; l = l.next {
-		if l.next != nil {
-			if _, e := wf.Write(append(l.text, '\n')); e != nil {
-				return e
-			}
-		} else {
-			if _, e := wf.Write(l.text); e != nil {
-				return e
-			}
+		if _, e := wf.Write(append(l.text, '\n')); e != nil {
+			return e
 		}
 	}
 	return nil

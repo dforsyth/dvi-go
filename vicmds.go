@@ -3,7 +3,9 @@ package main
 // XXX Some position pointers in these commands are NOT COPIED.  FIX!!!
 
 import (
+	"curses" // for regex
 	"os"
+	"regexp"
 )
 
 type vicmd struct {
@@ -15,6 +17,16 @@ type vicmd struct {
 	rw        bool // test writable
 	zerocount bool // count default is zero instead of 1
 }
+
+/* XXX not sure if this is a good idea
+type ViCmd interface {
+	Function() func(*CmdArgs) (*Position, os.Error)
+	Motion() bool
+	IsMotion() bool
+	LineMode() bool
+	ZeroCount() bool
+}
+*/
 
 type CmdArgs struct {
 	d          *Dvi
@@ -38,15 +50,138 @@ func resetCmdArgs(a *CmdArgs) {
 }
 
 /* XXX wrapper to force cursor fixes
-func doViCmd(a *CmdArgs, cmdfn func(*CmdArgs)(*Position, os.Error)) {
-	defer fixCursor(a.d.b.pos)
+func doViCmd(cmd *vicmd, a *CmdArgs) (*Position, os.Error) {
+	p, e := cmd.fn(a)
+	if p != nil {
+		p = fixCursor(p)
+	}
+	return p, e
 }
 */
 
-func fixCursor(pos *Position) {
+func fixCursor(pos *Position) *Position {
 	for pos.off > pos.line.length()-1 {
 		pos = prevChar(*pos)
 	}
+	return pos
+}
+
+func cmdCurrLineAndAbove(a *CmdArgs) (*Position, os.Error) {
+	p := a.start
+	// TODO: If there are less than a.c1-1 line after p.line in the buffer, it's an error.
+	for i := 0; i < a.c1-1; i++ {
+		p = nextLine(*p)
+		// TODO: go to first non-blank
+	}
+	return p, nil
+}
+
+func cmdMoveToColumn(a *CmdArgs) (*Position, os.Error) {
+	p := a.start
+	c := a.c1
+	if c > p.line.length() {
+		c = p.line.length()
+	}
+	// c-1 because positon.off is 0 based
+	c--
+	if !a.motion {
+		return &Position{p.line, c}, nil
+	} else {
+		if p.line.length() == 0 || p.off+1 == a.c1 {
+			// TODO: if the line is empty or the cursor is at the countth position in the
+			// current line, it shall be an error.
+			return nil, &DviError{}
+		} else {
+			return &Position{p.line, c}, nil
+		}
+	}
+	return nil, &DviError{}
+}
+
+func cmdFirstNonBlank(a *CmdArgs) (*Position, os.Error) {
+	p := &Position{a.start.line, 0}
+
+	for n := nextChar(*p); ; n = nextChar(*p) {
+		if c, e := p.getChar(); e == nil {
+			if _, ok := blankchars[c]; !ok {
+				break
+			}
+		}
+		if posEq(n, p) {
+			if a.motion {
+				// XXX This doesn't seem to be nvi behavior, but the spec says this 
+				// should be an error...
+				return nil, &DviError{}
+			}
+			break
+		}
+		p = n
+	}
+	return fixCursor(p), nil
+}
+
+type REMessage struct {
+	re *string
+}
+
+func (m *REMessage) Message() string {
+	return "/" + *m.re
+}
+
+func (m *REMessage) Color() int {
+	return 0
+}
+
+func (m *REMessage) Beep() bool {
+	return false
+}
+
+func cmdFindRegex(a *CmdArgs) (*Position, os.Error) {
+	// TODO: implement this properly
+	// TODO: pull code out into shared find op, probably on buffer
+	// TODO: scroll
+
+	p := nextChar(*a.start)
+	msg := &REMessage{}
+	re := ""
+	msg.re = &re
+	for {
+		// XXX this is so ghetto.  really need to fix up status/messaging
+		a.d.msg = msg
+		draw(a.d)
+		switch k := getCh(a.d); k {
+		case 0xd, 0xa, curses.KEY_ENTER:
+			if r, e := regexp.Compile(re); e == nil {
+				wrap := false
+				var i []int = nil
+				for i = r.FindIndex(p.line.text[p.off:]); i == nil; i = r.FindIndex(p.line.text[p.off:]) {
+					if p.line == a.start.line && wrap {
+						return nil, &DviError{"Pattern not found", 0}
+					}
+					if p.line == a.d.b.last {
+						wrap = true
+						p.line = a.d.b.first
+						p.off = 0
+					} else {
+						p = nextLine(*p)
+						p.off = 0
+					}
+				}
+				p.off = i[0] + p.off
+				if wrap {
+					a.d.queueMsg("Search wrapped", 0, false)
+				}
+				// XXX if motion, we need to determine whether or not this is in line or char mode
+			} else {
+				return nil, &DviError{"regex compile failed: " + e.String(), 0}
+			}
+			return p, nil
+		default:
+			re += string([]byte{byte(k)})
+		}
+	}
+
+	return p, &DviError{"Not reached", 0}
 }
 
 func cmdBackwards(a *CmdArgs) (*Position, os.Error) {
@@ -133,9 +268,10 @@ func cmdEOL(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdBOL(a *CmdArgs) (*Position, os.Error) {
-	p := *a.start
-	p.off = 0
-	return &p, nil
+	if a.start.off == 0 {
+		return nil, &DviError{}
+	}
+	return &Position{a.start.line, 0}, nil
 }
 
 func cmdPrevWord(a *CmdArgs) (*Position, os.Error) {
@@ -180,7 +316,7 @@ func cmdPrevWord(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdPrevBigWord(a *CmdArgs) (*Position, os.Error) {
-	return nil, nil
+	return nil, &DviError{"Not yet implemented", 0}
 }
 
 func cmdDelete(a *CmdArgs) (*Position, os.Error) {
@@ -203,15 +339,15 @@ func cmdDelete(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdDeleteEOL(a *CmdArgs) (*Position, os.Error) {
-	return nil, nil
+	return nil, &DviError{"Not yet implemented", 0}
 }
 
 func cmdEndOfWord(a *CmdArgs) (*Position, os.Error) {
-	return nil, nil
+	return nil, &DviError{"Not yet implemented", 0}
 }
 
 func cmdEndOfBigWord(a *CmdArgs) (*Position, os.Error) {
-	return nil, nil
+	return nil, &DviError{"Not yet implemented", 0}
 }
 
 func cmdToLine(a *CmdArgs) (*Position, os.Error) {
@@ -394,6 +530,6 @@ func cmdEx(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdDisplayInfo(a *CmdArgs) (*Position, os.Error) {
-	a.d.msg = &DviMessage{message: "fileinformation"}
+	a.d.queueMsg("fileinformation", 1, false)
 	return a.d.b.pos, nil
 }

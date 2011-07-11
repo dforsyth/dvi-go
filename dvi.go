@@ -29,7 +29,7 @@ type Dvi struct {
 	w       *curses.Window
 	lastcmd int
 	showmsg bool
-	msg     *DviMessage
+	msg     DviMessager
 	lastkey int
 	currx   int
 	curry   int
@@ -41,6 +41,24 @@ type DviMessage struct {
 	message string
 	color   int
 	beep    bool
+}
+
+func (m *DviMessage) Message() string {
+	return m.message
+}
+
+func (m *DviMessage) Color() int {
+	return m.color
+}
+
+func (m *DviMessage) Beep() bool {
+	return m.beep
+}
+
+type DviMessager interface {
+	Message() string
+	Color() int
+	Beep() bool
 }
 
 func message(s *Dvi) string {
@@ -70,6 +88,13 @@ var breakchars map[int]interface{} = map[int]interface{}{
 	'.':  nil,
 }
 
+var blankchars map[int]interface{} = map[int]interface{}{
+	' ':  nil,
+	'\n': nil,
+	'\t': nil,
+	'\r': nil,
+}
+
 func validBufName(n byte) bool {
 	// 0 is unnamed
 	if n >= 'a' && n <= 'z' {
@@ -86,7 +111,7 @@ func ctrl(k int) int {
 func insertmode(d *Dvi) {
 	for {
 		draw(d)
-		k := getC(d)
+		k := getCh(d)
 		switch k {
 		case 27:
 			if p := prevChar(*d.b.pos); p.line == d.b.pos.line {
@@ -96,6 +121,7 @@ func insertmode(d *Dvi) {
 		case curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_UP, curses.KEY_DOWN:
 			curses.Beep()
 		case ctrl('H'), 127, curses.KEY_BACKSPACE:
+			// TODO: Don't let backspace travel past starting point of input session
 			pp := prevChar(*d.b.pos)
 			d.b.remove(*prevChar(*d.b.pos), *d.b.pos, false)
 			d.b.pos = pp
@@ -128,16 +154,16 @@ func sighandlers() {
 }
 
 // Read input off of the dvi input window
-func getC(d *Dvi) int {
+func getCh(d *Dvi) int {
 	// expose simple input
 	return d.w.Getch()
 }
 
-func commandmode(d *Dvi) {
+func commandMode(d *Dvi) {
 	ca := &CmdArgs{}
 	count := 0
 	for {
-		k := getC(d)
+		k := getCh(d)
 		if (k >= '1' && k <= '9') || (count != 0 && k == '0') {
 			count *= 10
 			count += k - '0'
@@ -157,16 +183,17 @@ func commandmode(d *Dvi) {
 			if cmd.motion {
 				// This is a motion command
 				// XXX so much dup here.  really should pull this out.
+				// XXX d0 doesnt work.
 				ma := &CmdArgs{}
 				mcount := 0
 				for {
-					mk := getC(d)
+					mk := getCh(d)
 					if (mk >= '1' && mk <= '9') || (mcount != 0 && mk == '0') {
 						mcount *= 10
 						mcount += mk - '0'
 						continue
 					}
-					
+
 					// if the initial command and the motion command are both given counts, then the two
 					// counts are multiplied to form the final count
 					if count != 0 {
@@ -197,10 +224,11 @@ func commandmode(d *Dvi) {
 							}
 						} else {
 							// error reporting should be set up in the cmd fn
+							goto end
 						}
 					} else {
 						d.queueMsg(fmt.Sprintf("%c is not a valid motion", mk), 2, true)
-						panic("not a valid motion")
+						goto end
 					}
 					break
 				}
@@ -212,11 +240,14 @@ func commandmode(d *Dvi) {
 			}
 			if p, e := cmd.fn(ca); e == nil {
 				d.b.pos = p
+			} else {
+				d.queueMsg(e.String(), 2, true)
 			}
 		} else {
 			d.queueMsg(fmt.Sprintf("%c is not a dvi command", k), 2, true)
 		}
 
+	end:
 		count = 0
 		d.lastkey = k
 		draw(d)
@@ -268,7 +299,7 @@ func main() {
 	initscreen(d)
 	draw(d)
 
-	commandmode(d)
+	commandMode(d)
 }
 
 func exmode(d *Dvi) {
@@ -277,14 +308,15 @@ func exmode(d *Dvi) {
 	for {
 		d.msg = msg
 		draw(d)
-		k := getC(d)
+		k := getCh(d)
 		switch k {
 		case 27 /* ESC */ :
 			d.msg = nil
 			return
 		case 0xd, 0xa, curses.KEY_ENTER:
 			if msg.message == "w" {
-				d.b.writeFile()
+				// this is async according to the spec.  wrap with exWriteFile
+				go d.b.writeFile()
 				d.b.dirty = false
 			} else if msg.message == "q" || msg.message == "q!" {
 				if d.b.dirty && msg.message != "q!" {
