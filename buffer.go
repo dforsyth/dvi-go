@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"utf8"
 )
@@ -50,6 +51,7 @@ type Buffer struct {
 	line              bool // line mode buffer, for yank/put
 	next, prev        *Buffer
 	db                []*Line
+	ro	bool
 }
 
 func newBuffer() *Buffer {
@@ -291,4 +293,34 @@ func (b *Buffer) writeFile() os.Error {
 		}
 	}
 	return nil
+}
+
+func (b *Buffer) information() string {
+	var name string
+	var ro string
+	var modified string
+
+	if len(b.name) > 0 {
+		name = b.name
+	} else {
+		name = "no pathname"
+	}
+
+	// a buffer shouldn't have less than 1 line
+	lno := b.lineNumber(b.pos.line)
+	tln := b.lineNumber(b.last)
+
+	if b.ro {
+		ro = "readonly"
+	} else {
+		ro = "writeable"
+	}
+
+	if b.dirty {
+		modified = "modified"
+	} else {
+		modified = "unmodified"
+	}
+
+	return fmt.Sprintf("%s: %s: line %d of %d: %s", name, modified, lno, tln, ro)
 }

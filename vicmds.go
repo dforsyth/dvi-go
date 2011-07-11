@@ -530,6 +530,6 @@ func cmdEx(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdDisplayInfo(a *CmdArgs) (*Position, os.Error) {
-	a.d.queueMsg("fileinformation", 1, false)
+	a.d.queueMsg(a.d.b.information(), 1, false)
 	return a.d.b.pos, nil
 }
