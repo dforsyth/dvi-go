@@ -40,6 +40,9 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	':': &vicmd{
 		fn: cmdEx,
 	},
+	'~': &vicmd{
+		fn: cmdReverseCase,
+	},
 	'0': &vicmd{
 		fn:       cmdBOL,
 		isMotion: true,

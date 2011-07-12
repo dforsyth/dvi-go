@@ -36,6 +36,14 @@ func (p *Position) getChar() (int, os.Error) {
 	return -1, &DviError{}
 }
 
+func (p *Position) setChar(c int) (os.Error) {
+	if p.line.length() > 0 && p.off < p.line.length() {
+		p.line.text[p.off] = byte(c)
+		return nil
+	}
+	return &DviError{}
+}
+
 // XXX These should really be renamed nextPos and prevPos
 func prevChar(p Position) *Position {
 	if p.off > 0 {

@@ -6,6 +6,7 @@ import (
 	"curses" // for regex
 	"os"
 	"regexp"
+	"unicode"
 )
 
 type vicmd struct {
@@ -182,6 +183,27 @@ func cmdFindRegex(a *CmdArgs) (*Position, os.Error) {
 	}
 
 	return p, &DviError{"Not reached", 0}
+}
+
+func cmdReverseCase(a *CmdArgs) (*Position, os.Error) {
+	p := &Position{a.start.line, a.start.off}
+	for i := 0; i < a.c1; p, i = nextChar2(*p), i+1 {
+		if p.off == p.line.length() {
+			// work around: end of line position doesn't count.
+			i--
+			continue
+		}
+		if c, e := p.getChar(); e == nil {
+			if unicode.IsLower(c) {
+				p.setChar(unicode.ToUpper(c))
+			} else {
+				p.setChar(unicode.ToLower(c))
+			}
+			// really shouldn't mark dirty if it's a symbol, but meh.
+			a.d.b.dirty = true
+		}
+	}
+	return fixCursor(p), nil
 }
 
 func cmdBackwards(a *CmdArgs) (*Position, os.Error) {
