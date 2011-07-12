@@ -174,7 +174,7 @@ func (b *Buffer) remove(start, end Position, line bool) {
 			// If we aren't in line mode, check if only the 0th char is marked by end.
 			// If it is, move back to the end of the prev, because we don't actually
 			// want to delete the line.
-			if end.off == 0 {
+			if end.off == 0 && end.line.length() > 0 {
 				end.line = end.line.prev
 				end.off = end.line.length()
 			}

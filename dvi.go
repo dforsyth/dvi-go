@@ -122,8 +122,8 @@ func insertmode(d *Dvi) {
 			curses.Beep()
 		case ctrl('H'), 127, curses.KEY_BACKSPACE:
 			// TODO: Don't let backspace travel past starting point of input session
-			pp := prevChar(*d.b.pos)
-			d.b.remove(*prevChar(*d.b.pos), *d.b.pos, false)
+			pp := prevChar2(*d.b.pos)
+			d.b.remove(*prevChar2(*d.b.pos), *d.b.pos, false)
 			d.b.pos = pp
 		default:
 			d.b.pos = d.b.add(*d.b.pos, []byte{byte(k)})

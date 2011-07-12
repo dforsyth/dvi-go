@@ -36,7 +36,7 @@ func (p *Position) getChar() (int, os.Error) {
 	return -1, &DviError{}
 }
 
-func (p *Position) setChar(c int) (os.Error) {
+func (p *Position) setChar(c int) os.Error {
 	if p.line.length() > 0 && p.off < p.line.length() {
 		p.line.text[p.off] = byte(c)
 		return nil
@@ -57,7 +57,7 @@ func prevChar2(p Position) *Position {
 		p.off--
 	} else if p.line.prev != nil {
 		p.line = p.line.prev
-		p.off = p.line.length() - 1
+		p.off = p.line.length()
 	}
 	return &p
 }
