@@ -44,11 +44,11 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 		fn: cmdReverseCase,
 	},
 	'<': &vicmd{
-		fn: cmdShiftLeft,
+		fn:     cmdShiftLeft,
 		motion: true,
 	},
 	'>': &vicmd{
-		fn: cmdShiftRight,
+		fn:     cmdShiftRight,
 		motion: true,
 	},
 	'0': &vicmd{
