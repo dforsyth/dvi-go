@@ -316,7 +316,7 @@ func exmode(d *Dvi) {
 		case 0xd, 0xa, curses.KEY_ENTER:
 			if msg.message == "w" {
 				// this is async according to the spec.  wrap with exWriteFile
-				go d.b.writeFile()
+				d.b.writeFile()
 				d.b.dirty = false
 			} else if msg.message == "q" || msg.message == "q!" {
 				if d.b.dirty && msg.message != "q!" {

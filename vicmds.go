@@ -206,6 +206,21 @@ func cmdReverseCase(a *CmdArgs) (*Position, os.Error) {
 	return fixCursor(p), nil
 }
 
+func cmdShiftLeft(a *CmdArgs) (*Position, os.Error) {
+	return nil, nil
+}
+
+func cmdShiftRight(a *CmdArgs) (*Position, os.Error) {
+	if a.d.b.lineNumber(a.start.line) + a.c1-1 > a.d.b.lineCount() {
+		return nil, &DviError{}
+	}
+	p := Position{a.start.line, 0}
+	for i := 0; i < a.c1; p, i = *nextLine(p), i+1 {
+		a.d.b.add(p, []byte{'\t'})
+	}
+	return &Position{a.start.line, a.start.off+1}, nil
+}
+
 func cmdBackwards(a *CmdArgs) (*Position, os.Error) {
 	p := a.start
 	for i := a.c1; i > 0 && p.off > 0; i-- {
