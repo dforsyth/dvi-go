@@ -194,24 +194,33 @@ func commandMode(d *Dvi) {
 						continue
 					}
 
+					resetCmdArgs(ma)
 					// if the initial command and the motion command are both given counts, then the two
 					// counts are multiplied to form the final count
+					// c1 should never be 0, i think...
+					if mcount > 0 {
+						ma.c1 = mcount
+					} else {
+						ma.c1 = 1
+					}
 					if count != 0 {
 						ma.c1 *= count
 					}
 
-					resetCmdArgs(ma)
 					if mk == k {
 						ca.start.off = 0
-						ca.end = &Position{ca.start.line, ca.start.line.length()}
+						p := &Position{ca.start.line, 0}
+						for i := 0; i < ma.c1-1; i++ {
+							p = nextLine(*p)
+						}
+						ca.end = p
+						// ca.end = &Position{ca.start.line, ca.start.line.length()}
 						ca.line = true
 					} else if mcmd, ok := vicmds[mk]; ok && mcmd.isMotion {
 						ma.motion = true
-						if mcount != 0 {
-							ma.c1 = mcount
-						} else if !mcmd.zerocount {
-							ma.c1 = 1
-						}
+						//if mcount == 0 && !mcmd.zerocount {
+						//	ma.c1 = 1
+						//}
 
 						ma.start = ca.start
 						ma.d = d

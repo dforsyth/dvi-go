@@ -214,9 +214,9 @@ func cmdShiftRight(a *CmdArgs) (*Position, os.Error) {
 	if a.d.b.lineNumber(a.start.line)+a.c1-1 > a.d.b.lineCount() {
 		return nil, &DviError{}
 	}
-	p := Position{a.start.line, 0}
-	for i := 0; i < a.c1; p, i = *nextLine(p), i+1 {
-		a.d.b.add(p, []byte{'\t'})
+	p := &Position{a.start.line, 0}
+	for ; p.line != a.end.line.next; p = nextLine(*p) {
+		a.d.b.add(*p, []byte{'\t'})
 	}
 	return &Position{a.start.line, a.start.off + 1}, nil
 }
