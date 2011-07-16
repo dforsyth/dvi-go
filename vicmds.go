@@ -67,6 +67,20 @@ func fixCursor(pos *Position) *Position {
 	return pos
 }
 
+func nextBuffer(a *CmdArgs) (*Position, os.Error) {
+	if a.d.b.next != nil {
+		a.d.b = a.d.b.next
+		return a.d.b.pos, nil
+	}
+
+	if a.d.b == a.d.bufs {
+		return nil, &DviError{"single buffer", 0}
+	}
+
+	a.d.b = a.d.bufs
+	return a.d.b.pos, nil
+}
+
 func cmdCurrLineAndAbove(a *CmdArgs) (*Position, os.Error) {
 	p := a.start
 	// TODO: If there are less than a.c1-1 line after p.line in the buffer, it's an error.

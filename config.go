@@ -142,4 +142,7 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	ctrl('G'): &vicmd{
 		fn: cmdDisplayInfo,
 	},
+	ctrl('V'): &vicmd{
+		fn: nextBuffer,
+	},
 }

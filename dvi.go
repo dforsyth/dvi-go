@@ -4,6 +4,7 @@ import (
 	"curses"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"strconv"
@@ -26,6 +27,7 @@ func (e *DviError) String() string {
 
 type Dvi struct {
 	b       *Buffer
+	bufs    *Buffer
 	w       *curses.Window
 	lastcmd int
 	showmsg bool
@@ -35,6 +37,12 @@ type Dvi struct {
 	curry   int
 	buffers map[byte]*Buffer
 	cmdDisp string
+	config  DviConfig
+}
+
+type DviConfig struct {
+	temppfx string
+	tempdir string
 }
 
 type DviMessage struct {
@@ -264,12 +272,61 @@ func commandMode(d *Dvi) {
 
 }
 
+func (d *Dvi) openFile(path string) (*Buffer, os.Error) {
+	file, e := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0666)
+	if e != nil {
+		return nil, e
+	}
+	defer file.Close()
+	stat, e := file.Stat()
+	if e != nil {
+		return nil, e
+	}
+	if !stat.IsRegular() {
+		return nil, &DviError{"Not a regular file", 0}
+	}
+	// TODO create lock file
+	buf := newBuffer()
+	if e := buf.loadFile(file); e != nil {
+		return nil, e
+	}
+	buf.name = path
+	buf.temp = false
+	return buf, nil
+}
+
+func (d *Dvi) openTempFile() (*Buffer, os.Error) {
+	tfile, e := ioutil.TempFile(d.config.tempdir, d.config.temppfx)
+	if e != nil {
+		return nil, e
+	}
+	defer tfile.Close()
+
+	buf := newBuffer()
+	buf.name = tfile.Name()
+	buf.temp = true
+	return buf, nil
+}
+
+func (d *Dvi) addBuf(buf *Buffer) {
+	if d.bufs == nil {
+		d.bufs = buf
+	} else {
+		var b *Buffer
+		for b = d.bufs; b.next != nil; b = b.next {
+		}
+		b.next = buf
+	}
+}
+
 func main() {
 	defer func() {
 		endscreen()
 	}()
 
 	d := &Dvi{}
+	d.config.tempdir = os.TempDir()
+	d.config.temppfx = "dvi."
 
 	// buffers
 	d.buffers = make(map[byte]*Buffer)
@@ -281,26 +338,25 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 
-	b := newBuffer()
-
 	if len(args) > 0 {
-		path := args[0]
-		f, e := os.Open(path)
-		if e != nil {
-			panic(e.String())
+		for _, path := range args {
+			if b, e := d.openFile(path); e == nil {
+				d.addBuf(b)
+				b.resetPos()
+				b.disp = b.first
+			}
 		}
-		b.name = path
-		if e := b.loadFile(f); e != nil {
-			panic(e.String())
+	}
+	if d.bufs == nil {
+		if b, e := d.openTempFile(); e == nil {
+			d.addBuf(b)
+			b.resetPos()
+			b.disp = b.first
 		}
-		f.Close()
 	}
 
-	d.b = b
-
-	// reset position and jump display the first line
-	b.resetPos()
-	b.disp = b.first
+	// use the first buffer
+	d.b = d.bufs
 
 	go sighandlers()
 
