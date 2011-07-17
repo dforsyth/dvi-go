@@ -1,5 +1,9 @@
 package main
 
+import (
+	"os"
+)
+
 var config map[string]interface{} = map[string]interface{}{
 	// edit options, set to the default specified by the spec
 	// TODO: create a mapping from long to short option names
@@ -7,6 +11,8 @@ var config map[string]interface{} = map[string]interface{}{
 	"autoprint":  true,  // ap
 	"autowrite":  false, // aw
 	"wrapscan":   true,  // ws
+	"tempdir": os.TempDir(),
+	"temppfx": "dvi.",
 }
 
 var vicmds map[int]*vicmd = map[int]*vicmd{
@@ -142,6 +148,7 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	ctrl('G'): &vicmd{
 		fn: cmdDisplayInfo,
 	},
+	// XXX This is not a real/final command.
 	ctrl('V'): &vicmd{
 		fn: nextBuffer,
 	},

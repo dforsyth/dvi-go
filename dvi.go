@@ -37,12 +37,6 @@ type Dvi struct {
 	curry   int
 	buffers map[byte]*Buffer
 	cmdDisp string
-	config  DviConfig
-}
-
-type DviConfig struct {
-	temppfx string
-	tempdir string
 }
 
 type DviMessage struct {
@@ -296,7 +290,7 @@ func (d *Dvi) openFile(path string) (*Buffer, os.Error) {
 }
 
 func (d *Dvi) openTempFile() (*Buffer, os.Error) {
-	tfile, e := ioutil.TempFile(d.config.tempdir, d.config.temppfx)
+	tfile, e := ioutil.TempFile(config["tempdir"].(string), config["temppfx"].(string))
 	if e != nil {
 		return nil, e
 	}
@@ -325,8 +319,6 @@ func main() {
 	}()
 
 	d := &Dvi{}
-	d.config.tempdir = os.TempDir()
-	d.config.temppfx = "dvi."
 
 	// buffers
 	d.buffers = make(map[byte]*Buffer)
