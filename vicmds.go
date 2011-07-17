@@ -221,7 +221,16 @@ func cmdReverseCase(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdShiftLeft(a *CmdArgs) (*Position, os.Error) {
-	return nil, nil
+	if a.d.b.lineNumber(a.start.line)+a.c1-1 > a.d.b.lineCount() {
+		return nil, &DviError{}
+	}
+	p := &Position{a.start.line, 0}
+	for ; p.line != a.end.line.next; p = nextLine(*p) {
+		if c, e := p.getChar(); e == nil && c == '\t' {
+			a.d.b.remove(*p, *nextChar(*p), false)
+		}
+	}
+	return &Position{a.start.line, a.start.off + 1}, nil
 }
 
 func cmdShiftRight(a *CmdArgs) (*Position, os.Error) {
