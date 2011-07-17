@@ -11,8 +11,8 @@ var config map[string]interface{} = map[string]interface{}{
 	"autoprint":  true,  // ap
 	"autowrite":  false, // aw
 	"wrapscan":   true,  // ws
-	"tempdir": os.TempDir(),
-	"temppfx": "dvi.",
+	"tempdir":    os.TempDir(),
+	"temppfx":    "dvi.",
 }
 
 var vicmds map[int]*vicmd = map[int]*vicmd{
@@ -76,7 +76,10 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	'B': &vicmd{
 		fn: cmdPrevBigWord,
 	},
-	'c': &vicmd{},
+	'c': &vicmd{
+		fn:     cmdChange,
+		motion: true,
+	},
 	'd': &vicmd{
 		fn:     cmdDelete,
 		motion: true,
@@ -151,5 +154,21 @@ var vicmds map[int]*vicmd = map[int]*vicmd{
 	// XXX This is not a real/final command.
 	ctrl('V'): &vicmd{
 		fn: nextBuffer,
+	},
+}
+
+var excmds map[string]*excmd = map[string]*excmd{
+	"0": &excmd{
+		fn: exGoToLine,
+	},
+	"w": &excmd{
+		fn: exWriteFile,
+	},
+	"q": &excmd{
+		fn: exQuit,
+	},
+	// XXX This is not a real/final command.
+	"db": &excmd{
+		fn: exDirBrowser,
 	},
 }

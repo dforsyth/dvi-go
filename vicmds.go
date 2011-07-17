@@ -67,25 +67,15 @@ func fixCursor(pos *Position) *Position {
 	return pos
 }
 
-func nextBuffer(a *CmdArgs) (*Position, os.Error) {
-	if a.d.b.next != nil {
-		a.d.b = a.d.b.next
-		return a.d.b.pos, nil
-	}
-
-	if a.d.b == a.d.bufs {
-		return nil, &DviError{"single buffer", 0}
-	}
-
-	a.d.b = a.d.bufs
-	return a.d.b.pos, nil
-}
-
 func cmdCurrLineAndAbove(a *CmdArgs) (*Position, os.Error) {
 	p := a.start
-	// TODO: If there are less than a.c1-1 line after p.line in the buffer, it's an error.
 	for i := 0; i < a.c1-1; i++ {
-		p = nextLine(*p)
+		// If there are less than a.c1-1 line after p.line in the buffer, it's an error.
+		n := nextLine(*p)
+		if posEq(n, p) {
+			return nil, &DviError{}
+		}
+		p = n
 		// TODO: go to first non-blank
 	}
 	return p, nil
@@ -115,9 +105,9 @@ func cmdMoveToColumn(a *CmdArgs) (*Position, os.Error) {
 
 func cmdFirstNonBlank(a *CmdArgs) (*Position, os.Error) {
 	p := &Position{a.start.line, 0}
-
 	for n := nextChar(*p); ; n = nextChar(*p) {
 		if c, e := p.getChar(); e == nil {
+			// XXX should probably just use unicode.IsBlank here...
 			if _, ok := blankchars[c]; !ok {
 				break
 			}
@@ -139,7 +129,7 @@ type REMessage struct {
 	re *string
 }
 
-func (m *REMessage) Message() string {
+func (m *REMessage) Display() string {
 	return "/" + *m.re
 }
 
@@ -162,7 +152,7 @@ func cmdFindRegex(a *CmdArgs) (*Position, os.Error) {
 	msg.re = &re
 	for {
 		// XXX this is so ghetto.  really need to fix up status/messaging
-		a.d.msg = msg
+		a.d.status = msg
 		draw(a.d)
 		switch k := getCh(a.d); k {
 		case 0xd, 0xa, curses.KEY_ENTER:
@@ -376,6 +366,10 @@ func cmdPrevWord(a *CmdArgs) (*Position, os.Error) {
 }
 
 func cmdPrevBigWord(a *CmdArgs) (*Position, os.Error) {
+	return nil, &DviError{"Not yet implemented", 0}
+}
+
+func cmdChange(a *CmdArgs) (*Position, os.Error) {
 	return nil, &DviError{"Not yet implemented", 0}
 }
 

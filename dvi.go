@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"unicode"
 )
@@ -31,7 +30,8 @@ type Dvi struct {
 	w       *curses.Window
 	lastcmd int
 	showmsg bool
-	msg     DviMessager
+	status  DviStatus
+	statusq chan DviStatus
 	lastkey int
 	currx   int
 	curry   int
@@ -45,7 +45,7 @@ type DviMessage struct {
 	beep    bool
 }
 
-func (m *DviMessage) Message() string {
+func (m *DviMessage) Display() string {
 	return m.message
 }
 
@@ -57,23 +57,34 @@ func (m *DviMessage) Beep() bool {
 	return m.beep
 }
 
-type DviMessager interface {
-	Message() string
+type DviStatus interface {
+	Display() string
 	Color() int
 	Beep() bool
 }
 
-func message(s *Dvi) string {
-	return fmt.Sprintf("lastkey: %c(%d) | pos: x: %d/%d y: %d", s.lastkey, s.lastkey, s.currx,
-		s.b.pos.off, s.curry)
+func message(d *Dvi) string {
+	if d.status == nil {
+		return fmt.Sprintf("lastkey: %c(%d) | pos: x: %d/%d y: %d", d.lastkey, d.lastkey,
+			d.currx, d.b.pos.off, d.curry)
+	}
+	return d.status.Display()
 }
 
 func (d *Dvi) queueMsg(msg string, colors int, beep bool) {
-	d.msg = &DviMessage{
+	d.statusq <- &DviMessage{
 		msg,
 		colors,
 		beep,
 	}
+}
+
+func (d *Dvi) setStatus(s DviStatus) {
+	d.status = s
+}
+
+func (d *Dvi) unsetStatus() {
+	d.status = nil
 }
 
 var breakchars map[int]interface{} = map[int]interface{}{
@@ -266,7 +277,7 @@ func commandMode(d *Dvi) {
 
 }
 
-func (d *Dvi) openFile(path string) (*Buffer, os.Error) {
+func openFile(path string) (*Buffer, os.Error) {
 	file, e := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0666)
 	if e != nil {
 		return nil, e
@@ -289,7 +300,7 @@ func (d *Dvi) openFile(path string) (*Buffer, os.Error) {
 	return buf, nil
 }
 
-func (d *Dvi) openTempFile() (*Buffer, os.Error) {
+func openTempFile() (*Buffer, os.Error) {
 	tfile, e := ioutil.TempFile(config["tempdir"].(string), config["temppfx"].(string))
 	if e != nil {
 		return nil, e
@@ -324,15 +335,16 @@ func main() {
 	d.buffers = make(map[byte]*Buffer)
 	d.buffers[0] = newBuffer()
 
-	// msg (nil is default)
-	d.msg = nil
+	// status (nil is default)
+	d.status = nil
+	d.statusq = make(chan DviStatus, 1)
 
 	flag.Parse()
 	args := flag.Args()
 
 	if len(args) > 0 {
 		for _, path := range args {
-			if b, e := d.openFile(path); e == nil {
+			if b, e := openFile(path); e == nil {
 				d.addBuf(b)
 				b.resetPos()
 				b.disp = b.first
@@ -340,7 +352,7 @@ func main() {
 		}
 	}
 	if d.bufs == nil {
-		if b, e := d.openTempFile(); e == nil {
+		if b, e := openTempFile(); e == nil {
 			d.addBuf(b)
 			b.resetPos()
 			b.disp = b.first
@@ -357,59 +369,4 @@ func main() {
 	draw(d)
 
 	commandMode(d)
-}
-
-func exmode(d *Dvi) {
-	old := d.msg
-	msg := &DviMessage{}
-	for {
-		d.msg = msg
-		draw(d)
-		k := getCh(d)
-		switch k {
-		case 27 /* ESC */ :
-			d.msg = nil
-			return
-		case 0xd, 0xa, curses.KEY_ENTER:
-			if msg.message == "w" {
-				// this is async according to the spec.  wrap with exWriteFile
-				d.b.writeFile()
-				d.b.dirty = false
-			} else if msg.message == "q" || msg.message == "q!" {
-				if d.b.dirty && msg.message != "q!" {
-					d.queueMsg("modifications made to buffer!", 1, true)
-					return
-				}
-				endscreen()
-				syscall.Exit(0)
-			} else if i, e := strconv.Atoi(msg.message); e == nil {
-				l := d.b.first
-				for i > 1 && l != nil {
-					l = l.next
-					i--
-				}
-				if i == 1 {
-					d.b.pos.line = l
-					d.b.pos.off = 0
-				} else {
-					// error
-				}
-			} else if msg.message == "db" {
-				directoryBrowser(d, ".")
-			} else if msg.message == "emacs" {
-				emacs(d)
-			} else if msg.message == "file" {
-				d.queueMsg(d.b.information(), 1, false)
-				return
-			} else if msg.message == "showmsg" {
-				d.showmsg = !d.showmsg
-			} else {
-				curses.Beep()
-			}
-			d.msg = old
-			return
-		default:
-			msg.message += string([]byte{byte(k)})
-		}
-	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"curses"
 	"io/ioutil"
 	"os"
 )
@@ -13,14 +14,14 @@ func dirmode(d *Dvi) *Buffer {
 			d.b.pos = nextLine(*d.b.pos)
 		case 'k':
 			d.b.pos = prevLine(*d.b.pos)
-		case 13:
-			b := newBuffer()
-			// XXX gross
-			if f, e := os.Open(string(d.b.pos.line.text)); e == nil {
-				defer f.Close()
-				b.loadFile(f)
+		case 0xd, 0xa, curses.KEY_ENTER:
+			if b, e := openFile(string(d.b.pos.line.text)); e == nil {
+				b.resetPos()
+				b.disp = b.first
+				d.addBuf(b)
+				return b
 			}
-			return b
+			return nil
 		case 27:
 			return nil
 		default:
@@ -48,9 +49,6 @@ func directoryBrowser(d *Dvi, path string) {
 	// enter "dirmode"
 	if n := dirmode(d); n != nil {
 		d.b = n
-		d.b.disp = d.b.first
-		d.b.pos.line = d.b.first
-		d.b.pos.off = 0
 	} else {
 		d.b = o
 	}
@@ -72,4 +70,18 @@ func emacs(d *Dvi) {
 			d.b.pos = d.b.add(*d.b.pos, []byte{byte(k)})
 		}
 	}
+}
+
+func nextBuffer(a *CmdArgs) (*Position, os.Error) {
+	if a.d.b.next != nil {
+		a.d.b = a.d.b.next
+		return a.d.b.pos, nil
+	}
+
+	if a.d.b == a.d.bufs {
+		return nil, &DviError{"single buffer", 0}
+	}
+
+	a.d.b = a.d.bufs
+	return a.d.b.pos, nil
 }

@@ -66,7 +66,6 @@ func draw(d *Dvi) os.Error {
 
 	cursory := 0
 	cursorx := 0
-	str := ""
 	y := 0
 	for l := f.disp; y < *curses.Rows-1 && l != nil; y, l = y+1, l.next {
 		x := 0
@@ -123,13 +122,13 @@ func draw(d *Dvi) os.Error {
 	msg := ""
 	mcolor := 3
 	beep := false
-	if d.msg == nil {
-		msg = message(d) + " " + str
-	} else {
-		msg = ":" + d.msg.Message()
-		mcolor = d.msg.Color()
-		beep = d.msg.Beep()
-		d.msg = nil
+	select {
+	case fromq := <-d.statusq:
+		msg = fromq.Display()
+		mcolor = fromq.Color()
+		beep = fromq.Beep()
+	default:
+		msg = message(d)
 	}
 	d.w.Move(*curses.Rows-1, 0)
 	d.w.Clrtoeol()
