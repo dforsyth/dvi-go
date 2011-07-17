@@ -63,12 +63,13 @@ type DviStatus interface {
 	Beep() bool
 }
 
-func message(d *Dvi) string {
+func (d *Dvi) statusDisplay() (string, int, bool) {
+	// not thrilled with the name of this fn
 	if d.status == nil {
 		return fmt.Sprintf("lastkey: %c(%d) | pos: x: %d/%d y: %d", d.lastkey, d.lastkey,
-			d.currx, d.b.pos.off, d.curry)
+			d.currx, d.b.pos.off, d.curry), 3, false
 	}
-	return d.status.Display()
+	return d.status.Display(), d.status.Color(), d.status.Beep()
 }
 
 func (d *Dvi) queueMsg(msg string, colors int, beep bool) {
@@ -337,7 +338,7 @@ func main() {
 
 	// status (nil is default)
 	d.status = nil
-	d.statusq = make(chan DviStatus, 1)
+	d.statusq = make(chan DviStatus, 4)
 
 	flag.Parse()
 	args := flag.Args()

@@ -128,7 +128,7 @@ func draw(d *Dvi) os.Error {
 		mcolor = fromq.Color()
 		beep = fromq.Beep()
 	default:
-		msg = message(d)
+		msg, mcolor, beep = d.statusDisplay()
 	}
 	d.w.Move(*curses.Rows-1, 0)
 	d.w.Clrtoeol()
