@@ -1,3 +1,8 @@
+/* 
+ * Copyright (c) 2011 David Forsythe.
+ * See LICENSE file for license details.
+ */
+
 package main
 
 // XXX Some position pointers in these commands are NOT COPIED.  FIX!!!

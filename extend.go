@@ -1,3 +1,8 @@
+/* 
+ * Copyright (c) 2011 David Forsythe.
+ * See LICENSE file for license details.
+ */
+
 package main
 
 import (
@@ -58,6 +63,8 @@ func emacs(d *Dvi) {
 	for {
 		draw(d)
 		switch k := getCh(d); k {
+		case 27:
+			return
 		case ctrl('N'):
 			d.b.pos = nextLine(*d.b.pos)
 		case ctrl('P'):
@@ -66,6 +73,10 @@ func emacs(d *Dvi) {
 			d.b.pos = prevChar2(*d.b.pos)
 		case ctrl('F'):
 			d.b.pos = nextChar2(*d.b.pos)
+		case ctrl('H'), 127, curses.KEY_BACKSPACE:
+			pp := prevChar2(*d.b.pos)
+			d.b.remove(*prevChar2(*d.b.pos), *d.b.pos, false)
+			d.b.pos = pp
 		default:
 			d.b.pos = d.b.add(*d.b.pos, []byte{byte(k)})
 		}

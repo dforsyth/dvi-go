@@ -1,3 +1,8 @@
+/* 
+ * Copyright (c) 2011 David Forsythe.
+ * See LICENSE file for license details.
+ */
+
 package main
 
 import (
@@ -123,6 +128,7 @@ func ctrl(k int) int {
 }
 
 func insertmode(d *Dvi) {
+	startpos := &Position{d.b.pos.line, d.b.pos.off}
 	for {
 		draw(d)
 		k := getCh(d)
@@ -137,6 +143,10 @@ func insertmode(d *Dvi) {
 		case ctrl('H'), 127, curses.KEY_BACKSPACE:
 			// TODO: Don't let backspace travel past starting point of input session
 			pp := prevChar2(*d.b.pos)
+			if posEq(d.b.pos, startpos) {
+				d.queueMsg("", 1, true)
+				continue
+			}
 			d.b.remove(*prevChar2(*d.b.pos), *d.b.pos, false)
 			d.b.pos = pp
 		default:

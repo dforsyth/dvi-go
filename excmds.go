@@ -1,3 +1,8 @@
+/* 
+ * Copyright (c) 2011 David Forsythe.
+ * See LICENSE file for license details.
+ */
+
 package main
 
 // XXX Everything in here should be considered a place holder
